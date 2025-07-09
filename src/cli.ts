@@ -10,8 +10,10 @@ import { EvaluationTestRunner } from './testing/evals/runner.js';
 
 interface CliOptions {
   serverConfig?: string;
+  serverName?: string;
   timeout?: number;
   output?: 'console' | 'json' | 'junit';
+  models?: string;
 }
 
 function handleError(error: unknown): never {
@@ -33,7 +35,11 @@ async function runIntegrationTests(testFile: string, options: CliOptions): Promi
   try {
     console.log(`Running integration tests from: ${testFile}`);
     
-    const runner = new IntegrationTestRunner(testFile, options.serverConfig);
+    if (!options.serverConfig) {
+      throw new Error('Server configuration is required. Use --server-config <file> to specify the MCP server configuration.');
+    }
+    
+    const runner = new IntegrationTestRunner(testFile, options.serverConfig, options.serverName);
     const summary = await runner.run();
     
     // Exit with error code if any tests failed
@@ -49,7 +55,11 @@ async function runEvaluationTests(testFile: string, options: CliOptions): Promis
   try {
     console.log(`Running evaluation tests from: ${testFile}`);
     
-    const runner = new EvaluationTestRunner(testFile, options.serverConfig);
+    if (!options.serverConfig) {
+      throw new Error('Server configuration is required. Use --server-config <file> to specify the MCP server configuration.');
+    }
+    
+    const runner = new EvaluationTestRunner(testFile, options.serverConfig, options.serverName, options.models);
     const summary = await runner.run();
     
     // Exit with error code if any tests failed
@@ -74,7 +84,8 @@ async function main(): Promise<void> {
     .command('integration')
     .description('Run integration tests (direct tool calls)')
     .argument('<test-file>', 'Integration test configuration file (YAML)')
-    .option('--server-config <file>', 'MCP server configuration file (JSON)')
+    .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
+    .option('--server-name <name>', 'Specific server name to use from config (if multiple servers defined)')
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--output <format>', 'Output format (console, json, junit)', 'console')
     .action(async (testFile: string, options: CliOptions) => {
@@ -86,8 +97,9 @@ async function main(): Promise<void> {
     .command('evals')
     .description('Run evaluation tests (LLM interaction)')
     .argument('<test-file>', 'Evaluation test configuration file (YAML)')
-    .option('--server-config <file>', 'MCP server configuration file (JSON)')
-    .option('--models <models>', 'LLM models to use (comma-separated)')
+    .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
+    .option('--server-name <name>', 'Specific server name to use from config (if multiple servers defined)')
+    .option('--models <models>', 'LLM models to use (comma-separated, overrides config file)')
     .option('--timeout <ms>', 'Test timeout in milliseconds', '30000')
     .option('--output <format>', 'Output format (console, json, junit)', 'console')
     .action(async (testFile: string, options: CliOptions) => {

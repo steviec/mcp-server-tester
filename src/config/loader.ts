@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import YAML from 'yaml';
+import Ajv from 'ajv';
 import type { 
   IntegrationTestConfig, 
   EvaluationTestConfig, 
@@ -12,7 +13,13 @@ import type {
   ServerConfig 
 } from '../core/types.js';
 
+// Import JSON schemas
+import integrationTestSchema from '../schemas/integration-test.json' assert { type: 'json' };
+import evaluationTestSchema from '../schemas/evaluation-test.json' assert { type: 'json' };
+import serverConfigSchema from '../schemas/server-config.json' assert { type: 'json' };
+
 export class ConfigLoader {
+  private static ajv = new Ajv({ allErrors: true, verbose: true });
   /**
    * Load integration test configuration from YAML file
    */
@@ -31,7 +38,7 @@ export class ConfigLoader {
       throw new Error(`Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    return this.validateIntegrationConfig(config, resolvedPath);
+    return this.validateWithSchema(config, integrationTestSchema, resolvedPath, 'Integration test configuration') as IntegrationTestConfig;
   }
 
   /**
@@ -52,7 +59,7 @@ export class ConfigLoader {
       throw new Error(`Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    return this.validateEvaluationConfig(config, resolvedPath);
+    return this.validateWithSchema(config, evaluationTestSchema, resolvedPath, 'Evaluation test configuration') as EvaluationTestConfig;
   }
 
   /**
@@ -69,7 +76,7 @@ export class ConfigLoader {
       throw new Error(`Invalid JSON in server config ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    const mcpConfig = this.validateServerConfig(config, resolvedPath);
+    const mcpConfig = this.validateWithSchema(config, serverConfigSchema, resolvedPath, 'Server configuration') as McpServersConfig;
     
     if (serverName) {
       if (!mcpConfig.mcpServers[serverName]) {
@@ -108,123 +115,28 @@ export class ConfigLoader {
     return ext === '.yaml' || ext === '.yml';
   }
 
-  private static validateIntegrationConfig(config: unknown, filePath: string): IntegrationTestConfig {
-    if (!config || typeof config !== 'object') {
-      throw new Error(`Invalid configuration format in ${filePath}: expected object`);
+  /**
+   * Validate configuration using JSON Schema with helpful error messages
+   */
+  private static validateWithSchema(config: unknown, schema: any, filePath: string, configType: string): unknown {
+    const validate = this.ajv.compile(schema);
+    const valid = validate(config);
+    
+    if (!valid) {
+      const errors = validate.errors || [];
+      const errorMessages = errors.map(error => {
+        const path = error.instancePath ? `at '${error.instancePath}'` : 'at root';
+        const message = error.message || 'validation failed';
+        const data = error.data !== undefined ? ` (got: ${JSON.stringify(error.data)})` : '';
+        return `  - ${path}: ${message}${data}`;
+      });
+      
+      throw new Error(
+        `${configType} validation failed in ${filePath}:\n${errorMessages.join('\n')}\n\n` +
+        `Please check your configuration format. See the documentation for examples.`
+      );
     }
-
-    const obj = config as Record<string, any>;
-
-    if (!obj.server_config || typeof obj.server_config !== 'string') {
-      throw new Error(`Invalid configuration in ${filePath}: server_config is required and must be a string`);
-    }
-
-    if (!obj.tests || !Array.isArray(obj.tests)) {
-      throw new Error(`Invalid configuration in ${filePath}: tests is required and must be an array`);
-    }
-
-    // Validate each test
-    for (const test of obj.tests) {
-      if (!test.name || typeof test.name !== 'string') {
-        throw new Error(`Invalid test in ${filePath}: name is required and must be a string`);
-      }
-
-      if (!test.calls || !Array.isArray(test.calls)) {
-        throw new Error(`Invalid test '${test.name}' in ${filePath}: calls is required and must be an array`);
-      }
-
-      // Validate each call
-      for (const call of test.calls) {
-        if (!call.tool || typeof call.tool !== 'string') {
-          throw new Error(`Invalid call in test '${test.name}': tool is required and must be a string`);
-        }
-
-        if (!call.params || typeof call.params !== 'object') {
-          throw new Error(`Invalid call in test '${test.name}': params is required and must be an object`);
-        }
-
-        if (!call.expect || typeof call.expect !== 'object') {
-          throw new Error(`Invalid call in test '${test.name}': expect is required and must be an object`);
-        }
-
-        if (typeof call.expect.success !== 'boolean') {
-          throw new Error(`Invalid call in test '${test.name}': expect.success is required and must be a boolean`);
-        }
-      }
-    }
-
-    return obj as IntegrationTestConfig;
-  }
-
-  private static validateEvaluationConfig(config: unknown, filePath: string): EvaluationTestConfig {
-    if (!config || typeof config !== 'object') {
-      throw new Error(`Invalid configuration format in ${filePath}: expected object`);
-    }
-
-    const obj = config as Record<string, any>;
-
-    if (!obj.server_config || typeof obj.server_config !== 'string') {
-      throw new Error(`Invalid configuration in ${filePath}: server_config is required and must be a string`);
-    }
-
-    if (!obj.options || typeof obj.options !== 'object') {
-      throw new Error(`Invalid configuration in ${filePath}: options is required and must be an object`);
-    }
-
-    if (!obj.options.models || !Array.isArray(obj.options.models)) {
-      throw new Error(`Invalid configuration in ${filePath}: options.models is required and must be an array`);
-    }
-
-    if (!obj.tests || !Array.isArray(obj.tests)) {
-      throw new Error(`Invalid configuration in ${filePath}: tests is required and must be an array`);
-    }
-
-    // Validate each test
-    for (const test of obj.tests) {
-      if (!test.name || typeof test.name !== 'string') {
-        throw new Error(`Invalid test in ${filePath}: name is required and must be a string`);
-      }
-
-      if (!test.prompt || typeof test.prompt !== 'string') {
-        throw new Error(`Invalid test '${test.name}' in ${filePath}: prompt is required and must be a string`);
-      }
-    }
-
-    return obj as EvaluationTestConfig;
-  }
-
-  private static validateServerConfig(config: unknown, filePath: string): McpServersConfig {
-    if (!config || typeof config !== 'object') {
-      throw new Error(`Invalid server configuration format in ${filePath}: expected object`);
-    }
-
-    const obj = config as Record<string, any>;
-
-    if (!obj.mcpServers || typeof obj.mcpServers !== 'object') {
-      throw new Error(`Invalid server configuration in ${filePath}: mcpServers is required and must be an object`);
-    }
-
-    // Validate each server
-    for (const [serverName, serverConfig] of Object.entries(obj.mcpServers)) {
-      if (!serverConfig || typeof serverConfig !== 'object') {
-        throw new Error(`Invalid server configuration for '${serverName}': expected object`);
-      }
-
-      const server = serverConfig as Record<string, any>;
-
-      if (!server.command || typeof server.command !== 'string') {
-        throw new Error(`Invalid server configuration for '${serverName}': command is required and must be a string`);
-      }
-
-      if (server.args && !Array.isArray(server.args)) {
-        throw new Error(`Invalid server configuration for '${serverName}': args must be an array`);
-      }
-
-      if (server.env && typeof server.env !== 'object') {
-        throw new Error(`Invalid server configuration for '${serverName}': env must be an object`);
-      }
-    }
-
-    return obj as McpServersConfig;
+    
+    return config;
   }
 }

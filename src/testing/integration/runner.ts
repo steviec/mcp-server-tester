@@ -17,10 +17,12 @@ export class IntegrationTestRunner {
   private mcpClient: McpClient;
   private config: IntegrationTestConfig;
   private serverConfigPath: string;
+  private serverName?: string;
 
-  constructor(configPath: string, serverConfigPath?: string) {
+  constructor(configPath: string, serverConfigPath: string, serverName?: string) {
     this.config = ConfigLoader.loadIntegrationConfig(configPath);
-    this.serverConfigPath = serverConfigPath || this.config.server_config;
+    this.serverConfigPath = serverConfigPath;
+    this.serverName = serverName;
     this.mcpClient = new McpClient();
   }
 
@@ -29,7 +31,7 @@ export class IntegrationTestRunner {
     
     try {
       // Load server configuration and connect
-      const serverConfig = ConfigLoader.loadServerConfig(this.serverConfigPath);
+      const serverConfig = ConfigLoader.loadServerConfig(this.serverConfigPath, this.serverName);
       const transportOptions = createTransportOptions(serverConfig);
       
       await this.mcpClient.connect(transportOptions);
@@ -149,7 +151,6 @@ export class IntegrationTestRunner {
     
     return {
       name: test.name,
-      description: test.description,
       passed,
       errors,
       calls: callResults,

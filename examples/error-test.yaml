@@ -1,8 +1,5 @@
-server_config: "./examples/server-config.json"
-
 tests:
   - name: "nonexistent_tool"
-    description: "Test calling a tool that doesn't exist"
     calls:
       - tool: "nonexistent"
         params:
@@ -13,7 +10,6 @@ tests:
             contains: "Unknown tool"
 
   - name: "missing_parameter"
-    description: "Test calling echo without required parameter"
     calls:
       - tool: "echo"
         params: {}

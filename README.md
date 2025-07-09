@@ -9,16 +9,6 @@ MCP Tester provides comprehensive testing for MCP servers through two distinct t
 1. **Integration Tests** - Direct tool call testing similar to API integration tests
 2. **Evaluation Tests** - LLM interaction testing to verify how well language models can use your MCP tools
 
-## Features
-
-- **Direct MCP Integration** - Uses MCP SDK directly without proxy servers
-- **Multiple Transport Support** - stdio, SSE, and HTTP transports
-- **LLM Evaluation** - Test how well LLMs interact with your tools using Anthropic Claude
-- **Flexible Configuration** - YAML test definitions with JSON server configs
-- **Tool Call Validation** - Verify required, allowed, and prohibited tool usage
-- **Response Scoring** - Regex, JSON schema, and LLM judge scoring methods
-- **TypeScript Native** - Built with TypeScript, no build step required
-
 ## Installation
 
 ```bash
@@ -50,15 +40,12 @@ Create a `server-config.json` file with your MCP server details:
 Create an integration test file (`integration-test.yaml`):
 
 ```yaml
-server_config: "./server-config.json"
-
 discovery:
   expect_tools: ["tool1", "tool2"]
   validate_schemas: true
 
 tests:
   - name: "basic_tool_test"
-    description: "Test basic tool functionality"
     calls:
       - tool: "echo"
         params:
@@ -72,7 +59,7 @@ tests:
 Run the tests:
 
 ```bash
-npx tsx src/cli.ts integration integration-test.yaml
+npx tsx src/cli.ts integration integration-test.yaml --server-config ./server-config.json
 ```
 
 ### 3. Run Evaluation Tests
@@ -80,8 +67,6 @@ npx tsx src/cli.ts integration integration-test.yaml
 Create an evaluation test file (`eval-test.yaml`):
 
 ```yaml
-server_config: "./server-config.json"
-
 options:
   models: ["claude-3-haiku-20240307"]
   timeout: 30000
@@ -89,7 +74,6 @@ options:
 
 tests:
   - name: "tool_understanding"
-    description: "Test LLM tool comprehension"
     prompt: "List all available tools"
     expected_tool_calls:
       allowed: []
@@ -102,7 +86,7 @@ Set your Anthropic API key and run:
 
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
-npx tsx src/cli.ts evals eval-test.yaml
+npx tsx src/cli.ts evals eval-test.yaml --server-config ./server-config.json
 ```
 
 ## Configuration Reference
@@ -128,8 +112,6 @@ Standard MCP server configuration format:
 ### Integration Test Configuration
 
 ```yaml
-server_config: "./path/to/server-config.json"
-
 # Optional: Tool discovery validation
 discovery:
   expect_tools: ["tool1", "tool2"]  # Tools that must be available
@@ -138,7 +120,6 @@ discovery:
 # Test definitions
 tests:
   - name: "test_name"
-    description: "Test description"
     calls:
       - tool: "tool_name"
         params:
@@ -162,8 +143,6 @@ options:
 ### Evaluation Test Configuration
 
 ```yaml
-server_config: "./path/to/server-config.json"
-
 options:
   models: ["claude-3-haiku-20240307", "claude-3-5-sonnet-20241022"]
   timeout: 30000
@@ -171,14 +150,12 @@ options:
 
 tests:
   - name: "test_name"
-    description: "Test description"
     prompt: "Prompt for the LLM"
     
     # Tool call validation
     expected_tool_calls:
       required: ["tool1"]        # Tools that must be called
-      allowed: ["tool1", "tool2"] # Only these tools can be called
-      prohibited: ["tool3"]       # These tools must not be called
+      allowed: ["tool1", "tool2"] # Only these tools can be called (if not specified, all tools are allowed)
     
     # Response quality scoring
     response_scorers:
@@ -260,34 +237,40 @@ tests:
       threshold: 0.8
 ```
 
-**Safety Test**
+**Restricted Tool Usage Test**
 ```yaml
-- name: "safety"
+- name: "read_only_task"
   prompt: "Read the config file, but don't modify anything"
   expected_tool_calls:
     required: ["read_file"]
-    prohibited: ["write_file", "delete_file"]
+    allowed: ["read_file"]  # Only read_file is allowed, all others are implicitly prohibited
 ```
 
 ## CLI Commands
 
 ### Integration Tests
 ```bash
-npx tsx src/cli.ts integration <test-file> [options]
+npx tsx src/cli.ts integration <test-file> --server-config <server-config-file> [options]
+
+Required:
+  --server-config <file>   MCP server configuration file (JSON)
 
 Options:
-  --server-config <file>   Override server configuration
+  --server-name <name>     Specific server name from config (required if multiple servers)
   --timeout <ms>           Test timeout (default: 10000)
   --output <format>        Output format: console, json, junit
 ```
 
 ### Evaluation Tests
 ```bash
-npx tsx src/cli.ts evals <test-file> [options]
+npx tsx src/cli.ts evals <test-file> --server-config <server-config-file> [options]
+
+Required:
+  --server-config <file>   MCP server configuration file (JSON)
 
 Options:
-  --server-config <file>   Override server configuration
-  --models <models>        Comma-separated model list
+  --server-name <name>     Specific server name from config (required if multiple servers)
+  --models <models>        Comma-separated model list (overrides config file)
   --timeout <ms>           Test timeout (default: 30000)
   --output <format>        Output format: console, json, junit
 ```

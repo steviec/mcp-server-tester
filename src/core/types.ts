@@ -33,12 +33,10 @@ export interface IntegrationTestCall {
 
 export interface IntegrationTest {
   name: string;
-  description?: string;
   calls: IntegrationTestCall[];
 }
 
 export interface IntegrationTestConfig {
-  server_config: string;
   discovery?: {
     expect_tools?: string[];
     validate_schemas?: boolean;
@@ -63,7 +61,6 @@ export interface TestCallResult {
 
 export interface TestResult {
   name: string;
-  description?: string;
   passed: boolean;
   errors: string[];
   calls: TestCallResult[];
@@ -89,7 +86,6 @@ export interface TransportOptions {
 
 // Later: Evaluation test types (for LLM interaction)
 export interface EvaluationTestConfig {
-  server_config: string;
   options: {
     models: string[];
     timeout: number;
@@ -100,12 +96,10 @@ export interface EvaluationTestConfig {
 
 export interface EvaluationTest {
   name: string;
-  description?: string;
   prompt: string;
   expected_tool_calls?: {
     required?: string[];
     allowed?: string[];
-    prohibited?: string[];
   };
   response_scorers?: ResponseScorer[];
 }

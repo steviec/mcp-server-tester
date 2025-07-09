@@ -23,11 +23,16 @@ export class EvaluationTestRunner {
   private mcpClient: McpClient;
   private config: EvaluationTestConfig;
   private serverConfigPath: string;
+  private serverName?: string;
+  private models?: string[];
   private llmProvider: AnthropicProvider;
 
-  constructor(configPath: string, serverConfigPath?: string) {
+  constructor(configPath: string, serverConfigPath: string, serverName?: string, modelsOverride?: string) {
     this.config = ConfigLoader.loadEvaluationConfig(configPath);
-    this.serverConfigPath = serverConfigPath || this.config.server_config;
+    this.serverConfigPath = serverConfigPath;
+    this.serverName = serverName;
+    // Parse models override from CLI if provided
+    this.models = modelsOverride ? modelsOverride.split(',').map(m => m.trim()) : this.config.options.models;
     this.mcpClient = new McpClient();
     this.llmProvider = new AnthropicProvider();
   }
@@ -37,7 +42,7 @@ export class EvaluationTestRunner {
     
     try {
       // Load server configuration and connect
-      const serverConfig = ConfigLoader.loadServerConfig(this.serverConfigPath);
+      const serverConfig = ConfigLoader.loadServerConfig(this.serverConfigPath, this.serverName);
       const transportOptions = createTransportOptions(serverConfig);
       
       await this.mcpClient.connect(transportOptions);
@@ -47,7 +52,7 @@ export class EvaluationTestRunner {
       // Run evaluation tests for each model
       const results: EvaluationResult[] = [];
       
-      for (const model of this.config.options.models) {
+      for (const model of this.models!) {
         console.log(`\n🤖 Running evaluation tests with model: ${model}`);
         
         for (const test of this.config.tests) {
@@ -169,15 +174,6 @@ export class EvaluationTestRunner {
       }
     }
     
-    // Check prohibited tools
-    if (expectedToolCalls.prohibited) {
-      for (const prohibitedTool of expectedToolCalls.prohibited) {
-        if (actualToolNames.includes(prohibitedTool)) {
-          errors.push(`Prohibited tool '${prohibitedTool}' was called`);
-        }
-      }
-    }
-    
     // Check allowed tools (if specified, only these tools should be called)
     if (expectedToolCalls.allowed) {
       for (const actualTool of actualToolNames) {
@@ -193,7 +189,7 @@ export class EvaluationTestRunner {
   private async runResponseScorers(
     messages: any[],
     scorers: NonNullable<EvaluationTest['response_scorers']>
-  ): string[] {
+  ): Promise<string[]> {
     const errors: string[] = [];
     
     for (const scorer of scorers) {

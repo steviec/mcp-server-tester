@@ -1,5 +1,3 @@
-server_config: "./examples/server-config.json"
-
 # Tool discovery validation
 discovery:
   expect_tools: ["echo", "add"]
@@ -8,7 +6,6 @@ discovery:
 # Integration tests
 tests:
   - name: "echo_test"
-    description: "Test echo tool functionality"
     calls:
       - tool: "echo"
         params:
@@ -19,7 +16,6 @@ tests:
             contains: "Echo: Hello World"
 
   - name: "add_test"
-    description: "Test add tool functionality"
     calls:
       - tool: "add"
         params:
@@ -31,7 +27,6 @@ tests:
             contains: "5 + 3 = 8"
 
   - name: "multi_call_test"
-    description: "Test multiple tool calls in sequence"
     calls:
       - tool: "echo"
         params:

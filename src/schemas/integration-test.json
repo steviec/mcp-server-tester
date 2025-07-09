@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Integration Test Configuration",
+  "description": "Schema for MCP integration test configuration files",
+  "type": "object",
+  "required": ["tests"],
+  "properties": {
+    "discovery": {
+      "type": "object",
+      "properties": {
+        "expect_tools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of tools that must be available"
+        },
+        "validate_schemas": {
+          "type": "boolean",
+          "description": "Whether to validate tool input schemas"
+        }
+      },
+      "additionalProperties": false
+    },
+    "tests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/test"
+      },
+      "description": "Array of integration tests to run"
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "timeout": {
+          "type": "number",
+          "minimum": 1000,
+          "description": "Test timeout in milliseconds"
+        },
+        "cleanup": {
+          "type": "boolean",
+          "description": "Whether to cleanup after tests"
+        },
+        "parallel": {
+          "type": "boolean",
+          "description": "Whether to run tests in parallel"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "test": {
+      "type": "object",
+      "required": ["name", "calls"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable test name"
+        },
+        "calls": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/call"
+          },
+          "description": "Array of tool calls to make"
+        }
+      },
+      "additionalProperties": false
+    },
+    "call": {
+      "type": "object",
+      "required": ["tool", "params", "expect"],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Name of the tool to call"
+        },
+        "params": {
+          "type": "object",
+          "description": "Parameters to pass to the tool"
+        },
+        "expect": {
+          "type": "object",
+          "required": ["success"],
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "description": "Whether the call should succeed"
+            },
+            "result": {
+              "type": "object",
+              "properties": {
+                "contains": {
+                  "type": "string",
+                  "description": "Text that should be contained in the result"
+                },
+                "equals": {
+                  "description": "Exact value the result should equal"
+                },
+                "schema": {
+                  "description": "JSON schema the result should validate against"
+                }
+              },
+              "additionalProperties": false,
+              "description": "Expected result validation (only used when success=true)"
+            },
+            "error": {
+              "type": "object",
+              "properties": {
+                "contains": {
+                  "type": "string",
+                  "description": "Text that should be contained in the error message"
+                }
+              },
+              "additionalProperties": false,
+              "description": "Expected error validation (only used when success=false)"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

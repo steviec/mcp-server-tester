@@ -1,9 +1,6 @@
-server_config: "./examples/server-config.json"
-
 # Simple tests without discovery
 tests:
   - name: "basic_echo"
-    description: "Basic echo test"
     calls:
       - tool: "echo"
         params:
