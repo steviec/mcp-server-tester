@@ -38,7 +38,7 @@ export class TestServerLauncher {
 
       this.process = spawn(this.config.command, this.config.args, {
         env: { ...process.env, ...this.config.env },
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe'], // stdin, stdout, stderr all piped
       });
 
       this.process.on('error', error => {
@@ -46,13 +46,17 @@ export class TestServerLauncher {
         reject(new Error(`Failed to start server: ${error.message}`));
       });
 
-      // Wait for server to indicate it's ready
+      // Capture stderr to detect when server is ready, but don't let it reach console
+      let serverReady = false;
       this.process.stderr?.on('data', data => {
         const output = data.toString();
-        if (output.includes('Test MCP server running')) {
+        if (output.includes('Test MCP server running') && !serverReady) {
+          serverReady = true;
           clearTimeout(timeout);
           resolve();
         }
+        // Explicitly consume stderr data to prevent it from reaching the console
+        // This data is captured but not displayed anywhere
       });
 
       this.process.on('exit', code => {

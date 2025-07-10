@@ -2,8 +2,12 @@
  * CLI command tests for mcp-tester
  */
 
+import { describe, beforeAll, test, expect } from 'vitest';
 import { createCliRunner, CliRunner } from '../utils/cli-runner.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('MCP Tester CLI', () => {
   let cli: CliRunner;

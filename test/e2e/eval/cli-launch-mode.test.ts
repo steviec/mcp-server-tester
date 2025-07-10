@@ -2,6 +2,7 @@
  * E2E tests for evaluation functionality using CLI launch mode
  */
 
+import { describe, beforeAll, test, expect } from 'vitest';
 import { EvaluationTestRunner } from '../../../src/testing/evals/runner.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
@@ -45,7 +46,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 
@@ -90,7 +91,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 
@@ -134,7 +135,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 
@@ -178,7 +179,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 

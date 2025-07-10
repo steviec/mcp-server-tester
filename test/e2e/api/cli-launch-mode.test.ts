@@ -2,6 +2,7 @@
  * E2E tests for API functionality using CLI launch mode
  */
 
+import { describe, test, expect } from 'vitest';
 import { IntegrationTestRunner } from '../../../src/testing/integration/runner.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
@@ -15,7 +16,7 @@ describe('API Tests - CLI Launch Mode', () => {
     const runner = new IntegrationTestRunner(testConfigPath, {
       serverCommand: 'node',
       serverArgs: testServerPath,
-    });
+          });
 
     const summary = await runner.run();
 
@@ -51,7 +52,7 @@ tests:
       const runner = new IntegrationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 
@@ -90,7 +91,7 @@ tests:
       const runner = new IntegrationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 
@@ -145,7 +146,7 @@ tests:
       const runner = new IntegrationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-      });
+              });
 
       const summary = await runner.run();
 
@@ -207,7 +208,7 @@ tests:
     const runner = new IntegrationTestRunner(testConfigPath, {
       serverCommand: 'nonexistent-command',
       serverArgs: 'some-args',
-    });
+          });
 
     await expect(runner.run()).rejects.toThrow(/Failed to connect to MCP server/);
   }, 15000);

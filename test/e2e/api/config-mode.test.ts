@@ -2,6 +2,7 @@
  * E2E tests for API functionality using config file mode
  */
 
+import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 import { IntegrationTestRunner } from '../../../src/testing/integration/runner.js';
 import {
   TestServerLauncher,

@@ -105,44 +105,36 @@ export class IntegrationTestRunner {
 
     // Test tool discovery
     if (this.config.discovery.expect_tools) {
-      try {
-        const toolsResult = await this.mcpClient.listTools();
-        const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
+      const toolsResult = await this.mcpClient.listTools();
+      const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
 
-        for (const expectedTool of this.config.discovery.expect_tools) {
-          if (!availableTools.includes(expectedTool)) {
-            throw new Error(
-              `Expected tool '${expectedTool}' not found. Available tools: ${availableTools.join(', ')}`
-            );
-          }
+      for (const expectedTool of this.config.discovery.expect_tools) {
+        if (!availableTools.includes(expectedTool)) {
+          throw new Error(
+            `Expected tool '${expectedTool}' not found. Available tools: ${availableTools.join(', ')}`
+          );
         }
-
-        // Discovery: Found all expected tools
-      } catch (error) {
-        throw error;
       }
+
+      // Discovery: Found all expected tools
     }
 
     // Test schema validation
     if (this.config.discovery.validate_schemas) {
-      try {
-        const toolsResult = await this.mcpClient.listTools();
-        const tools = toolsResult.tools || [];
+      const toolsResult = await this.mcpClient.listTools();
+      const tools = toolsResult.tools || [];
 
-        for (const tool of tools) {
-          if (!tool.name) {
-            throw new Error(`Tool missing name property`);
-          }
-
-          if (!tool.inputSchema) {
-            throw new Error(`Tool '${tool.name}' missing input schema`);
-          }
+      for (const tool of tools) {
+        if (!tool.name) {
+          throw new Error(`Tool missing name property`);
         }
 
-        // Discovery: All tool schemas valid
-      } catch (error) {
-        throw error;
+        if (!tool.inputSchema) {
+          throw new Error(`Tool '${tool.name}' missing input schema`);
+        }
       }
+
+      // Discovery: All tool schemas valid
     }
   }
 
@@ -254,7 +246,10 @@ export class IntegrationTestRunner {
     }
   }
 
-  private validateCallResult(result: unknown, expect: IntegrationTestCall['expect']): string | null {
+  private validateCallResult(
+    result: unknown,
+    expect: IntegrationTestCall['expect']
+  ): string | null {
     if (!expect.result) {
       return null;
     }

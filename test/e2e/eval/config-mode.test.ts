@@ -2,6 +2,7 @@
  * E2E tests for evaluation functionality using config file mode
  */
 
+import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 import { EvaluationTestRunner } from '../../../src/testing/evals/runner.js';
 import {
   TestServerLauncher,

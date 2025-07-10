@@ -110,7 +110,7 @@ async function main(): Promise<void> {
   const program = new Command();
 
   program
-    .name('mcp-tester')
+    .name('mcp-server-tester')
     .description('Standalone CLI tool for testing MCP servers')
     .version('1.0.0');
 

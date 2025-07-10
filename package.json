@@ -1,20 +1,24 @@
 {
-  "name": "mcp-tester",
+  "name": "mcp-server-tester",
   "version": "1.0.0",
   "description": "Standalone CLI tool for testing Model Context Protocol (MCP) servers",
-  "main": "src/cli.ts",
+  "main": "dist/cli.js",
   "bin": {
-    "mcp-tester": "src/cli.ts"
+    "mcp-server-tester": "dist/cli.js"
   },
   "scripts": {
     "dev": "tsx src/cli.ts",
-    "test": "jest",
-    "test:unit": "jest test/unit",
-    "test:e2e": "jest test/e2e",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:e2e": "vitest run test/e2e",
+    "test:e2e:api": "vitest run test/e2e/api",
+    "test:e2e:eval": "vitest run test/e2e/eval",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "build": "tsc",
     "start": "tsx src/cli.ts",
     "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
@@ -27,7 +31,7 @@
     "cli",
     "model-context-protocol"
   ],
-  "author": "",
+  "author": "Stevie Clifton",
   "license": "MIT",
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
@@ -41,19 +45,31 @@
   "devDependencies": {
     "@eslint/js": "^9.30.1",
     "@types/debug": "^4.1.0",
-    "@types/jest": "^29.0.0",
     "@types/node": "^22.0.0",
     "@typescript-eslint/eslint-plugin": "^8.36.0",
     "@typescript-eslint/parser": "^8.36.0",
+    "@vitest/ui": "^3.2.4",
     "eslint": "^9.30.1",
     "globals": "^16.3.0",
-    "jest": "^29.0.0",
     "prettier": "^3.6.2",
-    "ts-jest": "^29.0.0",
     "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stevieclifton/mcp-server-tester.git"
+  },
+  "bugs": {
+    "url": "https://github.com/stevieclifton/mcp-server-tester/issues"
+  },
+  "homepage": "https://github.com/stevieclifton/mcp-server-tester#readme"
 }

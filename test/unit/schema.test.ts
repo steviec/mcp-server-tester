@@ -2,8 +2,12 @@
  * Schema validation tests for mcp-tester configurations
  */
 
+import { describe, test, expect } from 'vitest';
 import { ConfigLoader } from '../../src/config/loader.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Schema Validation', () => {
   const fixturesDir = path.join(__dirname, '../fixtures');

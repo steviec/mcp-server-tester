@@ -14,12 +14,12 @@ import type {
 } from '../core/types.js';
 
 // Import JSON schemas
-import integrationTestSchema from '../schemas/integration-test.json' assert { type: 'json' };
-import evaluationTestSchema from '../schemas/evaluation-test.json' assert { type: 'json' };
-import serverConfigSchema from '../schemas/server-config.json' assert { type: 'json' };
+import integrationTestSchema from '../schemas/integration-test.json' with { type: 'json' };
+import evaluationTestSchema from '../schemas/evaluation-test.json' with { type: 'json' };
+import serverConfigSchema from '../schemas/server-config.json' with { type: 'json' };
 
 export class ConfigLoader {
-  private static ajv = new Ajv({ allErrors: true, verbose: true });
+  private static ajv = new Ajv.default({ allErrors: true, verbose: true });
   /**
    * Load integration test configuration from YAML file
    */
@@ -154,7 +154,7 @@ export class ConfigLoader {
 
     if (!valid) {
       const errors = validate.errors || [];
-      const errorMessages = errors.map(error => {
+      const errorMessages = errors.map((error: any) => {
         const path = error.instancePath ? `at '${error.instancePath}'` : 'at root';
         const message = error.message || 'validation failed';
         const data = error.data !== undefined ? ` (got: ${JSON.stringify(error.data)})` : '';
