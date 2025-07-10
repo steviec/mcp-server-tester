@@ -1,5 +1,5 @@
 /**
- * Integration test runner for direct tool calls
+ * Capabilities test runner for direct tool calls
  */
 
 import {
@@ -9,9 +9,9 @@ import {
 } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import type {
-  IntegrationTestConfig,
-  IntegrationTest,
-  IntegrationTestCall,
+  CapabilitiesTestConfig,
+  CapabilitiesTest,
+  CapabilitiesTestCall,
   TestResult,
   TestCallResult,
   TestSummary,
@@ -25,13 +25,13 @@ interface ServerOptions {
   serverEnv?: string;
 }
 
-export class IntegrationTestRunner {
+export class CapabilitiesTestRunner {
   private mcpClient: McpClient;
-  private config: IntegrationTestConfig;
+  private config: CapabilitiesTestConfig;
   private serverOptions: ServerOptions;
 
   constructor(configPath: string, serverOptions: ServerOptions) {
-    this.config = ConfigLoader.loadIntegrationConfig(configPath);
+    this.config = ConfigLoader.loadCapabilitiesConfig(configPath);
     this.serverOptions = serverOptions;
     this.mcpClient = new McpClient();
   }
@@ -69,7 +69,7 @@ export class IntegrationTestRunner {
         await this.runDiscoveryTests();
       }
 
-      // Run integration tests
+      // Run capabilities tests
       const results: TestResult[] = [];
 
       for (const test of this.config.tests) {
@@ -138,7 +138,7 @@ export class IntegrationTestRunner {
     }
   }
 
-  private async runTest(test: IntegrationTest): Promise<TestResult> {
+  private async runTest(test: CapabilitiesTest): Promise<TestResult> {
     const startTime = Date.now();
     const callResults: TestCallResult[] = [];
     const errors: string[] = [];
@@ -166,7 +166,7 @@ export class IntegrationTestRunner {
     };
   }
 
-  private async runCall(call: IntegrationTestCall): Promise<TestCallResult> {
+  private async runCall(call: CapabilitiesTestCall): Promise<TestCallResult> {
     const startTime = Date.now();
 
     try {
@@ -248,7 +248,7 @@ export class IntegrationTestRunner {
 
   private validateCallResult(
     result: unknown,
-    expect: IntegrationTestCall['expect']
+    expect: CapabilitiesTestCall['expect']
   ): string | null {
     if (!expect.result) {
       return null;

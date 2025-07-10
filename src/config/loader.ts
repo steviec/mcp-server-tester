@@ -7,23 +7,25 @@ import path from 'path';
 import YAML from 'yaml';
 import Ajv from 'ajv';
 import type {
-  IntegrationTestConfig,
+  CapabilitiesTestConfig,
   EvaluationTestConfig,
+  UnifiedTestConfig,
   McpServersConfig,
   ServerConfig,
 } from '../core/types.js';
 
 // Import JSON schemas
-import integrationTestSchema from '../schemas/integration-test.json' with { type: 'json' };
+import capabilitiesTestSchema from '../schemas/capabilities-test.json' with { type: 'json' };
 import evaluationTestSchema from '../schemas/evaluation-test.json' with { type: 'json' };
+import unifiedTestSchema from '../schemas/unified-test.json' with { type: 'json' };
 import serverConfigSchema from '../schemas/server-config.json' with { type: 'json' };
 
 export class ConfigLoader {
   private static ajv = new Ajv.default({ allErrors: true, verbose: true });
   /**
-   * Load integration test configuration from YAML file
+   * Load capabilities test configuration from YAML file
    */
-  static loadIntegrationConfig(filePath: string): IntegrationTestConfig {
+  static loadCapabilitiesConfig(filePath: string): CapabilitiesTestConfig {
     const resolvedPath = this.resolvePath(filePath);
     const content = this.readFile(resolvedPath);
 
@@ -42,10 +44,38 @@ export class ConfigLoader {
 
     return this.validateWithSchema(
       config,
-      integrationTestSchema,
+      capabilitiesTestSchema,
       resolvedPath,
-      'Integration test configuration'
-    ) as IntegrationTestConfig;
+      'Capabilities test configuration'
+    ) as CapabilitiesTestConfig;
+  }
+
+  /**
+   * Load unified test configuration from YAML file
+   */
+  static loadUnifiedConfig(filePath: string): UnifiedTestConfig {
+    const resolvedPath = this.resolvePath(filePath);
+    const content = this.readFile(resolvedPath);
+
+    let config: unknown;
+    try {
+      if (this.isYamlFile(resolvedPath)) {
+        config = YAML.parse(content);
+      } else {
+        config = JSON.parse(content);
+      }
+    } catch (error) {
+      throw new Error(
+        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
+    return this.validateWithSchema(
+      config,
+      unifiedTestSchema,
+      resolvedPath,
+      'Unified test configuration'
+    ) as UnifiedTestConfig;
   }
 
   /**

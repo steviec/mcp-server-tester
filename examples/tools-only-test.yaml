@@ -1,18 +1,20 @@
-# Valid integration test configuration for testing (unified format)
+# MCP Tools-Only Test Configuration
+# This file demonstrates testing only tool capabilities
+
 tools:
   expect_tools: ['echo', 'add']
   tests:
-    - name: 'test_echo'
+    - name: 'Echoes a simple message'
       calls:
         - tool: 'echo'
           params:
-            message: 'test message'
+            message: 'Hello World'
           expect:
             success: true
             result:
-              contains: 'Echo: test message'
+              contains: 'Echo: Hello World'
 
-    - name: 'test_add'
+    - name: 'Adds two numbers correctly'
       calls:
         - tool: 'add'
           params:

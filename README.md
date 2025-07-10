@@ -12,7 +12,11 @@ MCP Tester provides comprehensive testing for MCP servers through two distinct t
 ## Installation
 
 ```bash
-npm install
+# Run directly with npx (recommended)
+npx mcp-server-tester --help
+
+# Or install globally
+npm install -g mcp-server-tester
 ```
 
 ## Quick Start
@@ -59,7 +63,7 @@ tests:
 Run the tests:
 
 ```bash
-npx tsx src/cli.ts integration integration-test.yaml --server-config ./server-config.json
+npx mcp-server-tester integration integration-test.yaml --server-config ./server-config.json
 ```
 
 ### 3. Run Evaluation Tests
@@ -86,7 +90,7 @@ Set your Anthropic API key and run:
 
 ```bash
 export ANTHROPIC_API_KEY="your-api-key"
-npx tsx src/cli.ts evals eval-test.yaml --server-config ./server-config.json
+npx mcp-server-tester evals eval-test.yaml --server-config ./server-config.json
 ```
 
 ## Configuration Reference
@@ -257,7 +261,7 @@ tests:
 ### Integration Tests
 
 ```bash
-npx tsx src/cli.ts integration <test-file> --server-config <server-config-file> [options]
+npx mcp-server-tester integration <test-file> --server-config <server-config-file> [options]
 
 Required:
   --server-config <file>   MCP server configuration file (JSON)
@@ -271,7 +275,7 @@ Options:
 ### Evaluation Tests
 
 ```bash
-npx tsx src/cli.ts evals <test-file> --server-config <server-config-file> [options]
+npx mcp-server-tester evals <test-file> --server-config <server-config-file> [options]
 
 Required:
   --server-config <file>   MCP server configuration file (JSON)
@@ -306,11 +310,33 @@ The `examples/` directory contains:
 
 ## Contributing
 
+### Development Setup
+
+```bash
+# Clone and install dependencies
+git clone https://github.com/steviec/mcp-server-tester.git
+cd mcp-server-tester
+npm install
+
+# Run in development mode
+npm run dev -- integration examples/integration-test.yaml --server-config examples/server-config.json
+
+# Run tests
+npm test
+
+# Run linting and formatting
+npm run lint
+npm run format
+```
+
+### Contributing Process
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests for new functionality
-5. Submit a pull request
+5. Run `npm test` and `npm run lint`
+6. Submit a pull request
 
 ## License
 

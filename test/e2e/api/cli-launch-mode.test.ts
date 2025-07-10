@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { IntegrationTestRunner } from '../../../src/testing/integration/runner.js';
+import { CapabilitiesTestRunner } from '../../../src/testing/capabilities/runner.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
 
@@ -11,9 +11,9 @@ describe('API Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
 
   test('should launch server and discover tools via CLI mode', async () => {
-    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-integration.yaml');
+    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
 
-    const runner = new IntegrationTestRunner(testConfigPath, {
+    const runner = new CapabilitiesTestRunner(testConfigPath, {
       serverCommand: 'node',
       serverArgs: testServerPath,
     });
@@ -49,7 +49,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
       });
@@ -88,7 +88,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
       });
@@ -143,7 +143,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
       });
@@ -185,7 +185,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
         serverEnv: 'NODE_ENV=test,TEST_VAR=value',
@@ -203,9 +203,9 @@ tests:
   }, 15000);
 
   test('should handle invalid server command gracefully', async () => {
-    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-integration.yaml');
+    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
 
-    const runner = new IntegrationTestRunner(testConfigPath, {
+    const runner = new CapabilitiesTestRunner(testConfigPath, {
       serverCommand: 'nonexistent-command',
       serverArgs: 'some-args',
     });

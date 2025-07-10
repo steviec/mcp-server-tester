@@ -1,6 +1,6 @@
 /**
  * Core types for MCP Tester
- * Focus on integration testing initially
+ * Focus on capabilities testing initially
  */
 
 // Server configuration (standard MCP format)
@@ -14,8 +14,8 @@ export interface McpServersConfig {
   mcpServers: Record<string, ServerConfig>;
 }
 
-// Integration test types
-export interface IntegrationTestCall {
+// Capabilities test types
+export interface CapabilitiesTestCall {
   tool: string;
   params: Record<string, any>;
   expect: {
@@ -31,17 +31,17 @@ export interface IntegrationTestCall {
   };
 }
 
-export interface IntegrationTest {
+export interface CapabilitiesTest {
   name: string;
-  calls: IntegrationTestCall[];
+  calls: CapabilitiesTestCall[];
 }
 
-export interface IntegrationTestConfig {
+export interface CapabilitiesTestConfig {
   discovery?: {
     expect_tools?: string[];
     validate_schemas?: boolean;
   };
-  tests: IntegrationTest[];
+  tests: CapabilitiesTest[];
   options?: {
     timeout?: number;
     cleanup?: boolean;
@@ -119,4 +119,22 @@ export interface EvaluationResult {
   errors: string[];
   scorer_results: any[];
   messages?: any[];
+}
+
+// Unified test types
+export interface UnifiedTestConfig {
+  tools?: ToolsConfig;
+  evaluations?: EvaluationsConfig;
+}
+
+export interface ToolsConfig {
+  expect_tools?: string[];
+  tests: CapabilitiesTest[];
+}
+
+export interface EvaluationsConfig {
+  models?: string[];
+  timeout?: number;
+  max_steps?: number;
+  tests: EvaluationTest[];
 }

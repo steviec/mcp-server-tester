@@ -78,38 +78,9 @@ export class CliRunner {
   }
 
   /**
-   * Helper to run integration command
+   * Helper to run unified test command
    */
-  async integration(
-    testFile: string,
-    serverConfig: string,
-    options: {
-      serverName?: string;
-      timeout?: number;
-      output?: string;
-    } = {}
-  ): Promise<CliResult> {
-    const args = ['integration', testFile, '--server-config', serverConfig];
-
-    if (options.serverName) {
-      args.push('--server-name', options.serverName);
-    }
-
-    if (options.timeout) {
-      args.push('--timeout', options.timeout.toString());
-    }
-
-    if (options.output) {
-      args.push('--output', options.output);
-    }
-
-    return this.run(args);
-  }
-
-  /**
-   * Helper to run evaluation command
-   */
-  async evals(
+  async test(
     testFile: string,
     serverConfig: string,
     options: {
@@ -119,7 +90,7 @@ export class CliRunner {
       output?: string;
     } = {}
   ): Promise<CliResult> {
-    const args = ['evals', testFile, '--server-config', serverConfig];
+    const args = [testFile, '--server-config', serverConfig];
 
     if (options.serverName) {
       args.push('--server-name', options.serverName);
@@ -141,10 +112,42 @@ export class CliRunner {
   }
 
   /**
+   * Legacy helper for backward compatibility
+   */
+  async integration(
+    testFile: string,
+    serverConfig: string,
+    options: {
+      serverName?: string;
+      timeout?: number;
+      output?: string;
+    } = {}
+  ): Promise<CliResult> {
+    return this.test(testFile, serverConfig, options);
+  }
+
+  /**
+   * Legacy helper for backward compatibility
+   */
+  async evals(
+    testFile: string,
+    serverConfig: string,
+    options: {
+      serverName?: string;
+      models?: string;
+      timeout?: number;
+      output?: string;
+    } = {}
+  ): Promise<CliResult> {
+    return this.test(testFile, serverConfig, options);
+  }
+
+  /**
    * Helper to get help text
    */
   async help(command?: string): Promise<CliResult> {
-    const args = command ? [command, '--help'] : ['--help'];
+    // Since we have a unified command now, just show general help
+    const args = ['--help'];
     return this.run(args);
   }
 }

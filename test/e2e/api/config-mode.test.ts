@@ -3,7 +3,7 @@
  */
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
-import { IntegrationTestRunner } from '../../../src/testing/integration/runner.js';
+import { CapabilitiesTestRunner } from '../../../src/testing/capabilities/runner.js';
 import {
   TestServerLauncher,
   createTestServerLauncher,
@@ -29,9 +29,9 @@ describe('API Tests - Config Mode', () => {
   }, 10000);
 
   test('should connect to server via config file and discover tools', async () => {
-    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-integration.yaml');
+    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
 
-    const runner = new IntegrationTestRunner(testConfigPath, {
+    const runner = new CapabilitiesTestRunner(testConfigPath, {
       serverConfig: testServerConfigPath,
       serverName: 'test-server',
     });
@@ -67,7 +67,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
       });
@@ -106,7 +106,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
       });
@@ -143,7 +143,7 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new IntegrationTestRunner(tempTestPath, {
+      const runner = new CapabilitiesTestRunner(tempTestPath, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
       });
@@ -180,18 +180,18 @@ tests:
     const tempConfigPath = path.resolve(process.cwd(), 'test/e2e/temp-multi-config.json');
     fs.writeFileSync(tempConfigPath, JSON.stringify(multiServerConfig, null, 2));
 
-    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-integration.yaml');
+    const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
 
     try {
       // Should fail without server name
-      const runnerWithoutName = new IntegrationTestRunner(testConfigPath, {
+      const runnerWithoutName = new CapabilitiesTestRunner(testConfigPath, {
         serverConfig: tempConfigPath,
       });
 
       await expect(runnerWithoutName.run()).rejects.toThrow('Multiple servers found');
 
       // Should work with server name
-      const runnerWithName = new IntegrationTestRunner(testConfigPath, {
+      const runnerWithName = new CapabilitiesTestRunner(testConfigPath, {
         serverConfig: tempConfigPath,
         serverName: 'server-1',
       });

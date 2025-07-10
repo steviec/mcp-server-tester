@@ -5,8 +5,7 @@
  */
 
 import { Command } from 'commander';
-import { IntegrationTestRunner } from './testing/integration/runner.js';
-import { EvaluationTestRunner } from './testing/evals/runner.js';
+import { UnifiedTestRunner } from './testing/unified-runner.js';
 
 interface CliOptions {
   serverConfig?: string;
@@ -34,9 +33,9 @@ function handleError(error: unknown): never {
   process.exit(1);
 }
 
-async function runIntegrationTests(testFile: string, options: CliOptions): Promise<void> {
+async function runTests(testFile: string, options: CliOptions): Promise<void> {
   try {
-    console.log(`Running integration tests from: ${testFile}`);
+    console.log(`Running tests from: ${testFile}`);
 
     // Validate server configuration options
     const hasConfigMode = !!options.serverConfig;
@@ -58,43 +57,7 @@ async function runIntegrationTests(testFile: string, options: CliOptions): Promi
       );
     }
 
-    const runner = new IntegrationTestRunner(testFile, options);
-    const summary = await runner.run();
-
-    // Exit with error code if any tests failed
-    if (summary.failed > 0) {
-      process.exit(1);
-    }
-  } catch (error) {
-    handleError(error);
-  }
-}
-
-async function runEvaluationTests(testFile: string, options: CliOptions): Promise<void> {
-  try {
-    console.log(`Running evaluation tests from: ${testFile}`);
-
-    // Validate server configuration options
-    const hasConfigMode = !!options.serverConfig;
-    const hasCommandMode = !!options.serverCommand;
-
-    if (!hasConfigMode && !hasCommandMode) {
-      throw new Error(
-        'Server configuration is required. Use either:\n' +
-          '  --server-config <file> [--server-name <name>] for config file mode, or\n' +
-          '  --server-command <command> [--server-args <args>] for CLI launch mode'
-      );
-    }
-
-    if (hasConfigMode && hasCommandMode) {
-      throw new Error(
-        'Cannot use both --server-config and --server-command. Choose one mode:\n' +
-          '  --server-config for existing server configuration, or\n' +
-          '  --server-command for direct server launch'
-      );
-    }
-
-    const runner = new EvaluationTestRunner(testFile, options);
+    const runner = new UnifiedTestRunner(testFile, options);
     const summary = await runner.run();
 
     // Exit with error code if any tests failed
@@ -114,30 +77,9 @@ async function main(): Promise<void> {
     .description('Standalone CLI tool for testing MCP servers')
     .version('1.0.0');
 
-  // Integration tests command
+  // Unified test command
   program
-    .command('integration')
-    .description('Run integration tests (direct tool calls)')
-    .argument('<test-file>', 'Integration test configuration file (YAML)')
-    .option('--server-config <file>', 'MCP server configuration file (JSON)')
-    .option(
-      '--server-name <name>',
-      'Specific server name to use from config (if multiple servers defined)'
-    )
-    .option('--server-command <command>', 'Command to launch MCP server directly')
-    .option('--server-args <args>', 'Arguments for server command (comma-separated)')
-    .option('--server-env <env>', 'Environment variables for server (key=value,key2=value2)')
-    .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
-    .option('--output <format>', 'Output format (console, json, junit)', 'console')
-    .action(async (testFile: string, options: CliOptions) => {
-      await runIntegrationTests(testFile, options);
-    });
-
-  // Evaluation tests command
-  program
-    .command('evals')
-    .description('Run evaluation tests (LLM interaction)')
-    .argument('<test-file>', 'Evaluation test configuration file (YAML)')
+    .argument('<test-file>', 'Test configuration file (YAML)')
     .option('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
       '--server-name <name>',
@@ -147,10 +89,10 @@ async function main(): Promise<void> {
     .option('--server-args <args>', 'Arguments for server command (comma-separated)')
     .option('--server-env <env>', 'Environment variables for server (key=value,key2=value2)')
     .option('--models <models>', 'LLM models to use (comma-separated, overrides config file)')
-    .option('--timeout <ms>', 'Test timeout in milliseconds', '30000')
+    .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--output <format>', 'Output format (console, json, junit)', 'console')
     .action(async (testFile: string, options: CliOptions) => {
-      await runEvaluationTests(testFile, options);
+      await runTests(testFile, options);
     });
 
   // Global options
