@@ -1,0 +1,24 @@
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      run: npm run format:check
+      fail_text: "Code formatting issues found. Run 'npm run format' to fix."
+
+    lint:
+      run: npm run lint
+      fail_text: "Linting errors found. Run 'npm run lint:fix' to fix auto-fixable issues."
+
+    typecheck:
+      run: npm run typecheck
+      fail_text: 'TypeScript type errors found. Fix the errors before committing.'
+
+    test:
+      run: npm run test:unit
+      fail_text: 'Unit tests failed. Fix the tests before committing.'
+
+pre-push:
+  commands:
+    test-all:
+      run: npm test
+      fail_text: 'All tests must pass before pushing.'

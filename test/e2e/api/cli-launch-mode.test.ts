@@ -16,7 +16,7 @@ describe('API Tests - CLI Launch Mode', () => {
     const runner = new IntegrationTestRunner(testConfigPath, {
       serverCommand: 'node',
       serverArgs: testServerPath,
-          });
+    });
 
     const summary = await runner.run();
 
@@ -52,7 +52,7 @@ tests:
       const runner = new IntegrationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 
@@ -91,7 +91,7 @@ tests:
       const runner = new IntegrationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 
@@ -146,7 +146,7 @@ tests:
       const runner = new IntegrationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 
@@ -208,7 +208,7 @@ tests:
     const runner = new IntegrationTestRunner(testConfigPath, {
       serverCommand: 'nonexistent-command',
       serverArgs: 'some-args',
-          });
+    });
 
     await expect(runner.run()).rejects.toThrow(/Failed to connect to MCP server/);
   }, 15000);

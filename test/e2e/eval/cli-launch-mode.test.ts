@@ -46,7 +46,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 
@@ -91,7 +91,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 
@@ -135,7 +135,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 
@@ -179,7 +179,7 @@ tests:
       const runner = new EvaluationTestRunner(tempTestPath, {
         serverCommand: 'node',
         serverArgs: testServerPath,
-              });
+      });
 
       const summary = await runner.run();
 

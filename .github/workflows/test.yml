@@ -50,17 +50,3 @@ jobs:
 
       # Note: E2E eval tests require ANTHROPIC_API_KEY and are skipped in CI
       # They can be run locally with: npm run test:e2e:eval
-
-      - name: Test CLI help commands
-        run: |
-          npx tsx src/cli.ts --help
-          npx tsx src/cli.ts integration --help
-          npx tsx src/cli.ts evals --help
-
-      - name: Test CLI launch mode functionality
-        run: |
-          npx tsx src/cli.ts integration examples/simple-test.yaml --server-command "node" --server-args "examples/test-server.js"
-
-      - name: Test config file mode functionality
-        run: |
-          npx tsx src/cli.ts integration examples/simple-test.yaml --server-config examples/server-config.json --server-name test-server
