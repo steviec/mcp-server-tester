@@ -43,8 +43,8 @@ jobs:
         env:
           NODE_ENV: test
 
-      - name: Run E2E API tests
-        run: npm run test:e2e:api
+      - name: Run E2E tests (skipping eval tests if not API key is set)
+        run: npm run test:e2e
         env:
           NODE_ENV: test
 

@@ -7,16 +7,15 @@ import { EvaluationTestRunner } from '../../../src/testing/evals/runner.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
 
-describe('Eval Tests - CLI Launch Mode', () => {
+const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+
+describe.skipIf(!hasApiKey)('Eval Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
 
   beforeAll(() => {
-    // Check for API key early
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error(
-        'ANTHROPIC_API_KEY environment variable is required for evaluation tests.\n' +
-          'Please set your Anthropic API key: export ANTHROPIC_API_KEY="your-key-here"'
-      );
+    if (!hasApiKey) {
+      console.warn('⚠️  ANTHROPIC_API_KEY not set - skipping evaluation tests');
+      console.warn('   To run eval tests: export ANTHROPIC_API_KEY="your-key-here"');
     }
   });
 
