@@ -1,49 +1,49 @@
 # Tool discovery validation
 discovery:
-  expect_tools: ["echo", "add"]
+  expect_tools: ['echo', 'add']
   validate_schemas: true
 
 # Integration tests
 tests:
-  - name: "echo_test"
+  - name: 'Echoes a simple message'
     calls:
-      - tool: "echo"
+      - tool: 'echo'
         params:
-          message: "Hello World"
+          message: 'Hello World'
         expect:
           success: true
           result:
-            contains: "Echo: Hello World"
+            contains: 'Echo: Hello World'
 
-  - name: "add_test"
+  - name: 'Adds two numbers correctly'
     calls:
-      - tool: "add"
+      - tool: 'add'
         params:
           a: 5
           b: 3
         expect:
           success: true
           result:
-            contains: "5 + 3 = 8"
+            contains: '5 + 3 = 8'
 
-  - name: "multi_call_test"
+  - name: 'Handles multiple tool calls in sequence'
     calls:
-      - tool: "echo"
+      - tool: 'echo'
         params:
-          message: "First call"
+          message: 'First call'
         expect:
           success: true
           result:
-            contains: "Echo: First call"
-      
-      - tool: "add"
+            contains: 'Echo: First call'
+
+      - tool: 'add'
         params:
           a: 10
           b: 20
         expect:
           success: true
           result:
-            contains: "10 + 20 = 30"
+            contains: '10 + 20 = 30'
 
 # Global test options
 options:

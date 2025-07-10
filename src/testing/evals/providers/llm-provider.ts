@@ -14,8 +14,8 @@ export interface LlmConversationConfig {
 
 export interface LlmConversationResult {
   messages: CoreMessage[];
-  toolCalls: ToolCall[];
-  toolResults: ToolResult[];
+  toolCalls: ToolCall<any, any>[];
+  toolResults: ToolResult<any, any, any>[];
   success: boolean;
   error?: string;
 }
@@ -27,30 +27,30 @@ export interface LlmJudgeResult {
 
 export abstract class LlmProvider {
   abstract executeConversation(
-    mcpClient: McpClient,
-    prompt: string,
-    config: LlmConversationConfig
+    _mcpClient: McpClient,
+    _prompt: string,
+    _config: LlmConversationConfig
   ): Promise<LlmConversationResult>;
 
   abstract judgeResponse(
-    messages: CoreMessage[],
-    criteria: string,
-    threshold?: number
+    _messages: CoreMessage[],
+    _criteria: string,
+    _threshold?: number
   ): Promise<LlmJudgeResult>;
 
   /**
    * Extract tool calls from AI SDK messages
    */
-  extractToolCalls(messages: CoreMessage[]): ToolCall[] {
-    const toolCalls: ToolCall[] = [];
-    
+  extractToolCalls(messages: CoreMessage[]): ToolCall<any, any>[] {
+    const toolCalls: ToolCall<any, any>[] = [];
+
     for (const message of messages) {
       if (message.role === 'assistant') {
         if (typeof message.content === 'string') {
           // Skip text-only messages
           continue;
         }
-        
+
         // Handle array content with tool calls
         if (Array.isArray(message.content)) {
           for (const part of message.content) {
@@ -58,23 +58,23 @@ export abstract class LlmProvider {
               toolCalls.push({
                 toolCallId: part.toolCallId,
                 toolName: part.toolName,
-                args: part.args
+                args: part.args,
               });
             }
           }
         }
       }
     }
-    
+
     return toolCalls;
   }
 
   /**
    * Extract tool results from AI SDK messages
    */
-  extractToolResults(messages: CoreMessage[]): ToolResult[] {
-    const toolResults: ToolResult[] = [];
-    
+  extractToolResults(messages: CoreMessage[]): ToolResult<any, any, any>[] {
+    const toolResults: ToolResult<any, any, any>[] = [];
+
     for (const message of messages) {
       if (message.role === 'tool' && Array.isArray(message.content)) {
         for (const part of message.content) {
@@ -82,14 +82,14 @@ export abstract class LlmProvider {
             toolResults.push({
               toolCallId: part.toolCallId,
               toolName: part.toolName,
+              args: {}, // Tool args not available in result
               result: part.result,
-              isError: part.isError
             });
           }
         }
       }
     }
-    
+
     return toolResults;
   }
 }

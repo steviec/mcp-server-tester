@@ -1,0 +1,19 @@
+# Build outputs
+dist/
+coverage/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Generated files
+*.d.ts
+
+# Test fixtures (intentionally invalid files)
+test/fixtures/invalid-configs/invalid.json

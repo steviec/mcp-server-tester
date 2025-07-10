@@ -6,11 +6,11 @@ import fs from 'fs';
 import path from 'path';
 import YAML from 'yaml';
 import Ajv from 'ajv';
-import type { 
-  IntegrationTestConfig, 
-  EvaluationTestConfig, 
-  McpServersConfig, 
-  ServerConfig 
+import type {
+  IntegrationTestConfig,
+  EvaluationTestConfig,
+  McpServersConfig,
+  ServerConfig,
 } from '../core/types.js';
 
 // Import JSON schemas
@@ -26,7 +26,7 @@ export class ConfigLoader {
   static loadIntegrationConfig(filePath: string): IntegrationTestConfig {
     const resolvedPath = this.resolvePath(filePath);
     const content = this.readFile(resolvedPath);
-    
+
     let config: unknown;
     try {
       if (this.isYamlFile(resolvedPath)) {
@@ -35,10 +35,17 @@ export class ConfigLoader {
         config = JSON.parse(content);
       }
     } catch (error) {
-      throw new Error(`Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
-    return this.validateWithSchema(config, integrationTestSchema, resolvedPath, 'Integration test configuration') as IntegrationTestConfig;
+    return this.validateWithSchema(
+      config,
+      integrationTestSchema,
+      resolvedPath,
+      'Integration test configuration'
+    ) as IntegrationTestConfig;
   }
 
   /**
@@ -47,7 +54,7 @@ export class ConfigLoader {
   static loadEvaluationConfig(filePath: string): EvaluationTestConfig {
     const resolvedPath = this.resolvePath(filePath);
     const content = this.readFile(resolvedPath);
-    
+
     let config: unknown;
     try {
       if (this.isYamlFile(resolvedPath)) {
@@ -56,10 +63,17 @@ export class ConfigLoader {
         config = JSON.parse(content);
       }
     } catch (error) {
-      throw new Error(`Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
-    return this.validateWithSchema(config, evaluationTestSchema, resolvedPath, 'Evaluation test configuration') as EvaluationTestConfig;
+    return this.validateWithSchema(
+      config,
+      evaluationTestSchema,
+      resolvedPath,
+      'Evaluation test configuration'
+    ) as EvaluationTestConfig;
   }
 
   /**
@@ -68,20 +82,29 @@ export class ConfigLoader {
   static loadServerConfig(filePath: string, serverName?: string): ServerConfig {
     const resolvedPath = this.resolvePath(filePath);
     const content = this.readFile(resolvedPath);
-    
+
     let config: unknown;
     try {
       config = JSON.parse(content);
     } catch (error) {
-      throw new Error(`Invalid JSON in server config ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Invalid JSON in server config ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
-    const mcpConfig = this.validateWithSchema(config, serverConfigSchema, resolvedPath, 'Server configuration') as McpServersConfig;
-    
+    const mcpConfig = this.validateWithSchema(
+      config,
+      serverConfigSchema,
+      resolvedPath,
+      'Server configuration'
+    ) as McpServersConfig;
+
     if (serverName) {
       if (!mcpConfig.mcpServers[serverName]) {
         const availableServers = Object.keys(mcpConfig.mcpServers).join(', ');
-        throw new Error(`Server '${serverName}' not found in config. Available servers: ${availableServers}`);
+        throw new Error(
+          `Server '${serverName}' not found in config. Available servers: ${availableServers}`
+        );
       }
       return mcpConfig.mcpServers[serverName];
     }
@@ -91,9 +114,11 @@ export class ConfigLoader {
     if (serverNames.length === 0) {
       throw new Error('No servers found in configuration');
     }
-    
+
     if (serverNames.length > 1) {
-      throw new Error(`Multiple servers found in config: ${serverNames.join(', ')}. Please specify a server name.`);
+      throw new Error(
+        `Multiple servers found in config: ${serverNames.join(', ')}. Please specify a server name.`
+      );
     }
 
     return mcpConfig.mcpServers[serverNames[0]];
@@ -118,10 +143,15 @@ export class ConfigLoader {
   /**
    * Validate configuration using JSON Schema with helpful error messages
    */
-  private static validateWithSchema(config: unknown, schema: any, filePath: string, configType: string): unknown {
+  private static validateWithSchema(
+    config: unknown,
+    schema: any,
+    filePath: string,
+    configType: string
+  ): unknown {
     const validate = this.ajv.compile(schema);
     const valid = validate(config);
-    
+
     if (!valid) {
       const errors = validate.errors || [];
       const errorMessages = errors.map(error => {
@@ -130,13 +160,13 @@ export class ConfigLoader {
         const data = error.data !== undefined ? ` (got: ${JSON.stringify(error.data)})` : '';
         return `  - ${path}: ${message}${data}`;
       });
-      
+
       throw new Error(
         `${configType} validation failed in ${filePath}:\n${errorMessages.join('\n')}\n\n` +
-        `Please check your configuration format. See the documentation for examples.`
+          `Please check your configuration format. See the documentation for examples.`
       );
     }
-    
+
     return config;
   }
 }

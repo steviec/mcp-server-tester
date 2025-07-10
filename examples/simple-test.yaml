@@ -1,10 +1,10 @@
 # Simple tests without discovery
 tests:
-  - name: "basic_echo"
+  - name: 'Echoes a basic test message'
     calls:
-      - tool: "echo"
+      - tool: 'echo'
         params:
-          message: "test"
+          message: 'test'
         expect:
           success: true
 

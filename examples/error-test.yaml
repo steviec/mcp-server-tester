@@ -1,17 +1,17 @@
 tests:
-  - name: "nonexistent_tool"
+  - name: 'nonexistent_tool'
     calls:
-      - tool: "nonexistent"
+      - tool: 'nonexistent'
         params:
-          test: "value"
+          test: 'value'
         expect:
           success: false
           error:
-            contains: "Unknown tool"
+            contains: 'Unknown tool'
 
-  - name: "missing_parameter"
+  - name: 'missing_parameter'
     calls:
-      - tool: "echo"
+      - tool: 'echo'
         params: {}
         expect:
           success: false

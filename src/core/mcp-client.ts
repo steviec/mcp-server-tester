@@ -2,10 +2,10 @@
  * MCP Client connection management with transport support
  */
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import type { TransportOptions, ServerConfig } from "./types.js";
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import type { TransportOptions, ServerConfig } from './types.js';
 
 export class McpClient {
   private client: Client;
@@ -14,14 +14,14 @@ export class McpClient {
 
   constructor() {
     this.client = new Client({
-      name: "mcp-tester",
-      version: "1.0.0",
+      name: 'mcp-tester',
+      version: '1.0.0',
     });
   }
 
   async connect(options: TransportOptions): Promise<void> {
     if (this.connected) {
-      throw new Error("Client is already connected");
+      throw new Error('Client is already connected');
     }
 
     try {
@@ -29,7 +29,9 @@ export class McpClient {
       await this.client.connect(this.transport);
       this.connected = true;
     } catch (error) {
-      throw new Error(`Failed to connect to MCP server: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to connect to MCP server: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -42,7 +44,7 @@ export class McpClient {
       await this.client.close();
       this.connected = false;
     } catch (error) {
-      console.error("Error disconnecting from MCP server:", error);
+      console.error('Error disconnecting from MCP server:', error);
     }
   }
 
@@ -52,7 +54,9 @@ export class McpClient {
       const result = await this.client.listTools();
       return result;
     } catch (error) {
-      throw new Error(`Failed to list tools: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to list tools: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -65,7 +69,9 @@ export class McpClient {
       });
       return result;
     } catch (error) {
-      throw new Error(`Failed to call tool ${name}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to call tool ${name}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -75,7 +81,9 @@ export class McpClient {
       const result = await this.client.listResources();
       return result;
     } catch (error) {
-      throw new Error(`Failed to list resources: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to list resources: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -85,7 +93,9 @@ export class McpClient {
       const result = await this.client.readResource({ uri });
       return result;
     } catch (error) {
-      throw new Error(`Failed to read resource ${uri}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to read resource ${uri}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -95,7 +105,9 @@ export class McpClient {
       const result = await this.client.listPrompts();
       return result;
     } catch (error) {
-      throw new Error(`Failed to list prompts: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to list prompts: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -108,7 +120,9 @@ export class McpClient {
       });
       return result;
     } catch (error) {
-      throw new Error(`Failed to get prompt ${name}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to get prompt ${name}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -119,7 +133,7 @@ export class McpClient {
       case 'sse':
         return this.createSSETransport(options);
       case 'http':
-        throw new Error("HTTP transport not yet implemented");
+        throw new Error('HTTP transport not yet implemented');
       default:
         throw new Error(`Unsupported transport type: ${options.type}`);
     }
@@ -127,7 +141,7 @@ export class McpClient {
 
   private async createStdioTransport(options: TransportOptions): Promise<StdioClientTransport> {
     if (!options.command) {
-      throw new Error("Command is required for stdio transport");
+      throw new Error('Command is required for stdio transport');
     }
 
     return new StdioClientTransport({
@@ -139,7 +153,7 @@ export class McpClient {
 
   private async createSSETransport(options: TransportOptions): Promise<SSEClientTransport> {
     if (!options.url) {
-      throw new Error("URL is required for SSE transport");
+      throw new Error('URL is required for SSE transport');
     }
 
     return new SSEClientTransport(new URL(options.url));
@@ -147,7 +161,7 @@ export class McpClient {
 
   private ensureConnected(): void {
     if (!this.connected) {
-      throw new Error("Client is not connected. Call connect() first.");
+      throw new Error('Client is not connected. Call connect() first.');
     }
   }
 }
@@ -164,7 +178,7 @@ export function createTransportOptions(serverConfig: ServerConfig): TransportOpt
 
 export function createTransportOptionsFromUrl(url: string): TransportOptions {
   const parsedUrl = new URL(url);
-  
+
   // Determine transport type based on URL path
   if (parsedUrl.pathname.endsWith('/mcp')) {
     return { type: 'http', url };
@@ -174,4 +188,33 @@ export function createTransportOptionsFromUrl(url: string): TransportOptions {
     // Default to SSE for URLs
     return { type: 'sse', url };
   }
+}
+
+export function createServerConfigFromCli(
+  command: string,
+  args?: string,
+  env?: string
+): ServerConfig {
+  const serverConfig: ServerConfig = {
+    command,
+  };
+
+  // Parse comma-separated args
+  if (args) {
+    serverConfig.args = args.split(',').map(arg => arg.trim());
+  }
+
+  // Parse key=value,key2=value2 environment variables
+  if (env) {
+    serverConfig.env = {};
+    const envPairs = env.split(',');
+    for (const pair of envPairs) {
+      const [key, value] = pair.split('=');
+      if (key && value) {
+        serverConfig.env[key.trim()] = value.trim();
+      }
+    }
+  }
+
+  return serverConfig;
 }

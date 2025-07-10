@@ -41,19 +41,19 @@ Create an integration test file (`integration-test.yaml`):
 
 ```yaml
 discovery:
-  expect_tools: ["tool1", "tool2"]
+  expect_tools: ['tool1', 'tool2']
   validate_schemas: true
 
 tests:
-  - name: "basic_tool_test"
+  - name: 'Echoes a basic message'
     calls:
-      - tool: "echo"
+      - tool: 'echo'
         params:
-          message: "Hello World"
+          message: 'Hello World'
         expect:
           success: true
           result:
-            contains: "Hello World"
+            contains: 'Hello World'
 ```
 
 Run the tests:
@@ -68,18 +68,18 @@ Create an evaluation test file (`eval-test.yaml`):
 
 ```yaml
 options:
-  models: ["claude-3-haiku-20240307"]
+  models: ['claude-3-haiku-20240307']
   timeout: 30000
   max_steps: 3
 
 tests:
-  - name: "tool_understanding"
-    prompt: "List all available tools"
+  - name: 'tool_understanding'
+    prompt: 'List all available tools'
     expected_tool_calls:
       allowed: []
     response_scorers:
-      - type: "regex"
-        pattern: "(tool|function|capability)"
+      - type: 'regex'
+        pattern: '(tool|function|capability)'
 ```
 
 Set your Anthropic API key and run:
@@ -114,62 +114,62 @@ Standard MCP server configuration format:
 ```yaml
 # Optional: Tool discovery validation
 discovery:
-  expect_tools: ["tool1", "tool2"]  # Tools that must be available
-  validate_schemas: true            # Validate tool input schemas
+  expect_tools: ['tool1', 'tool2'] # Tools that must be available
+  validate_schemas: true # Validate tool input schemas
 
 # Test definitions
 tests:
-  - name: "test_name"
+  - name: 'Performs specific functionality'
     calls:
-      - tool: "tool_name"
+      - tool: 'tool_name'
         params:
-          param1: "value1"
+          param1: 'value1'
           param2: 123
         expect:
-          success: true              # Whether call should succeed
-          result:                    # Optional result validation
-            contains: "text"         # Text that should be in result
-            equals: "exact_match"    # Exact result match
-          error:                     # For expected failures
-            contains: "error_text"
+          success: true # Whether call should succeed
+          result: # Optional result validation
+            contains: 'text' # Text that should be in result
+            equals: 'exact_match' # Exact result match
+          error: # For expected failures
+            contains: 'error_text'
 
 # Global options
 options:
-  timeout: 10000     # Test timeout in milliseconds
-  cleanup: true      # Cleanup after tests
-  parallel: false    # Run tests in parallel
+  timeout: 10000 # Test timeout in milliseconds
+  cleanup: true # Cleanup after tests
+  parallel: false # Run tests in parallel
 ```
 
 ### Evaluation Test Configuration
 
 ```yaml
 options:
-  models: ["claude-3-haiku-20240307", "claude-3-5-sonnet-20241022"]
+  models: ['claude-3-haiku-20240307', 'claude-3-5-sonnet-20241022']
   timeout: 30000
   max_steps: 3
 
 tests:
-  - name: "test_name"
-    prompt: "Prompt for the LLM"
-    
+  - name: 'Evaluates specific LLM behavior'
+    prompt: 'Prompt for the LLM'
+
     # Tool call validation
     expected_tool_calls:
-      required: ["tool1"]        # Tools that must be called
-      allowed: ["tool1", "tool2"] # Only these tools can be called (if not specified, all tools are allowed)
-    
+      required: ['tool1'] # Tools that must be called
+      allowed: ['tool1', 'tool2'] # Only these tools can be called (if not specified, all tools are allowed)
+
     # Response quality scoring
     response_scorers:
-      - type: "regex"
-        pattern: "expected_pattern"
-      
-      - type: "json-schema"
+      - type: 'regex'
+        pattern: 'expected_pattern'
+
+      - type: 'json-schema'
         schema:
-          type: "string"
+          type: 'string'
           minLength: 10
           pattern: "\\d+"
-      
-      - type: "llm-judge"
-        criteria: "Did the assistant complete the task correctly?"
+
+      - type: 'llm-judge'
+        criteria: 'Did the assistant complete the task correctly?'
         threshold: 0.8
 ```
 
@@ -178,77 +178,84 @@ tests:
 ### Integration Testing Patterns
 
 **Single Tool Call**
+
 ```yaml
-- name: "single_call"
+- name: 'Calls echo tool with message'
   calls:
-    - tool: "echo"
-      params: { message: "test" }
+    - tool: 'echo'
+      params: { message: 'test' }
       expect: { success: true }
 ```
 
 **Multi-Step Workflow**
+
 ```yaml
-- name: "workflow"
+- name: 'Creates, reads, and deletes file'
   calls:
-    - tool: "create_file"
-      params: { path: "/tmp/test.txt", content: "data" }
+    - tool: 'create_file'
+      params: { path: '/tmp/test.txt', content: 'data' }
       expect: { success: true }
-    - tool: "read_file"
-      params: { path: "/tmp/test.txt" }
-      expect: 
+    - tool: 'read_file'
+      params: { path: '/tmp/test.txt' }
+      expect:
         success: true
-        result: { contains: "data" }
-    - tool: "delete_file"
-      params: { path: "/tmp/test.txt" }
+        result: { contains: 'data' }
+    - tool: 'delete_file'
+      params: { path: '/tmp/test.txt' }
       expect: { success: true }
 ```
 
 **Error Testing**
+
 ```yaml
-- name: "error_handling"
+- name: 'Handles nonexistent tool gracefully'
   calls:
-    - tool: "nonexistent_tool"
+    - tool: 'nonexistent_tool'
       params: {}
-      expect: 
+      expect:
         success: false
-        error: { contains: "unknown tool" }
+        error: { contains: 'unknown tool' }
 ```
 
 ### Evaluation Testing Patterns
 
 **Tool Discovery Test**
+
 ```yaml
-- name: "discovery"
-  prompt: "What tools do you have available?"
-  expected_tool_calls: { allowed: [] }  # No tools should be called
+- name: 'Lists available tools without calling them'
+  prompt: 'What tools do you have available?'
+  expected_tool_calls: { allowed: [] } # No tools should be called
   response_scorers:
-    - type: "regex"
-      pattern: "(tool|function|available)"
+    - type: 'regex'
+      pattern: '(tool|function|available)'
 ```
 
 **Task Completion Test**
+
 ```yaml
-- name: "task"
-  prompt: "Add 5 and 3"
-  expected_tool_calls: { required: ["add"] }
+- name: 'Completes math task using required tools'
+  prompt: 'Add 5 and 3'
+  expected_tool_calls: { required: ['add'] }
   response_scorers:
-    - type: "llm-judge"
-      criteria: "Did the assistant correctly add the numbers?"
+    - type: 'llm-judge'
+      criteria: 'Did the assistant correctly add the numbers?'
       threshold: 0.8
 ```
 
 **Restricted Tool Usage Test**
+
 ```yaml
-- name: "read_only_task"
+- name: 'Reads file without modifying it'
   prompt: "Read the config file, but don't modify anything"
   expected_tool_calls:
-    required: ["read_file"]
-    allowed: ["read_file"]  # Only read_file is allowed, all others are implicitly prohibited
+    required: ['read_file']
+    allowed: ['read_file'] # Only read_file is allowed, all others are implicitly prohibited
 ```
 
 ## CLI Commands
 
 ### Integration Tests
+
 ```bash
 npx tsx src/cli.ts integration <test-file> --server-config <server-config-file> [options]
 
@@ -262,6 +269,7 @@ Options:
 ```
 
 ### Evaluation Tests
+
 ```bash
 npx tsx src/cli.ts evals <test-file> --server-config <server-config-file> [options]
 

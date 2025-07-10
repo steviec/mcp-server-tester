@@ -2,11 +2,15 @@
  * Anthropic LLM Provider using Vercel AI SDK
  */
 
-import { generateText } from 'ai';
+import { generateText, type CoreMessage } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import type { CoreMessage, ToolCall, ToolResult } from 'ai';
 import type { McpClient } from '../../../core/mcp-client.js';
-import { LlmProvider, type LlmConversationConfig, type LlmConversationResult, type LlmJudgeResult } from './llm-provider.js';
+import {
+  LlmProvider,
+  type LlmConversationConfig,
+  type LlmConversationResult,
+  type LlmJudgeResult,
+} from './llm-provider.js';
 
 export class AnthropicProvider extends LlmProvider {
   async executeConversation(
@@ -18,7 +22,7 @@ export class AnthropicProvider extends LlmProvider {
       // Get available tools from MCP server
       const toolsResponse = await mcpClient.listTools();
       const mcpTools = toolsResponse.tools || [];
-      
+
       // Convert MCP tools to AI SDK format
       const aiTools: Record<string, any> = {};
       for (const mcpTool of mcpTools) {
@@ -30,47 +34,48 @@ export class AnthropicProvider extends LlmProvider {
               const result = await mcpClient.callTool(mcpTool.name, args);
               return result;
             } catch (error) {
-              throw new Error(`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`);
+              throw new Error(
+                `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+              );
             }
-          }
+          },
         };
       }
-      
+
       // Create initial message
       const messages: CoreMessage[] = [
         {
           role: 'user',
-          content: prompt
-        }
+          content: prompt,
+        },
       ];
-      
+
       // Execute conversation with tool calling
       const result = await generateText({
         model: anthropic(config.model),
         messages,
         tools: aiTools,
         maxSteps: config.maxSteps,
-        abortSignal: AbortSignal.timeout(config.timeout)
+        abortSignal: AbortSignal.timeout(config.timeout),
       });
-      
+
       // Extract tool calls and results
       const toolCalls = this.extractToolCalls(result.response.messages);
       const toolResults = this.extractToolResults(result.response.messages);
-      
+
       return {
         messages: result.response.messages,
         toolCalls,
         toolResults,
-        success: true
+        success: true,
       };
-      
     } catch (error) {
       return {
         messages: [],
         toolCalls: [],
         toolResults: [],
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -78,21 +83,23 @@ export class AnthropicProvider extends LlmProvider {
   async judgeResponse(
     messages: CoreMessage[],
     criteria: string,
-    threshold: number = 0.7
+    _threshold: number = 0.7
   ): Promise<LlmJudgeResult> {
     try {
       // Create a conversation context for the judge
-      const conversationContext = messages.map(msg => {
-        if (msg.role === 'user') {
-          return `User: ${typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}`;
-        } else if (msg.role === 'assistant') {
-          return `Assistant: ${typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}`;
-        } else if (msg.role === 'tool') {
-          return `Tool Result: ${JSON.stringify(msg.content)}`;
-        }
-        return '';
-      }).join('\n');
-      
+      const conversationContext = messages
+        .map(msg => {
+          if (msg.role === 'user') {
+            return `User: ${typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}`;
+          } else if (msg.role === 'assistant') {
+            return `Assistant: ${typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}`;
+          } else if (msg.role === 'tool') {
+            return `Tool Result: ${JSON.stringify(msg.content)}`;
+          }
+          return '';
+        })
+        .join('\n');
+
       const judgePrompt = `
 Please evaluate the following conversation based on these criteria: ${criteria}
 
@@ -111,31 +118,30 @@ Respond in the following JSON format:
         messages: [
           {
             role: 'user',
-            content: judgePrompt
-          }
+            content: judgePrompt,
+          },
         ],
-        abortSignal: AbortSignal.timeout(30000) // 30 second timeout for judge
+        abortSignal: AbortSignal.timeout(30000), // 30 second timeout for judge
       });
-      
+
       // Parse the JSON response
       try {
         const response = JSON.parse(result.text);
         return {
           score: response.score,
-          rationale: response.rationale
+          rationale: response.rationale,
         };
-      } catch (parseError) {
+      } catch {
         // Fallback if JSON parsing fails
         return {
           score: 0.0,
-          rationale: `Failed to parse judge response: ${result.text}`
+          rationale: `Failed to parse judge response: ${result.text}`,
         };
       }
-      
     } catch (error) {
       return {
         score: 0.0,
-        rationale: `Judge evaluation failed: ${error instanceof Error ? error.message : String(error)}`
+        rationale: `Judge evaluation failed: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }

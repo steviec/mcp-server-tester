@@ -1,0 +1,6 @@
+# Invalid: test missing required fields
+tests:
+  - name: 'incomplete_test'
+    # Missing calls array
+    expect:
+      success: true

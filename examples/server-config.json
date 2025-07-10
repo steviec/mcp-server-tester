@@ -2,7 +2,7 @@
   "mcpServers": {
     "test-server": {
       "command": "node",
-      "args": ["test-server.js"],
+      "args": ["examples/test-server.js"],
       "env": {
         "NODE_ENV": "development"
       }

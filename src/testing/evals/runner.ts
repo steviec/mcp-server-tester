@@ -2,14 +2,14 @@
  * Evaluation test runner for LLM interaction testing
  */
 
-import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
+import {
+  McpClient,
+  createTransportOptions,
+  createServerConfigFromCli,
+} from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
-import type { 
-  EvaluationTestConfig,
-  EvaluationTest,
-  EvaluationResult
-} from '../../core/types.js';
+import type { EvaluationTestConfig, EvaluationTest, EvaluationResult } from '../../core/types.js';
 
 export interface EvaluationSummary {
   total: number;
@@ -19,74 +19,93 @@ export interface EvaluationSummary {
   results: EvaluationResult[];
 }
 
+interface EvalServerOptions {
+  serverConfig?: string;
+  serverName?: string;
+  serverCommand?: string;
+  serverArgs?: string;
+  serverEnv?: string;
+  models?: string;
+}
+
 export class EvaluationTestRunner {
   private mcpClient: McpClient;
   private config: EvaluationTestConfig;
-  private serverConfigPath: string;
-  private serverName?: string;
-  private models?: string[];
+  private serverOptions: EvalServerOptions;
+  private models: string[];
   private llmProvider: AnthropicProvider;
 
-  constructor(configPath: string, serverConfigPath: string, serverName?: string, modelsOverride?: string) {
+  constructor(configPath: string, serverOptions: EvalServerOptions) {
     this.config = ConfigLoader.loadEvaluationConfig(configPath);
-    this.serverConfigPath = serverConfigPath;
-    this.serverName = serverName;
+    this.serverOptions = serverOptions;
     // Parse models override from CLI if provided
-    this.models = modelsOverride ? modelsOverride.split(',').map(m => m.trim()) : this.config.options.models;
+    this.models = serverOptions.models
+      ? serverOptions.models.split(',').map(m => m.trim())
+      : this.config.options.models;
     this.mcpClient = new McpClient();
     this.llmProvider = new AnthropicProvider();
   }
 
   async run(): Promise<EvaluationSummary> {
     const startTime = Date.now();
-    
+
     try {
-      // Load server configuration and connect
-      const serverConfig = ConfigLoader.loadServerConfig(this.serverConfigPath, this.serverName);
-      const transportOptions = createTransportOptions(serverConfig);
-      
+      // Check for API key early
+      if (!process.env.ANTHROPIC_API_KEY) {
+        throw new Error(
+          'ANTHROPIC_API_KEY environment variable is required for evaluation tests.\n' +
+            'Please set your Anthropic API key: export ANTHROPIC_API_KEY="your-key-here"'
+        );
+      }
+
+      // Determine server configuration based on mode
+      let transportOptions;
+
+      if (this.serverOptions.serverConfig) {
+        // Config file mode
+        const serverConfig = ConfigLoader.loadServerConfig(
+          this.serverOptions.serverConfig,
+          this.serverOptions.serverName
+        );
+        transportOptions = createTransportOptions(serverConfig);
+      } else if (this.serverOptions.serverCommand) {
+        // CLI launch mode
+        const serverConfig = createServerConfigFromCli(
+          this.serverOptions.serverCommand,
+          this.serverOptions.serverArgs,
+          this.serverOptions.serverEnv
+        );
+        transportOptions = createTransportOptions(serverConfig);
+      } else {
+        throw new Error('No server configuration provided');
+      }
+
       await this.mcpClient.connect(transportOptions);
-      
-      console.log('Connected to MCP server for evaluation tests');
-      
+
       // Run evaluation tests for each model
       const results: EvaluationResult[] = [];
-      
-      for (const model of this.models!) {
-        console.log(`\n🤖 Running evaluation tests with model: ${model}`);
-        
+
+      for (const model of this.models) {
         for (const test of this.config.tests) {
-          console.log(`Running test: ${test.name}`);
           const result = await this.runTest(test, model);
           results.push(result);
-          
-          // Show immediate feedback
-          if (result.passed) {
-            console.log(`✅ ${test.name} (${model}): PASSED`);
-          } else {
-            console.log(`❌ ${test.name} (${model}): FAILED`);
-            result.errors.forEach(error => {
-              console.log(`   • ${error}`);
-            });
-          }
         }
       }
-      
+
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       const summary: EvaluationSummary = {
         total: results.length,
         passed: results.filter(r => r.passed).length,
         failed: results.filter(r => !r.passed).length,
         duration,
-        results
+        results,
       };
-      
-      console.log(`\nEvaluation Results: ${summary.passed}/${summary.total} tests passed in ${duration}ms`);
-      
+
+      // Results logged by Jest framework
+
       return summary;
-      
     } finally {
       await this.mcpClient.disconnect();
     }
@@ -95,7 +114,7 @@ export class EvaluationTestRunner {
   private async runTest(test: EvaluationTest, model: string): Promise<EvaluationResult> {
     const errors: string[] = [];
     let passed = true;
-    
+
     try {
       // Execute LLM conversation
       const conversationResult = await this.llmProvider.executeConversation(
@@ -104,15 +123,15 @@ export class EvaluationTestRunner {
         {
           model,
           maxSteps: this.config.options.max_steps,
-          timeout: this.config.options.timeout
+          timeout: this.config.options.timeout,
         }
       );
-      
+
       if (!conversationResult.success) {
         errors.push(`Conversation failed: ${conversationResult.error}`);
         passed = false;
       }
-      
+
       // Validate tool calls if expected
       if (test.expected_tool_calls && conversationResult.success) {
         const toolCallErrors = this.validateToolCalls(
@@ -124,7 +143,7 @@ export class EvaluationTestRunner {
           passed = false;
         }
       }
-      
+
       // Run response scorers if configured
       if (test.response_scorers && conversationResult.success) {
         const scorerErrors = await this.runResponseScorers(
@@ -136,24 +155,25 @@ export class EvaluationTestRunner {
           passed = false;
         }
       }
-      
+
       return {
         name: test.name,
         model,
         passed,
         errors,
         scorer_results: [], // TODO: Implement detailed scorer results
-        messages: conversationResult.messages
+        messages: conversationResult.messages,
       };
-      
     } catch (error) {
       return {
         name: test.name,
         model,
         passed: false,
-        errors: [`Test execution failed: ${error instanceof Error ? error.message : String(error)}`],
+        errors: [
+          `Test execution failed: ${error instanceof Error ? error.message : String(error)}`,
+        ],
         scorer_results: [],
-        messages: []
+        messages: [],
       };
     }
   }
@@ -164,7 +184,7 @@ export class EvaluationTestRunner {
   ): string[] {
     const errors: string[] = [];
     const actualToolNames = actualToolCalls.map(call => call.toolName);
-    
+
     // Check required tools
     if (expectedToolCalls.required) {
       for (const requiredTool of expectedToolCalls.required) {
@@ -173,7 +193,7 @@ export class EvaluationTestRunner {
         }
       }
     }
-    
+
     // Check allowed tools (if specified, only these tools should be called)
     if (expectedToolCalls.allowed) {
       for (const actualTool of actualToolNames) {
@@ -182,7 +202,7 @@ export class EvaluationTestRunner {
         }
       }
     }
-    
+
     return errors;
   }
 
@@ -191,7 +211,7 @@ export class EvaluationTestRunner {
     scorers: NonNullable<EvaluationTest['response_scorers']>
   ): Promise<string[]> {
     const errors: string[] = [];
-    
+
     for (const scorer of scorers) {
       try {
         if (scorer.type === 'regex') {
@@ -206,7 +226,9 @@ export class EvaluationTestRunner {
             scorer.threshold
           );
           if (result.score < (scorer.threshold || 0.7)) {
-            errors.push(`LLM judge failed: score ${result.score} < threshold ${scorer.threshold || 0.7}. Rationale: ${result.rationale}`);
+            errors.push(
+              `LLM judge failed: score ${result.score} < threshold ${scorer.threshold || 0.7}. Rationale: ${result.rationale}`
+            );
           }
         } else if (scorer.type === 'json-schema') {
           const success = await this.runJsonSchemaScorer(messages, scorer.schema!);
@@ -215,28 +237,29 @@ export class EvaluationTestRunner {
           }
         }
       } catch (error) {
-        errors.push(`Scorer '${scorer.type}' failed: ${error instanceof Error ? error.message : String(error)}`);
+        errors.push(
+          `Scorer '${scorer.type}' failed: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
-    
+
     return errors;
   }
 
   private async runRegexScorer(messages: any[], pattern: string): Promise<boolean> {
     const regex = new RegExp(pattern, 'i');
-    
+
     for (const message of messages) {
       if (message.role === 'assistant') {
-        const content = typeof message.content === 'string' 
-          ? message.content 
-          : JSON.stringify(message.content);
-        
+        const content =
+          typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+
         if (regex.test(content)) {
           return true;
         }
       }
     }
-    
+
     return false;
   }
 
@@ -244,14 +267,13 @@ export class EvaluationTestRunner {
     // Basic JSON schema validation - would need full implementation with ajv
     for (const message of messages) {
       if (message.role === 'assistant') {
-        const content = typeof message.content === 'string' 
-          ? message.content 
-          : JSON.stringify(message.content);
-        
+        const content =
+          typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+
         // Try to parse as JSON and do basic validation
         try {
           const jsonData = JSON.parse(content);
-          
+
           // Very basic schema validation - in practice would use ajv
           if (schema.type === 'string' && typeof jsonData === 'string') {
             if (schema.minLength && jsonData.length < schema.minLength) {
@@ -262,12 +284,11 @@ export class EvaluationTestRunner {
             }
             return true;
           }
-          
+
           if (schema.type === 'object' && typeof jsonData === 'object') {
             return true; // Basic object validation
           }
-          
-        } catch (parseError) {
+        } catch {
           // If schema expects a string but content is not JSON, check if it matches
           if (schema.type === 'string') {
             if (schema.pattern && new RegExp(schema.pattern).test(content)) {
@@ -277,7 +298,7 @@ export class EvaluationTestRunner {
         }
       }
     }
-    
+
     return false;
   }
 }
