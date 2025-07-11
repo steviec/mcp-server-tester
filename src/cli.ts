@@ -16,6 +16,8 @@ interface CliOptions {
   timeout?: number;
   output?: 'console' | 'json' | 'junit';
   models?: string;
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 function handleError(error: unknown): never {
@@ -91,12 +93,14 @@ async function main(): Promise<void> {
     .option('--models <models>', 'LLM models to use (comma-separated, overrides config file)')
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--output <format>', 'Output format (console, json, junit)', 'console')
+    .option('--quiet', 'Suppress non-essential output')
+    .option('--verbose', 'Enable verbose output with additional details')
     .action(async (testFile: string, options: CliOptions) => {
       await runTests(testFile, options);
     });
 
   // Global options
-  program.option('--debug', 'Enable debug logging').option('--verbose', 'Enable verbose output');
+  program.option('--debug', 'Enable debug logging');
 
   // Parse command line arguments
   program.parse();

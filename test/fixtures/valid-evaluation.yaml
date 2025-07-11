@@ -1,5 +1,5 @@
-# Valid evaluation test configuration for testing (unified format)
-evaluations:
+# Valid LLM evaluation (eval) test configuration for testing (unified format)
+evals:
   models: ['claude-3-haiku-20240307']
   timeout: 30000
   max_steps: 3

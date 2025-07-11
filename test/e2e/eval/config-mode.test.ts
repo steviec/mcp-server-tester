@@ -3,7 +3,8 @@
  */
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
-import { EvaluationTestRunner } from '../../../src/testing/evals/runner.js';
+import { EvalTestRunner } from '../../../src/testing/evals/runner.js';
+import { ConfigLoader } from '../../../src/config/loader.js';
 import {
   TestServerLauncher,
   createTestServerLauncher,
@@ -43,16 +44,15 @@ describe.skipIf(!hasApiKey)('Eval Tests - Config Mode', () => {
 
     try {
       const testConfig = `
-options:
+evals:
   models: ['claude-3-haiku-20240307']
   timeout: 10000
   max_steps: 2
-
-tests:
-  - name: 'Should fail without API key'
-    prompt: 'Hello'
-    expected_tool_calls:
-      allowed: []
+  tests:
+    - name: 'Should fail without API key'
+      prompt: 'Hello'
+      expected_tool_calls:
+        allowed: []
 `;
 
       const fs = await import('fs');
@@ -60,7 +60,8 @@ tests:
       fs.writeFileSync(tempTestPath, testConfig);
 
       try {
-        const runner = new EvaluationTestRunner(tempTestPath, {
+        const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+        const runner = new EvalTestRunner(testConfigData.evals!, {
           serverConfig: testServerConfigPath,
           serverName: 'test-server',
         });
@@ -81,19 +82,18 @@ tests:
 
   test('should connect to server and run basic evaluation via config mode', async () => {
     const testConfig = `
-options:
+evals:
   models: ['claude-3-haiku-20240307']
   timeout: 30000
   max_steps: 2
-
-tests:
-  - name: 'Lists available tools via config mode'
-    prompt: 'What tools do you have available? Please list them.'
-    expected_tool_calls:
-      allowed: []  # Should not call any tools, just list them
-    response_scorers:
-      - type: 'regex'
-        pattern: '(echo|add|tool|function)'
+  tests:
+    - name: 'Lists available tools via config mode'
+      prompt: 'What tools do you have available? Please list them.'
+      expected_tool_calls:
+        allowed: []  # Should not call any tools, just list them
+      response_scorers:
+        - type: 'regex'
+          pattern: '(echo|add|tool|function)'
 `;
 
     // Write temporary test file
@@ -102,7 +102,8 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new EvaluationTestRunner(tempTestPath, {
+      const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const runner = new EvalTestRunner(testConfigData.evals!, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
       });
@@ -123,22 +124,21 @@ tests:
 
   test('should execute tool call evaluation via config mode', async () => {
     const testConfig = `
-options:
+evals:
   models: ['claude-3-haiku-20240307']
   timeout: 30000
   max_steps: 3
-
-tests:
-  - name: 'Uses echo tool correctly via config mode'
-    prompt: 'Please echo the message "Hello from eval test"'
-    expected_tool_calls:
-      required: ['echo']
-    response_scorers:
-      - type: 'regex'
-        pattern: 'Hello from eval test'
-      - type: 'llm-judge'
-        criteria: 'Did the assistant successfully echo the requested message?'
-        threshold: 0.7
+  tests:
+    - name: 'Uses echo tool correctly via config mode'
+      prompt: 'Please echo the message "Hello from eval test"'
+      expected_tool_calls:
+        required: ['echo']
+      response_scorers:
+        - type: 'regex'
+          pattern: 'Hello from eval test'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant successfully echo the requested message?'
+          threshold: 0.7
 `;
 
     // Write temporary test file
@@ -147,7 +147,8 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new EvaluationTestRunner(tempTestPath, {
+      const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const runner = new EvalTestRunner(testConfigData.evals!, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
       });
@@ -167,23 +168,22 @@ tests:
 
   test('should handle math task evaluation via config mode', async () => {
     const testConfig = `
-options:
+evals:
   models: ['claude-3-haiku-20240307']
   timeout: 30000
   max_steps: 3
-
-tests:
-  - name: 'Solves math problem via config mode'
-    prompt: 'Please add 23 and 19 together using the available tools'
-    expected_tool_calls:
-      required: ['add']
-      allowed: ['add']  # Only allow add tool, not echo
-    response_scorers:
-      - type: 'regex'
-        pattern: '(42|23.*19|19.*23)'
-      - type: 'llm-judge'
-        criteria: 'Did the assistant correctly add 23 and 19 to get 42?'
-        threshold: 0.8
+  tests:
+    - name: 'Solves math problem via config mode'
+      prompt: 'Please add 23 and 19 together using the available tools'
+      expected_tool_calls:
+        required: ['add']
+        allowed: ['add']  # Only allow add tool, not echo
+      response_scorers:
+        - type: 'regex'
+          pattern: '(42|23.*19|19.*23)'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant correctly add 23 and 19 to get 42?'
+          threshold: 0.8
 `;
 
     // Write temporary test file
@@ -192,7 +192,8 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new EvaluationTestRunner(tempTestPath, {
+      const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const runner = new EvalTestRunner(testConfigData.evals!, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
       });
@@ -212,19 +213,18 @@ tests:
 
   test('should handle model override via config mode', async () => {
     const testConfig = `
-options:
+evals:
   models: ['claude-3-haiku-20240307']  # This will be overridden
   timeout: 30000
   max_steps: 2
-
-tests:
-  - name: 'Test with model override'
-    prompt: 'Say hello'
-    expected_tool_calls:
-      allowed: []
-    response_scorers:
-      - type: 'regex'
-        pattern: '(hello|hi|greetings)'
+  tests:
+    - name: 'Test with model override'
+      prompt: 'Say hello'
+      expected_tool_calls:
+        allowed: []
+      response_scorers:
+        - type: 'regex'
+          pattern: '(hello|hi|greetings)'
 `;
 
     // Write temporary test file
@@ -233,7 +233,8 @@ tests:
     fs.writeFileSync(tempTestPath, testConfig);
 
     try {
-      const runner = new EvaluationTestRunner(tempTestPath, {
+      const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const runner = new EvalTestRunner(testConfigData.evals!, {
         serverConfig: testServerConfigPath,
         serverName: 'test-server',
         models: 'claude-3-haiku-20240307', // Override the config

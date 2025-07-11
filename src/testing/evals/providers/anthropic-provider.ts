@@ -2,7 +2,7 @@
  * Anthropic LLM Provider using Vercel AI SDK
  */
 
-import { generateText, type CoreMessage } from 'ai';
+import { generateText, tool, jsonSchema, type CoreMessage } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import type { McpClient } from '../../../core/mcp-client.js';
 import {
@@ -23,15 +23,18 @@ export class AnthropicProvider extends LlmProvider {
       const toolsResponse = await mcpClient.listTools();
       const mcpTools = toolsResponse.tools || [];
 
-      // Convert MCP tools to AI SDK format
+      // Convert MCP tools to AI SDK format using tool() helper
       const aiTools: Record<string, any> = {};
       for (const mcpTool of mcpTools) {
-        aiTools[mcpTool.name] = {
+        aiTools[mcpTool.name] = tool({
           description: mcpTool.description,
-          parameters: mcpTool.inputSchema,
-          execute: async (args: any) => {
+          parameters: jsonSchema(mcpTool.inputSchema),
+          execute: async (args: unknown) => {
             try {
-              const result = await mcpClient.callTool(mcpTool.name, args);
+              const result = await mcpClient.callTool(
+                mcpTool.name,
+                args as Record<string, unknown>
+              );
               return result;
             } catch (error) {
               throw new Error(
@@ -39,7 +42,7 @@ export class AnthropicProvider extends LlmProvider {
               );
             }
           },
-        };
+        });
       }
 
       // Create initial message

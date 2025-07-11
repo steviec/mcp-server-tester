@@ -13,7 +13,7 @@ describe('MCP Tester CLI', () => {
   let cli: CliRunner;
   const fixturesDir = path.join(__dirname, '../fixtures');
   const validIntegrationTest = path.join(fixturesDir, 'valid-integration.yaml');
-  const validEvaluationTest = path.join(fixturesDir, 'valid-evaluation.yaml');
+  const validEvalTest = path.join(fixturesDir, 'valid-evaluation.yaml');
   const testServerConfig = path.join(fixturesDir, 'test-server-config.json');
 
   beforeAll(() => {
@@ -92,9 +92,9 @@ describe('MCP Tester CLI', () => {
     });
   });
 
-  describe('Unified Command - Evaluations', () => {
+  describe('Unified Command - LLM Evaluations (evals)', () => {
     test('should fail when server-config is missing', async () => {
-      const result = await cli.run([validEvaluationTest]);
+      const result = await cli.run([validEvalTest]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('Server configuration is required');
@@ -110,7 +110,7 @@ describe('MCP Tester CLI', () => {
     });
 
     test('should process arguments correctly (may fail on execution)', async () => {
-      const result = await cli.test(validEvaluationTest, testServerConfig, {
+      const result = await cli.test(validEvalTest, testServerConfig, {
         serverName: 'test-server',
         models: 'claude-3-haiku-20240307',
         timeout: 8000,
@@ -128,7 +128,7 @@ describe('MCP Tester CLI', () => {
     }, 15000);
 
     test('should handle models override', async () => {
-      const result = await cli.test(validEvaluationTest, testServerConfig, {
+      const result = await cli.test(validEvalTest, testServerConfig, {
         serverName: 'test-server',
         models: 'custom-model-1,custom-model-2',
       });

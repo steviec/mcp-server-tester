@@ -1,5 +1,5 @@
 # MCP Unified Test Configuration
-# This file demonstrates testing both capabilities and evaluations in a single file
+# This file demonstrates testing both capabilities and LLM evaluations (evals) in a single file
 
 # Tool capability tests
 tools:
@@ -63,7 +63,7 @@ evals:
           threshold: 0.8
 
     - name: 'Calls echo tool with correct parameters'
-      prompt: "Please echo the message 'Hello from evaluation test'"
+      prompt: "Please echo the message 'Hello from eval test'"
       expected_tool_calls:
         required: ['echo']
       response_scorers:

@@ -4,8 +4,10 @@
 
 import { ConfigLoader } from '../config/loader.js';
 import { CapabilitiesTestRunner } from './capabilities/runner.js';
-import { EvaluationTestRunner } from './evals/runner.js';
+import { EvalTestRunner } from './evals/runner.js';
+import { DisplayManager } from './display/DisplayManager.js';
 import type { TestConfig, TestSummary, TestResult } from '../core/types.js';
+import type { DisplayOptions } from './display/types.js';
 
 interface ServerOptions {
   serverConfig?: string;
@@ -16,66 +18,78 @@ interface ServerOptions {
   models?: string;
   timeout?: number;
   output?: 'console' | 'json' | 'junit';
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 export class TestRunner {
   private config: TestConfig;
   private serverOptions: ServerOptions;
+  private displayManager: DisplayManager;
 
   constructor(configPath: string, serverOptions: ServerOptions) {
     this.config = ConfigLoader.loadTestConfig(configPath);
     this.serverOptions = serverOptions;
+
+    // Create display manager with options
+    const displayOptions: DisplayOptions = {
+      formatter: serverOptions.output,
+      quiet: serverOptions.quiet,
+      verbose: serverOptions.verbose,
+    };
+    this.displayManager = new DisplayManager(displayOptions);
   }
 
   async run(): Promise<TestSummary> {
     const startTime = Date.now();
     const capabilitiesResults: TestResult[] = [];
-    const evaluationResults: TestResult[] = [];
+    const evalResults: TestResult[] = [];
 
-    console.log('Detecting test types...');
+    this.displayManager.progress('Detecting test types...');
 
     // Auto-detect which test types to run based on config sections
     const hasTools = !!this.config.tools;
-    const hasEvaluations = !!this.config.evaluations;
+    const hasEvals = !!this.config.evals;
 
-    if (!hasTools && !hasEvaluations) {
+    if (!hasTools && !hasEvals) {
       throw new Error(
-        'No test sections found. Please provide either "tools" or "evaluations" sections in your test file.'
+        'No test sections found. Please provide either "tools" or "evals" sections in your test file.'
       );
     }
 
     // Run capabilities tests if tools section exists
     if (hasTools) {
-      console.log('Running tools tests...');
+      this.displayManager.progress('Running tools tests...');
       const capabilitiesRunner = new CapabilitiesTestRunner(this.config.tools!, this.serverOptions);
       const capabilitiesResult = await capabilitiesRunner.run();
       capabilitiesResults.push(...capabilitiesResult.results);
     }
 
-    // Run evaluation tests if evaluations section exists
-    if (hasEvaluations) {
-      console.log('Running evaluation tests...');
-      const evaluationRunner = new EvaluationTestRunner(
-        this.config.evaluations!,
-        this.serverOptions
+    // Run LLM evaluation (eval) tests if evals section exists
+    if (hasEvals) {
+      this.displayManager.progress('Running LLM evaluation (eval) tests...');
+      const evalRunner = new EvalTestRunner(
+        this.config.evals!,
+        this.serverOptions,
+        this.displayManager
       );
-      const evaluationResult = await evaluationRunner.run();
-      // Convert evaluation results to test results format
-      const convertedResults: TestResult[] = evaluationResult.results.map(evalResult => ({
-        name: `${evalResult.name} (${evalResult.model})`,
-        passed: evalResult.passed,
-        errors: evalResult.errors,
-        calls: [], // Evaluations don't have tool calls in the same format
-        duration: 0, // Individual test duration not tracked in evaluations
+      const evalResult = await evalRunner.run();
+      // Convert eval results to test results format
+      const convertedResults: TestResult[] = evalResult.results.map(evalRes => ({
+        name: `${evalRes.name} (${evalRes.model})`,
+        passed: evalRes.passed,
+        errors: evalRes.errors,
+        calls: [], // Evals don't have tool calls in the same format
+        duration: 0, // Individual test duration not tracked in evals
       }));
-      evaluationResults.push(...convertedResults);
+      evalResults.push(...convertedResults);
     }
 
     const endTime = Date.now();
     const duration = endTime - startTime;
 
     // Combine results from all runners
-    const allResults = [...capabilitiesResults, ...evaluationResults];
+    const allResults = [...capabilitiesResults, ...evalResults];
     const combinedSummary: TestSummary = {
       total: allResults.length,
       passed: allResults.filter(r => r.passed).length,
@@ -84,11 +98,11 @@ export class TestRunner {
       results: allResults,
     };
 
-    console.log(`\\nTest Summary:`);
-    console.log(`  Total: ${combinedSummary.total}`);
-    console.log(`  Passed: ${combinedSummary.passed}`);
-    console.log(`  Failed: ${combinedSummary.failed}`);
-    console.log(`  Duration: ${combinedSummary.duration}ms`);
+    // Final summary is handled by the individual test runners through DisplayManager
+    // For capabilities tests, we might need to add DisplayManager support later
+    // For now, only evals use the new display system
+
+    this.displayManager.flush();
 
     return combinedSummary;
   }

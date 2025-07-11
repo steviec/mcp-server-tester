@@ -27,7 +27,7 @@
       "additionalProperties": false,
       "required": ["tests"]
     },
-    "evaluations": {
+    "evals": {
       "type": "object",
       "properties": {
         "models": {
@@ -52,9 +52,9 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/definitions/evaluationTest"
+            "$ref": "#/definitions/evalTest"
           },
-          "description": "Array of evaluation tests to run"
+          "description": "Array of LLM evaluation (eval) tests to run"
         }
       },
       "additionalProperties": false,
@@ -175,7 +175,7 @@
       },
       "additionalProperties": false
     },
-    "evaluationTest": {
+    "evalTest": {
       "type": "object",
       "required": ["name", "prompt"],
       "properties": {

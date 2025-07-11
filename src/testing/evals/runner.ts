@@ -1,5 +1,5 @@
 /**
- * Evaluation test runner for LLM interaction testing
+ * LLM Evaluation (eval) test runner for LLM interaction testing
  */
 
 import {
@@ -9,14 +9,14 @@ import {
 } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
-import type { EvaluationsConfig, EvaluationTest, EvaluationResult } from '../../core/types.js';
+import type { EvalsConfig, EvalTest, EvalResult } from '../../core/types.js';
 
-export interface EvaluationSummary {
+export interface EvalSummary {
   total: number;
   passed: number;
   failed: number;
   duration: number;
-  results: EvaluationResult[];
+  results: EvalResult[];
 }
 
 interface EvalServerOptions {
@@ -28,16 +28,18 @@ interface EvalServerOptions {
   models?: string;
 }
 
-export class EvaluationTestRunner {
+export class EvalTestRunner {
   private mcpClient: McpClient;
-  private config: EvaluationsConfig;
+  private config: EvalsConfig;
   private serverOptions: EvalServerOptions;
   private models: string[];
   private llmProvider: AnthropicProvider;
+  private displayManager?: any; // Will be injected from outside
 
-  constructor(config: EvaluationsConfig, serverOptions: EvalServerOptions) {
+  constructor(config: EvalsConfig, serverOptions: EvalServerOptions, displayManager?: any) {
     this.config = config;
     this.serverOptions = serverOptions;
+    this.displayManager = displayManager;
     // Parse models override from CLI if provided
     this.models = serverOptions.models
       ? serverOptions.models.split(',').map(m => m.trim())
@@ -46,14 +48,14 @@ export class EvaluationTestRunner {
     this.llmProvider = new AnthropicProvider();
   }
 
-  async run(): Promise<EvaluationSummary> {
+  async run(): Promise<EvalSummary> {
     const startTime = Date.now();
 
     try {
       // Check for API key early
       if (!process.env.ANTHROPIC_API_KEY) {
         throw new Error(
-          'ANTHROPIC_API_KEY environment variable is required for evaluation tests.\n' +
+          'ANTHROPIC_API_KEY environment variable is required for LLM evaluation (eval) tests.\n' +
             'Please set your Anthropic API key: export ANTHROPIC_API_KEY="your-key-here"'
         );
       }
@@ -82,20 +84,44 @@ export class EvaluationTestRunner {
 
       await this.mcpClient.connect(transportOptions);
 
-      // Run evaluation tests for each model
-      const results: EvaluationResult[] = [];
+      // Notify display manager about test suite start
+      if (this.displayManager) {
+        this.displayManager.suiteStart(this.config.tests.length, this.models.length);
+      }
+
+      // Run LLM evaluation (eval) tests for each model
+      const results: EvalResult[] = [];
 
       for (const model of this.models) {
+        // Notify display manager about model change
+        if (this.displayManager) {
+          this.displayManager.progress(`Running tests with model: ${model}`, model);
+        }
+
         for (const test of this.config.tests) {
+          if (this.displayManager) {
+            this.displayManager.testStart(test.name, model);
+          }
+
           const result = await this.runTest(test, model);
           results.push(result);
+
+          if (this.displayManager) {
+            this.displayManager.testComplete(
+              test.name,
+              result.passed,
+              result.errors,
+              model,
+              test.prompt
+            );
+          }
         }
       }
 
       const endTime = Date.now();
       const duration = endTime - startTime;
 
-      const summary: EvaluationSummary = {
+      const summary: EvalSummary = {
         total: results.length,
         passed: results.filter(r => r.passed).length,
         failed: results.filter(r => !r.passed).length,
@@ -103,7 +129,15 @@ export class EvaluationTestRunner {
         results,
       };
 
-      // Results logged by Jest framework
+      // Notify display manager about test suite completion
+      if (this.displayManager) {
+        this.displayManager.suiteComplete(
+          summary.total,
+          summary.passed,
+          summary.failed,
+          summary.duration
+        );
+      }
 
       return summary;
     } finally {
@@ -111,7 +145,7 @@ export class EvaluationTestRunner {
     }
   }
 
-  private async runTest(test: EvaluationTest, model: string): Promise<EvaluationResult> {
+  private async runTest(test: EvalTest, model: string): Promise<EvalResult> {
     const errors: string[] = [];
     let passed = true;
 
@@ -180,7 +214,7 @@ export class EvaluationTestRunner {
 
   private validateToolCalls(
     actualToolCalls: any[],
-    expectedToolCalls: NonNullable<EvaluationTest['expected_tool_calls']>
+    expectedToolCalls: NonNullable<EvalTest['expected_tool_calls']>
   ): string[] {
     const errors: string[] = [];
     const actualToolNames = actualToolCalls.map(call => call.toolName);
@@ -195,9 +229,17 @@ export class EvaluationTestRunner {
     }
 
     // Check allowed tools (if specified, only these tools should be called)
+    // Note: required tools are automatically considered allowed
     if (expectedToolCalls.allowed) {
+      const allowedTools = [...expectedToolCalls.allowed];
+
+      // Add required tools to allowed list since they should always be permitted
+      if (expectedToolCalls.required) {
+        allowedTools.push(...expectedToolCalls.required);
+      }
+
       for (const actualTool of actualToolNames) {
-        if (!expectedToolCalls.allowed.includes(actualTool)) {
+        if (!allowedTools.includes(actualTool)) {
           errors.push(`Tool '${actualTool}' was called but not in allowed list`);
         }
       }
@@ -208,7 +250,7 @@ export class EvaluationTestRunner {
 
   private async runResponseScorers(
     messages: any[],
-    scorers: NonNullable<EvaluationTest['response_scorers']>
+    scorers: NonNullable<EvalTest['response_scorers']>
   ): Promise<string[]> {
     const errors: string[] = [];
 

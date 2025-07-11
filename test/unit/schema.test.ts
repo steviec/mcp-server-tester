@@ -28,17 +28,17 @@ describe('Schema Validation', () => {
       }).not.toThrow();
     });
 
-    test('should load valid test config with evaluations section', () => {
+    test('should load valid test config with LLM evaluations (evals) section', () => {
       const validConfig = path.join(fixturesDir, 'valid-evaluation.yaml');
 
       expect(() => {
         const config = ConfigLoader.loadTestConfig(validConfig);
-        expect(config).toHaveProperty('evaluations');
-        expect(config.evaluations).toHaveProperty('tests');
-        expect(config.evaluations?.tests).toBeInstanceOf(Array);
-        expect(config.evaluations?.tests.length).toBeGreaterThan(0);
-        expect(config.evaluations?.tests[0]).toHaveProperty('name');
-        expect(config.evaluations?.tests[0]).toHaveProperty('prompt');
+        expect(config).toHaveProperty('evals');
+        expect(config.evals).toHaveProperty('tests');
+        expect(config.evals?.tests).toBeInstanceOf(Array);
+        expect(config.evals?.tests.length).toBeGreaterThan(0);
+        expect(config.evals?.tests[0]).toHaveProperty('name');
+        expect(config.evals?.tests[0]).toHaveProperty('prompt');
       }).not.toThrow();
     });
 
@@ -46,8 +46,8 @@ describe('Schema Validation', () => {
       const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
 
       // Check that expected_tool_calls doesn't have prohibited field
-      if (config.evaluations?.tests) {
-        const testWithToolCalls = config.evaluations.tests.find(t => t.expected_tool_calls);
+      if (config.evals?.tests) {
+        const testWithToolCalls = config.evals.tests.find(t => t.expected_tool_calls);
         if (testWithToolCalls?.expected_tool_calls) {
           expect(testWithToolCalls.expected_tool_calls).not.toHaveProperty('prohibited');
           expect(testWithToolCalls.expected_tool_calls).toHaveProperty('allowed');
@@ -58,8 +58,8 @@ describe('Schema Validation', () => {
     test('should validate response scorer types', () => {
       const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
 
-      if (config.evaluations?.tests) {
-        const testWithScorers = config.evaluations.tests.find(t => t.response_scorers);
+      if (config.evals?.tests) {
+        const testWithScorers = config.evals.tests.find(t => t.response_scorers);
         if (testWithScorers?.response_scorers) {
           for (const scorer of testWithScorers.response_scorers) {
             expect(['regex', 'json-schema', 'llm-judge']).toContain(scorer.type);
@@ -176,8 +176,8 @@ describe('Schema Validation', () => {
     test('should validate evaluation config structure', () => {
       const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
 
-      if (config.evaluations?.tests) {
-        for (const test of config.evaluations.tests) {
+      if (config.evals?.tests) {
+        for (const test of config.evals.tests) {
           expect(typeof test.name).toBe('string');
           expect(typeof test.prompt).toBe('string');
           expect(test.name.length).toBeGreaterThan(0);

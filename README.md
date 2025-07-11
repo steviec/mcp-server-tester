@@ -300,7 +300,7 @@ See `examples/` directory:
 
 - `test.yaml` - Combined tools and evals
 - `tools-test.yaml` - Tools testing only
-- `evaluations-test.yaml` - Evals only
+- `evaluations-test.yaml` - LLM evaluations (evals) only
 - `server-config.json` - Server configuration
 - `test-server.js` - Sample MCP server
 

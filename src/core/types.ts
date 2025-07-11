@@ -115,17 +115,17 @@ export interface TransportOptions {
   env?: Record<string, string>;
 }
 
-// Later: Evaluation test types (for LLM interaction)
-export interface EvaluationTestConfig {
+// Later: LLM Evaluation (eval) test types
+export interface EvalTestConfig {
   options: {
     models: string[];
     timeout: number;
     max_steps: number;
   };
-  tests: EvaluationTest[];
+  tests: EvalTest[];
 }
 
-export interface EvaluationTest {
+export interface EvalTest {
   name: string;
   prompt: string;
   expected_tool_calls?: {
@@ -143,7 +143,7 @@ export interface ResponseScorer {
   threshold?: number;
 }
 
-export interface EvaluationResult {
+export interface EvalResult {
   name: string;
   model: string;
   passed: boolean;
@@ -155,7 +155,7 @@ export interface EvaluationResult {
 // Main test configuration
 export interface TestConfig {
   tools?: ToolsConfig;
-  evaluations?: EvaluationsConfig;
+  evals?: EvalsConfig;
 }
 
 export interface ToolsConfig {
@@ -163,9 +163,9 @@ export interface ToolsConfig {
   tests: CapabilitiesTest[];
 }
 
-export interface EvaluationsConfig {
+export interface EvalsConfig {
   models?: string[];
   timeout?: number;
   max_steps?: number;
-  tests: EvaluationTest[];
+  tests: EvalTest[];
 }
