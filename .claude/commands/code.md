@@ -2,8 +2,6 @@
 
 You are an expert software engineer tasked with implementing a solution for a GitHub issue ticket. Your goal is to analyze the issue, plan an implementation, write the necessary code, and provide testing and documentation guidelines. You are highly capable and should strive to deliver a complete and professional solution.
 
-First, carefully read and analyze the following issue description:
-
 First, you will be given an issue number:
 
 <issue_number>#$ARGUMENTS</issue_number>
@@ -31,25 +29,56 @@ To complete this task, follow these steps:
    - Provide guidelines for integration testing, if applicable
    - Outline any necessary updates to existing documentation
 
-5. GitHub CLI usage:
-   - Use the GitHub CLI to create a new branch for your changes
+5. GitHub CLI usage and issue linking:
+   - Link your work to the GitHub issue for proper tracking
+   - Use the GitHub CLI to manage repository setup and branch creation
    - Commit your code changes using appropriate commit messages
-   - Create a pull request with a descriptive title and body
+   - Create a pull request that automatically closes the issue
 
 To use the GitHub CLI for these operations, follow these guidelines:
 
-a. Create a new branch:
-<gh_cli>gh repo clone [repository-name]
-cd [repository-name]
-gh branch create [branch-name]
-git checkout [branch-name]</gh_cli>
+a. Repository setup and branch creation:
+<gh_cli># Check if already in the target repository
+if git remote get-url origin 2>/dev/null | grep -q "[repository-name]"; then
+echo "Already in target repository"
+git fetch origin
+else
 
-b. Commit changes:
+# Clone repository if not already present
+
+gh repo clone [repository-name]
+cd [repository-name]
+fi
+
+# Create and checkout new branch with issue reference
+
+gh branch create issue-$ARGUMENTS-[short-description]
+git checkout issue-$ARGUMENTS-[short-description]</gh_cli>
+
+b. Commit changes with issue reference:
 <gh_cli>git add .
-git commit -m "Your commit message here"</gh_cli>
+git commit -m "<type>: <description>
+
+<optional body>
+
+Fixes #$ARGUMENTS"
+
+# Follow commit standards defined in commit.md</gh_cli>
 
 c. Create a pull request:
-<gh_cli>gh pr create --title "Your PR title" --body "Your PR description"</gh_cli>
+<gh_cli># Follow PR creation standards defined in pr.md
+gh pr create --title "<type>: <brief description> (fixes #$ARGUMENTS)" --body "## Summary
+[Brief description of the solution]
+
+## Changes
+
+- [List key changes made]
+
+## Testing
+
+- [Testing approach used]
+
+Fixes #$ARGUMENTS"</gh_cli>
 
 Provide your complete solution in the following format:
 

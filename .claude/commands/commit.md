@@ -3,11 +3,31 @@ allowed-tools: Bash(git*,npm*)
 description: Intelligently commit staged changes with generated message and pre-commit hook handling
 ---
 
-# Context
+# Commit Standards Reference
 
-- Current git status: !`git status`
-- Recent commits: !`git log --oneline -5`
-- Package.json scripts: @`package.json` (scripts section)
+**This file defines the project-wide commit and PR standards used across all workflows.**
+
+## Commit Message Format
+
+**Structure**: `<type>: <description>`
+
+**Types**: feat, fix, docs, style, refactor, test, chore
+
+**Rules**:
+
+- Keep description concise (under 50 chars), focus on purpose/benefit
+- Add body only if needed to explain WHY or list distinct subsections
+- Using bullet points, focus on functional changes and purpose, not technical implementation
+- Use the minimum number of bullet points necessary
+- NEVER mention specific files, methods, classes, or implementation details
+
+## Issue Linking
+
+**Commit body**: Include `Fixes #123` or `Closes #123` to auto-close issues
+**Branch naming**: `issue-123-short-description`
+**PR titles**: `<type>: <description> (fixes #123)`
+
+---
 
 # Task
 
@@ -17,14 +37,7 @@ Handle the complete commit workflow:
    - Auto-stage relevant files with `git add .`
    - Analyze staged changes: !`git diff --cached`
 
-2. **Generate commit message** based on changes:
-   - Use conventional commit format: `<type>: <description>`
-   - Types: feat, fix, docs, style, refactor, test, chore
-   - Keep description concise (under 50 chars), focus on purpose/benefit
-   - Add body only if needed to explain WHY or list distinct subsections
-   - Using bullet points, focus on functional changes and purpose, not technical implementation
-   - Use the minimum number of bullet points necessary
-   - NEVER mention specific files, methods, classes, or implementation details
+2. **Generate commit message** using standards above:
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
