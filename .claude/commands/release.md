@@ -1,42 +1,40 @@
 # Release Command
 
-Creates a new release with AI-generated release notes.
+When the user runs `/release [patch|minor|major]`, create a new release with AI-generated release notes.
 
-## Usage
+## Steps to Execute
+
+1. **Extract the version type** from the user's command (patch, minor, or major)
+
+2. **Check prerequisites** by running `./.claude/commands/release-check.sh`
+
+3. **Get the last release tag and commits since then**:
+
+   ```bash
+   LAST_TAG=$(git tag -l "v*" --sort=-version:refname | head -1)
+   git log ${LAST_TAG}..HEAD --oneline
+   ```
+
+4. **Analyze the commits and generate appropriately-sized release notes**:
+   - **1-3 commits**: Single line per meaningful change
+   - **5+ commits**: Group into categories (Features, Fixes, etc.)
+   - **Internal/tooling changes**: Keep minimal unless user-facing
+   - **Breaking changes**: Always highlight prominently
+
+5. **Show preview** of the proposed version bump and release notes
+
+6. **Ask user to confirm** before proceeding
+
+7. **If confirmed, execute the release**:
+   ```bash
+   npm version [patch|minor|major]
+   git push && git push --tags
+   gh release create v[NEW_VERSION] --notes "[GENERATED_NOTES]"
+   ```
+
+## Example Usage
 
 ```
-/release [patch|minor|major]
+User: /release patch
+Claude: [follows steps above to create a patch release]
 ```
-
-## Flow
-
-When user runs `/release minor`:
-
-1. **Check prerequisites**: Clean git working directory, gh CLI authenticated
-2. **Find last release tag**: Get the most recent semantic version tag (v1.0.2)
-3. **Analyze commits**: Get git log since last release tag
-4. **Generate release notes**: LLM categorizes commits into features, fixes, etc.
-5. **Show preview**: Display new version and release notes
-6. **Execute release**: Run npm version, push tags, create GitHub release
-
-## Implementation
-
-```bash
-# 1. Prerequisites (helper script)
-./.claude/commands/release-check.sh
-
-# 2. Get last release tag and commits
-LAST_TAG=$(git tag -l "v*" --sort=-version:refname | head -1)
-git log ${LAST_TAG}..HEAD --oneline
-
-# 3. LLM analyzes commits and generates release notes
-
-# 4. Show preview and confirm
-
-# 5. Execute release
-npm version [type]
-git push && git push --tags
-gh release create v[NEW_VERSION] --notes "[GENERATED_NOTES]"
-```
-
-The helper script handles deterministic validation, while Claude handles the analysis and orchestration.
