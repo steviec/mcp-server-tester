@@ -20,6 +20,9 @@ Handle the complete commit workflow:
 2. **Generate commit message** based on changes:
    - Use conventional commit format: `<type>: <description>`
    - Types: feat, fix, docs, style, refactor, test, chore
+   - Keep description concise (under 50 chars), focus on purpose/benefit
+   - Add body only if needed to explain WHY (1-2 sentences max)
+   - NEVER mention specific files, methods, classes, or implementation details
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
