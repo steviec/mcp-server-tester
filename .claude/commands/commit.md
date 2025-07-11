@@ -21,8 +21,10 @@ Handle the complete commit workflow:
    - Use conventional commit format: `<type>: <description>`
    - Types: feat, fix, docs, style, refactor, test, chore
    - Keep description concise (under 50 chars), focus on purpose/benefit
-   - Add body only if needed to explain WHY (1-2 sentences max)
+   - Add body only if needed to explain WHY or list distinct subsections
+   - Use bullet points for multiple logical components or subsections
    - NEVER mention specific files, methods, classes, or implementation details
+   - Focus on user/business impact, not technical implementation
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
