@@ -2,11 +2,7 @@
  * Capabilities test runner for direct tool calls
  */
 
-import {
-  McpClient,
-  createTransportOptions,
-  createServerConfigFromCli,
-} from '../../core/mcp-client.js';
+import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import {
   type ToolsConfig,
@@ -20,11 +16,11 @@ import {
 } from '../../core/types.js';
 
 interface ServerOptions {
-  serverConfig?: string;
+  serverConfig: string;
   serverName?: string;
-  serverCommand?: string;
-  serverArgs?: string;
-  serverEnv?: string;
+  timeout?: number;
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 export class CapabilitiesTestRunner {
@@ -42,27 +38,12 @@ export class CapabilitiesTestRunner {
     const startTime = Date.now();
 
     try {
-      // Determine server configuration based on mode
-      let transportOptions;
-
-      if (this.serverOptions.serverConfig) {
-        // Config file mode
-        const serverConfig = ConfigLoader.loadServerConfig(
-          this.serverOptions.serverConfig,
-          this.serverOptions.serverName
-        );
-        transportOptions = createTransportOptions(serverConfig);
-      } else if (this.serverOptions.serverCommand) {
-        // CLI launch mode
-        const serverConfig = createServerConfigFromCli(
-          this.serverOptions.serverCommand,
-          this.serverOptions.serverArgs,
-          this.serverOptions.serverEnv
-        );
-        transportOptions = createTransportOptions(serverConfig);
-      } else {
-        throw new Error('No server configuration provided');
-      }
+      // Load server configuration from config file
+      const serverConfig = ConfigLoader.loadServerConfig(
+        this.serverOptions.serverConfig,
+        this.serverOptions.serverName
+      );
+      const transportOptions = createTransportOptions(serverConfig);
 
       await this.mcpClient.connect(transportOptions);
 

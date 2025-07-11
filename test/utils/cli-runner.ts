@@ -85,9 +85,7 @@ export class CliRunner {
     serverConfig: string,
     options: {
       serverName?: string;
-      models?: string;
       timeout?: number;
-      output?: string;
     } = {}
   ): Promise<CliResult> {
     const args = [testFile, '--server-config', serverConfig];
@@ -96,16 +94,8 @@ export class CliRunner {
       args.push('--server-name', options.serverName);
     }
 
-    if (options.models) {
-      args.push('--models', options.models);
-    }
-
     if (options.timeout) {
       args.push('--timeout', options.timeout.toString());
-    }
-
-    if (options.output) {
-      args.push('--output', options.output);
     }
 
     return this.run(args);
@@ -120,7 +110,6 @@ export class CliRunner {
     options: {
       serverName?: string;
       timeout?: number;
-      output?: string;
     } = {}
   ): Promise<CliResult> {
     return this.test(testFile, serverConfig, options);
@@ -134,9 +123,7 @@ export class CliRunner {
     serverConfig: string,
     options: {
       serverName?: string;
-      models?: string;
       timeout?: number;
-      output?: string;
     } = {}
   ): Promise<CliResult> {
     return this.test(testFile, serverConfig, options);

@@ -10,7 +10,7 @@ import path from 'path';
 
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
-describe.skipIf(!hasApiKey)('Eval Tests - CLI Launch Mode', () => {
+describe.skip('Eval Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
 
   beforeAll(() => {

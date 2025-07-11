@@ -8,7 +8,7 @@ import { ConfigLoader } from '../../../src/config/loader.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
 
-describe('API Tests - CLI Launch Mode', () => {
+describe.skip('API Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
 
   test('should launch server and discover tools via CLI mode', async () => {

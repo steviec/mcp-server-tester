@@ -15,14 +15,9 @@ const __dirname = dirname(__filename);
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
 
 interface CliOptions {
-  serverConfig?: string;
+  serverConfig: string;
   serverName?: string;
-  serverCommand?: string;
-  serverArgs?: string;
-  serverEnv?: string;
   timeout?: number;
-  output?: 'console' | 'json' | 'junit';
-  models?: string;
   quiet?: boolean;
   verbose?: boolean;
 }
@@ -45,26 +40,6 @@ function handleError(error: unknown): never {
 async function runTests(testFile: string, options: CliOptions): Promise<void> {
   try {
     console.log(`Running tests from: ${testFile}`);
-
-    // Validate server configuration options
-    const hasConfigMode = !!options.serverConfig;
-    const hasCommandMode = !!options.serverCommand;
-
-    if (!hasConfigMode && !hasCommandMode) {
-      throw new Error(
-        'Server configuration is required. Use either:\n' +
-          '  --server-config <file> [--server-name <name>] for config file mode, or\n' +
-          '  --server-command <command> [--server-args <args>] for CLI launch mode'
-      );
-    }
-
-    if (hasConfigMode && hasCommandMode) {
-      throw new Error(
-        'Cannot use both --server-config and --server-command. Choose one mode:\n' +
-          '  --server-config for existing server configuration, or\n' +
-          '  --server-command for direct server launch'
-      );
-    }
 
     const runner = new TestRunner(testFile, options);
     const summary = await runner.run();
@@ -89,25 +64,17 @@ async function main(): Promise<void> {
   // Unified test command
   program
     .argument('<test-file>', 'Test configuration file (YAML)')
-    .option('--server-config <file>', 'MCP server configuration file (JSON)')
+    .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
       '--server-name <name>',
       'Specific server name to use from config (if multiple servers defined)'
     )
-    .option('--server-command <command>', 'Command to launch MCP server directly')
-    .option('--server-args <args>', 'Arguments for server command (comma-separated)')
-    .option('--server-env <env>', 'Environment variables for server (key=value,key2=value2)')
-    .option('--models <models>', 'LLM models to use (comma-separated, overrides config file)')
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
-    .option('--output <format>', 'Output format (console, json, junit)', 'console')
     .option('--quiet', 'Suppress non-essential output')
     .option('--verbose', 'Enable verbose output with additional details')
     .action(async (testFile: string, options: CliOptions) => {
       await runTests(testFile, options);
     });
-
-  // Global options
-  program.option('--debug', 'Enable debug logging');
 
   // Parse command line arguments
   program.parse();

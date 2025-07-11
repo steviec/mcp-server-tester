@@ -2,11 +2,7 @@
  * LLM Evaluation (eval) test runner for LLM interaction testing
  */
 
-import {
-  McpClient,
-  createTransportOptions,
-  createServerConfigFromCli,
-} from '../../core/mcp-client.js';
+import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
 import type { EvalsConfig, EvalTest, EvalResult } from '../../core/types.js';
@@ -22,12 +18,11 @@ export interface EvalSummary {
 }
 
 interface EvalServerOptions {
-  serverConfig?: string;
+  serverConfig: string;
   serverName?: string;
-  serverCommand?: string;
-  serverArgs?: string;
-  serverEnv?: string;
-  models?: string;
+  timeout?: number;
+  quiet?: boolean;
+  verbose?: boolean;
 }
 
 export class EvalTestRunner {
@@ -46,10 +41,8 @@ export class EvalTestRunner {
     this.config = config;
     this.serverOptions = serverOptions;
     this.displayManager = displayManager;
-    // Parse models override from CLI if provided
-    this.models = serverOptions.models
-      ? serverOptions.models.split(',').map(m => m.trim())
-      : this.config.models || ['claude-3-haiku-20240307'];
+    // Use models from config file or default
+    this.models = this.config.models || ['claude-3-haiku-20240307'];
     this.mcpClient = new McpClient();
     this.llmProvider = new AnthropicProvider();
   }
@@ -66,27 +59,12 @@ export class EvalTestRunner {
         );
       }
 
-      // Determine server configuration based on mode
-      let transportOptions;
-
-      if (this.serverOptions.serverConfig) {
-        // Config file mode
-        const serverConfig = ConfigLoader.loadServerConfig(
-          this.serverOptions.serverConfig,
-          this.serverOptions.serverName
-        );
-        transportOptions = createTransportOptions(serverConfig);
-      } else if (this.serverOptions.serverCommand) {
-        // CLI launch mode
-        const serverConfig = createServerConfigFromCli(
-          this.serverOptions.serverCommand,
-          this.serverOptions.serverArgs,
-          this.serverOptions.serverEnv
-        );
-        transportOptions = createTransportOptions(serverConfig);
-      } else {
-        throw new Error('No server configuration provided');
-      }
+      // Load server configuration from config file
+      const serverConfig = ConfigLoader.loadServerConfig(
+        this.serverOptions.serverConfig,
+        this.serverOptions.serverName
+      );
+      const transportOptions = createTransportOptions(serverConfig);
 
       await this.mcpClient.connect(transportOptions);
 

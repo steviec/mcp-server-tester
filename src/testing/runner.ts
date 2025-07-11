@@ -10,14 +10,9 @@ import type { TestConfig, TestSummary, TestResult } from '../core/types.js';
 import type { DisplayOptions } from './display/types.js';
 
 interface ServerOptions {
-  serverConfig?: string;
+  serverConfig: string;
   serverName?: string;
-  serverCommand?: string;
-  serverArgs?: string;
-  serverEnv?: string;
-  models?: string;
   timeout?: number;
-  output?: 'console' | 'json' | 'junit';
   quiet?: boolean;
   verbose?: boolean;
 }
@@ -33,7 +28,7 @@ export class TestRunner {
 
     // Create display manager with options
     const displayOptions: DisplayOptions = {
-      formatter: serverOptions.output,
+      formatter: 'console',
       quiet: serverOptions.quiet,
       verbose: serverOptions.verbose,
     };
