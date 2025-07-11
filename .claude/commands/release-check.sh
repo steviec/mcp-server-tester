@@ -43,4 +43,20 @@ if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
 fi
 
 echo -e "${GREEN}✅ All prerequisites satisfied${NC}"
+
+# Get last release tag and commits since then
+echo ""
+echo "📋 Release Information:"
+
+LAST_TAG=$(git tag -l "v*" --sort=-version:refname | head -1)
+if [ -z "$LAST_TAG" ]; then
+    echo -e "${YELLOW}No previous release tags found${NC}"
+    echo "Commits in this release:"
+    git log --oneline | head -10
+else
+    echo -e "Last release tag: ${GREEN}$LAST_TAG${NC}"
+    echo "Commits since $LAST_TAG:"
+    git log $LAST_TAG..HEAD --oneline
+fi
+
 exit 0
