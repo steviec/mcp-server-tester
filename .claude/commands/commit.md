@@ -22,9 +22,9 @@ Handle the complete commit workflow:
    - Types: feat, fix, docs, style, refactor, test, chore
    - Keep description concise (under 50 chars), focus on purpose/benefit
    - Add body only if needed to explain WHY or list distinct subsections
-   - Use bullet points for multiple logical components or subsections
+   - Using bullet points, focus on functional changes and purpose, not technical implementation
+   - Use the minimum number of bullet points necessary
    - NEVER mention specific files, methods, classes, or implementation details
-   - Focus on functional changes and purpose, not technical implementation
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
