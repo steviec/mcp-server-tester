@@ -1,6 +1,6 @@
 # Invalid: missing tests array
 discovery:
-  expect_tools: ['echo']
+  expected_tool_list: ['echo']
 
 options:
   timeout: 5000

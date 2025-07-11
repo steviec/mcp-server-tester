@@ -1,342 +1,320 @@
-# MCP Tester
+# MCP Server Tester
 
-A standalone CLI tool for testing Model Context Protocol (MCP) servers with both integration and evaluation capabilities.
+A tool to confirm that your MCP server provides the correct capabilities and can be used consistently by LLMs.
 
 ## Overview
 
-MCP Tester provides comprehensive testing for MCP servers through two distinct testing approaches:
+MCP Tester provides two testing approaches:
 
-1. **Integration Tests** - Direct tool call testing similar to API integration tests
-2. **Evaluation Tests** - LLM interaction testing to verify how well language models can use your MCP tools
+- **Tools Testing** - Direct API calls to test your MCP server's tool implementations
+- **Evals** - Test that LLMs can correctly discover and use your MCP tools
+
+## Quick Example
+
+Test a filesystem MCP server (`fs-test.yaml`):
+
+```yaml
+tools:
+  expected_tool_list: ['read_file', 'write_file', 'list_directory']
+  tests:
+    # Single tool test (simplified format)
+    - name: 'Read file test'
+      tool: 'read_file'
+      params: { path: '/tmp/test.txt' }
+      expect:
+        success: true
+        result: { contains: 'hello world' }
+
+    # Multi-step workflow test
+    - name: 'Write and read file workflow'
+      calls:
+        - tool: 'write_file'
+          params: { path: '/tmp/test.txt', content: 'hello world' }
+          expect: { success: true }
+
+        - tool: 'read_file'
+          params: { path: '/tmp/test.txt' }
+          expect:
+            success: true
+            result: { contains: 'hello world' }
+
+evals:
+  models: ['claude-3-haiku-20240307']
+  tests:
+    - name: 'LLM can create and read files'
+      prompt: 'Create a file called hello.txt with the content "test" and then read it back'
+      expected_tool_calls:
+        required: ['write_file', 'read_file']
+      response_scorers:
+        - type: 'regex'
+          pattern: 'test'
+```
+
+Run the test:
+
+```bash
+npx mcp-server-tester fs-test.yaml --server-config server-config.json
+```
+
+Output:
+
+```
+Running tests from: fs-test.yaml
+Detecting test types...
+Running tools tests...
+Running eval tests...
+
+Test Summary:
+  Total: 2
+  Passed: 2
+  Failed: 0
+  Duration: 1247ms
+```
 
 ## Installation
 
 ```bash
-# Run directly with npx (recommended)
+# Run directly
 npx mcp-server-tester --help
 
-# Or install globally
+# Install globally
 npm install -g mcp-server-tester
 ```
 
-## Quick Start
+## Setup
 
-### 1. Set up your MCP server configuration
+### 1. Server Configuration
 
-Create a `server-config.json` file with your MCP server details:
+Create `server-config.json` with your MCP server details:
 
 ```json
 {
   "mcpServers": {
-    "your-server": {
+    "filesystem": {
       "command": "node",
-      "args": ["path/to/your/server.js"],
+      "args": ["./filesystem-server.js"],
       "env": {
-        "API_KEY": "your-key"
+        "ALLOWED_DIRS": "/tmp,/home/user/documents"
       }
     }
   }
 }
 ```
 
-### 2. Run Integration Tests
+### 2. Tools Testing
 
-Create an integration test file (`integration-test.yaml`):
-
-```yaml
-discovery:
-  expect_tools: ['tool1', 'tool2']
-  validate_schemas: true
-
-tests:
-  - name: 'Echoes a basic message'
-    calls:
-      - tool: 'echo'
-        params:
-          message: 'Hello World'
-        expect:
-          success: true
-          result:
-            contains: 'Hello World'
-```
-
-Run the tests:
-
-```bash
-npx mcp-server-tester integration integration-test.yaml --server-config ./server-config.json
-```
-
-### 3. Run Evaluation Tests
-
-Create an evaluation test file (`eval-test.yaml`):
+Test your MCP server's tool implementations directly:
 
 ```yaml
-options:
-  models: ['claude-3-haiku-20240307']
-  timeout: 30000
-  max_steps: 3
-
-tests:
-  - name: 'tool_understanding'
-    prompt: 'List all available tools'
-    expected_tool_calls:
-      allowed: []
-    response_scorers:
-      - type: 'regex'
-        pattern: '(tool|function|capability)'
-```
-
-Set your Anthropic API key and run:
-
-```bash
-export ANTHROPIC_API_KEY="your-api-key"
-npx mcp-server-tester evals eval-test.yaml --server-config ./server-config.json
-```
-
-## Configuration Reference
-
-### Server Configuration
-
-Standard MCP server configuration format:
-
-```json
-{
-  "mcpServers": {
-    "server-name": {
-      "command": "executable",
-      "args": ["arg1", "arg2"],
-      "env": {
-        "ENV_VAR": "value"
-      }
-    }
-  }
-}
-```
-
-### Integration Test Configuration
-
-```yaml
-# Optional: Tool discovery validation
-discovery:
-  expect_tools: ['tool1', 'tool2'] # Tools that must be available
-  validate_schemas: true # Validate tool input schemas
-
-# Test definitions
-tests:
-  - name: 'Performs specific functionality'
-    calls:
-      - tool: 'tool_name'
-        params:
-          param1: 'value1'
-          param2: 123
-        expect:
-          success: true # Whether call should succeed
-          result: # Optional result validation
-            contains: 'text' # Text that should be in result
-            equals: 'exact_match' # Exact result match
-          error: # For expected failures
-            contains: 'error_text'
-
-# Global options
-options:
-  timeout: 10000 # Test timeout in milliseconds
-  cleanup: true # Cleanup after tests
-  parallel: false # Run tests in parallel
-```
-
-### Evaluation Test Configuration
-
-```yaml
-options:
-  models: ['claude-3-haiku-20240307', 'claude-3-5-sonnet-20241022']
-  timeout: 30000
-  max_steps: 3
-
-tests:
-  - name: 'Evaluates specific LLM behavior'
-    prompt: 'Prompt for the LLM'
-
-    # Tool call validation
-    expected_tool_calls:
-      required: ['tool1'] # Tools that must be called
-      allowed: ['tool1', 'tool2'] # Only these tools can be called (if not specified, all tools are allowed)
-
-    # Response quality scoring
-    response_scorers:
-      - type: 'regex'
-        pattern: 'expected_pattern'
-
-      - type: 'json-schema'
-        schema:
-          type: 'string'
-          minLength: 10
-          pattern: "\\d+"
-
-      - type: 'llm-judge'
-        criteria: 'Did the assistant complete the task correctly?'
-        threshold: 0.8
-```
-
-## Testing Patterns
-
-### Integration Testing Patterns
-
-**Single Tool Call**
-
-```yaml
-- name: 'Calls echo tool with message'
-  calls:
-    - tool: 'echo'
-      params: { message: 'test' }
-      expect: { success: true }
-```
-
-**Multi-Step Workflow**
-
-```yaml
-- name: 'Creates, reads, and deletes file'
-  calls:
-    - tool: 'create_file'
+tools:
+  expected_tool_list: ['read_file', 'write_file']
+  tests:
+    # Simple single tool tests
+    - name: 'Write file successfully'
+      tool: 'write_file'
       params: { path: '/tmp/test.txt', content: 'data' }
       expect: { success: true }
-    - tool: 'read_file'
+
+    - name: 'Read existing file'
+      tool: 'read_file'
       params: { path: '/tmp/test.txt' }
       expect:
         success: true
         result: { contains: 'data' }
-    - tool: 'delete_file'
-      params: { path: '/tmp/test.txt' }
-      expect: { success: true }
-```
 
-**Error Testing**
-
-```yaml
-- name: 'Handles nonexistent tool gracefully'
-  calls:
-    - tool: 'nonexistent_tool'
-      params: {}
+    - name: 'Handle missing file'
+      tool: 'read_file'
+      params: { path: '/nonexistent/file.txt' }
       expect:
         success: false
-        error: { contains: 'unknown tool' }
+        error: { contains: 'not found' }
 ```
 
-### Evaluation Testing Patterns
+### 3. LLM Evals
 
-**Tool Discovery Test**
+Test that language models can use your tools correctly:
 
 ```yaml
-- name: 'Lists available tools without calling them'
-  prompt: 'What tools do you have available?'
-  expected_tool_calls: { allowed: [] } # No tools should be called
-  response_scorers:
-    - type: 'regex'
-      pattern: '(tool|function|available)'
+evals:
+  models: ['claude-3-haiku-20240307']
+  tests:
+    - name: 'LLM discovers available tools'
+      prompt: 'What file operations can you perform?'
+      expected_tool_calls: { allowed: [] } # Should not call tools
+      response_scorers:
+        - type: 'regex'
+          pattern: '(read|write|file)'
+
+    - name: 'LLM performs file operations'
+      prompt: 'List the files in /tmp directory'
+      expected_tool_calls: { required: ['list_directory'] }
+      response_scorers:
+        - type: 'llm-judge'
+          criteria: 'Did the assistant successfully list directory contents?'
+          threshold: 0.8
 ```
 
-**Task Completion Test**
-
-```yaml
-- name: 'Completes math task using required tools'
-  prompt: 'Add 5 and 3'
-  expected_tool_calls: { required: ['add'] }
-  response_scorers:
-    - type: 'llm-judge'
-      criteria: 'Did the assistant correctly add the numbers?'
-      threshold: 0.8
-```
-
-**Restricted Tool Usage Test**
-
-```yaml
-- name: 'Reads file without modifying it'
-  prompt: "Read the config file, but don't modify anything"
-  expected_tool_calls:
-    required: ['read_file']
-    allowed: ['read_file'] # Only read_file is allowed, all others are implicitly prohibited
-```
-
-## CLI Commands
-
-### Integration Tests
+Run evals (requires API key):
 
 ```bash
-npx mcp-server-tester integration <test-file> --server-config <server-config-file> [options]
-
-Required:
-  --server-config <file>   MCP server configuration file (JSON)
-
-Options:
-  --server-name <name>     Specific server name from config (required if multiple servers)
-  --timeout <ms>           Test timeout (default: 10000)
-  --output <format>        Output format: console, json, junit
+export ANTHROPIC_API_KEY="your-key"
+npx mcp-server-tester eval-test.yaml --server-config server-config.json
 ```
 
-### Evaluation Tests
+## Test Configuration
+
+### Tools Tests
+
+```yaml
+tools:
+  expected_tool_list: ['tool1', 'tool2'] # Verify these tools exist via tools/list
+  tests:
+    # Single tool test format (recommended for simple tests)
+    - name: 'Simple tool test'
+      tool: 'tool_name'
+      params: { key: 'value' }
+      expect:
+        success: true
+        result:
+          contains: 'expected_text'
+          equals: 'exact_match'
+        error: # For testing error conditions
+          contains: 'error_message'
+
+    # Multi-step test format (for complex workflows)
+    - name: 'Complex workflow test'
+      calls:
+        - tool: 'tool1'
+          params: { ... }
+          expect: { ... }
+        - tool: 'tool2'
+          params: { ... }
+          expect: { ... }
+```
+
+### Eval Tests
+
+```yaml
+evals:
+  models: ['claude-3-haiku-20240307']
+  timeout: 30000
+  max_steps: 3
+  tests:
+    - name: 'Test description'
+      prompt: 'Task for the LLM'
+      expected_tool_calls:
+        required: ['tool1'] # Must call these
+        allowed: ['tool1', 'tool2'] # Can only call these
+      response_scorers:
+        - type: 'regex'
+          pattern: 'pattern_to_match'
+        - type: 'llm-judge'
+          criteria: 'Evaluation criteria'
+          threshold: 0.8
+```
+
+## CLI Usage
 
 ```bash
-npx mcp-server-tester evals <test-file> --server-config <server-config-file> [options]
-
-Required:
-  --server-config <file>   MCP server configuration file (JSON)
+mcp-server-tester <test-file> --server-config <config-file> [options]
 
 Options:
-  --server-name <name>     Specific server name from config (required if multiple servers)
-  --models <models>        Comma-separated model list (overrides config file)
-  --timeout <ms>           Test timeout (default: 30000)
-  --output <format>        Output format: console, json, junit
+  --server-config <file>    MCP server configuration (required)
+  --server-name <name>      Server name if multiple in config
+  --models <models>         Override models for evals
+  --timeout <ms>            Test timeout
+  --output <format>         Output: console, json, junit
+
+# Alternative: Launch server directly
+mcp-server-tester test.yaml --server-command "node" --server-args "server.js"
 ```
 
-## Environment Variables
+## Common Patterns
 
-- `ANTHROPIC_API_KEY` - Required for evaluation tests
-- `DEBUG=mcp-tester` - Enable debug logging
+### Multi-step Workflows
+
+```yaml
+tools:
+  tests:
+    - name: 'Database CRUD operations'
+      calls:
+        - tool: 'create_record'
+          params: { table: 'users', data: { name: 'Alice' } }
+          expect: { success: true }
+
+        - tool: 'read_record'
+          params: { table: 'users', id: 1 }
+          expect:
+            success: true
+            result: { contains: 'Alice' }
+
+        - tool: 'delete_record'
+          params: { table: 'users', id: 1 }
+          expect: { success: true }
+```
+
+### Error Handling
+
+```yaml
+tools:
+  tests:
+    # Single tool error test
+    - name: 'Invalid parameters are rejected'
+      tool: 'read_file'
+      params: { path: '../../../etc/passwd' }
+      expect:
+        success: false
+        error: { contains: 'access denied' }
+```
+
+### LLM Task Completion
+
+```yaml
+evals:
+  tests:
+    - name: 'LLM completes complex task'
+      prompt: 'Find all .log files in /var/log and count how many contain "ERROR"'
+      expected_tool_calls:
+        required: ['list_directory', 'read_file']
+      response_scorers:
+        - type: 'regex'
+          pattern: '\\d+.*files.*ERROR'
+```
+
+### Tool Discovery
+
+```yaml
+evals:
+  tests:
+    - name: 'LLM understands capabilities without calling tools'
+      prompt: 'What database operations can you perform? Just list them.'
+      expected_tool_calls: { allowed: [] }
+      response_scorers:
+        - type: 'regex'
+          pattern: '(create|read|update|delete|query)'
+```
 
 ## Examples
 
-The `examples/` directory contains:
+See `examples/` directory:
 
-- `server-config.json` - Sample MCP server configuration
-- `integration-test.yaml` - Integration test examples
-- `eval-test.yaml` - Evaluation test examples
-- `test-server.js` - Simple MCP server for testing
+- `test.yaml` - Combined tools and evals
+- `tools-test.yaml` - Tools testing only
+- `evaluations-test.yaml` - Evals only
+- `server-config.json` - Server configuration
+- `test-server.js` - Sample MCP server
 
-## Architecture
+## Environment Variables
 
-- **Direct MCP SDK Usage** - No proxy server overhead
-- **Vercel AI SDK Integration** - Unified types for LLM interactions
-- **Modular Design** - Separate runners for different test types
-- **TypeScript Native** - Built with TypeScript, runs with tsx
+- `ANTHROPIC_API_KEY` - Required for evals
+- `DEBUG=mcp-tester` - Debug logging
 
 ## Contributing
 
-### Development Setup
-
-```bash
-# Clone and install dependencies
-git clone https://github.com/steviec/mcp-server-tester.git
-cd mcp-server-tester
-npm install
-
-# Run in development mode
-npm run dev -- integration examples/integration-test.yaml --server-config examples/server-config.json
-
-# Run tests
-npm test
-
-# Run linting and formatting
-npm run lint
-npm run format
-```
-
-### Contributing Process
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run `npm test` and `npm run lint`
-6. Submit a pull request
+1. Fork and create feature branch
+2. Add tests for new functionality
+3. Run `npm test` and `npm run lint`
+4. Submit pull request
 
 ## License
 

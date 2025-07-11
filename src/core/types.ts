@@ -31,9 +31,40 @@ export interface CapabilitiesTestCall {
   };
 }
 
-export interface CapabilitiesTest {
+// Single tool test format
+export interface SingleToolTest {
+  name: string;
+  tool: string;
+  params: Record<string, any>;
+  expect: {
+    success: boolean;
+    result?: {
+      contains?: string;
+      equals?: any;
+      schema?: any;
+    };
+    error?: {
+      contains?: string;
+    };
+  };
+}
+
+// Multi-step test format
+export interface MultiStepTest {
   name: string;
   calls: CapabilitiesTestCall[];
+}
+
+// Union type for both formats
+export type CapabilitiesTest = SingleToolTest | MultiStepTest;
+
+// Type guards to distinguish between formats
+export function isSingleToolTest(test: CapabilitiesTest): test is SingleToolTest {
+  return 'tool' in test;
+}
+
+export function isMultiStepTest(test: CapabilitiesTest): test is MultiStepTest {
+  return 'calls' in test;
 }
 
 export interface CapabilitiesTestConfig {
@@ -121,14 +152,14 @@ export interface EvaluationResult {
   messages?: any[];
 }
 
-// Unified test types
-export interface UnifiedTestConfig {
+// Main test configuration
+export interface TestConfig {
   tools?: ToolsConfig;
   evaluations?: EvaluationsConfig;
 }
 
 export interface ToolsConfig {
-  expect_tools?: string[];
+  expected_tool_list?: string[];
   tests: CapabilitiesTest[];
 }
 

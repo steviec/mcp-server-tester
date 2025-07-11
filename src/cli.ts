@@ -5,7 +5,7 @@
  */
 
 import { Command } from 'commander';
-import { UnifiedTestRunner } from './testing/unified-runner.js';
+import { TestRunner } from './testing/runner.js';
 
 interface CliOptions {
   serverConfig?: string;
@@ -57,7 +57,7 @@ async function runTests(testFile: string, options: CliOptions): Promise<void> {
       );
     }
 
-    const runner = new UnifiedTestRunner(testFile, options);
+    const runner = new TestRunner(testFile, options);
     const summary = await runner.run();
 
     // Exit with error code if any tests failed

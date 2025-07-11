@@ -145,7 +145,7 @@ export class CliRunner {
   /**
    * Helper to get help text
    */
-  async help(command?: string): Promise<CliResult> {
+  async help(_command?: string): Promise<CliResult> {
     // Since we have a unified command now, just show general help
     const args = ['--help'];
     return this.run(args);

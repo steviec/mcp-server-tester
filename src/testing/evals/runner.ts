@@ -9,7 +9,7 @@ import {
 } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
-import type { EvaluationTestConfig, EvaluationTest, EvaluationResult } from '../../core/types.js';
+import type { EvaluationsConfig, EvaluationTest, EvaluationResult } from '../../core/types.js';
 
 export interface EvaluationSummary {
   total: number;
@@ -30,18 +30,18 @@ interface EvalServerOptions {
 
 export class EvaluationTestRunner {
   private mcpClient: McpClient;
-  private config: EvaluationTestConfig;
+  private config: EvaluationsConfig;
   private serverOptions: EvalServerOptions;
   private models: string[];
   private llmProvider: AnthropicProvider;
 
-  constructor(configPath: string, serverOptions: EvalServerOptions) {
-    this.config = ConfigLoader.loadEvaluationConfig(configPath);
+  constructor(config: EvaluationsConfig, serverOptions: EvalServerOptions) {
+    this.config = config;
     this.serverOptions = serverOptions;
     // Parse models override from CLI if provided
     this.models = serverOptions.models
       ? serverOptions.models.split(',').map(m => m.trim())
-      : this.config.options.models;
+      : this.config.models || ['claude-3-haiku-20240307'];
     this.mcpClient = new McpClient();
     this.llmProvider = new AnthropicProvider();
   }
@@ -122,8 +122,8 @@ export class EvaluationTestRunner {
         test.prompt,
         {
           model,
-          maxSteps: this.config.options.max_steps,
-          timeout: this.config.options.timeout,
+          maxSteps: this.config.max_steps || 3,
+          timeout: this.config.timeout || 30000,
         }
       );
 

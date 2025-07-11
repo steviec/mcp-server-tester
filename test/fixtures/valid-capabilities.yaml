@@ -1,29 +1,23 @@
-# Valid capabilities test configuration for legacy schema testing
-discovery:
-  expect_tools: ['echo', 'add']
-  validate_schemas: true
+# Valid test configuration with tools section
+tools:
+  expected_tool_list: ['echo', 'add']
+  tests:
+    - name: 'test_echo'
+      tool: 'echo'
+      params:
+        message: 'test message'
+      expect:
+        success: true
+        result:
+          contains: 'Echo: test message'
 
-tests:
-  - name: 'test_echo'
-    calls:
-      - tool: 'echo'
-        params:
-          message: 'test message'
-        expect:
-          success: true
-          result:
-            contains: 'Echo: test message'
-
-  - name: 'test_add'
-    calls:
-      - tool: 'add'
-        params:
-          a: 5
-          b: 3
-        expect:
-          success: true
-          result:
-            contains: '5 + 3 = 8'
-
-options:
-  timeout: 5000
+    - name: 'test_add_multi_step'
+      calls:
+        - tool: 'add'
+          params:
+            a: 5
+            b: 3
+          expect:
+            success: true
+            result:
+              contains: '5 + 3 = 8'

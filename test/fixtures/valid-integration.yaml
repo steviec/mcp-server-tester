@@ -1,6 +1,6 @@
-# Valid integration test configuration for testing (unified format)
+# Valid test configuration for testing (unified format)
 tools:
-  expect_tools: ['echo', 'add']
+  expected_tool_list: ['echo', 'add']
   tests:
     - name: 'test_echo'
       calls:

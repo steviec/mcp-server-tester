@@ -6,26 +6,19 @@ import fs from 'fs';
 import path from 'path';
 import YAML from 'yaml';
 import Ajv from 'ajv';
-import type {
-  CapabilitiesTestConfig,
-  EvaluationTestConfig,
-  UnifiedTestConfig,
-  McpServersConfig,
-  ServerConfig,
-} from '../core/types.js';
+import type { TestConfig, McpServersConfig, ServerConfig } from '../core/types.js';
 
 // Import JSON schemas
-import capabilitiesTestSchema from '../schemas/capabilities-test.json' with { type: 'json' };
-import evaluationTestSchema from '../schemas/evaluation-test.json' with { type: 'json' };
-import unifiedTestSchema from '../schemas/unified-test.json' with { type: 'json' };
+import testConfigSchema from '../schemas/test-config.json' with { type: 'json' };
 import serverConfigSchema from '../schemas/server-config.json' with { type: 'json' };
 
 export class ConfigLoader {
   private static ajv = new Ajv.default({ allErrors: true, verbose: true });
+
   /**
-   * Load capabilities test configuration from YAML file
+   * Load test configuration from YAML file
    */
-  static loadCapabilitiesConfig(filePath: string): CapabilitiesTestConfig {
+  static loadTestConfig(filePath: string): TestConfig {
     const resolvedPath = this.resolvePath(filePath);
     const content = this.readFile(resolvedPath);
 
@@ -44,66 +37,10 @@ export class ConfigLoader {
 
     return this.validateWithSchema(
       config,
-      capabilitiesTestSchema,
+      testConfigSchema,
       resolvedPath,
-      'Capabilities test configuration'
-    ) as CapabilitiesTestConfig;
-  }
-
-  /**
-   * Load unified test configuration from YAML file
-   */
-  static loadUnifiedConfig(filePath: string): UnifiedTestConfig {
-    const resolvedPath = this.resolvePath(filePath);
-    const content = this.readFile(resolvedPath);
-
-    let config: unknown;
-    try {
-      if (this.isYamlFile(resolvedPath)) {
-        config = YAML.parse(content);
-      } else {
-        config = JSON.parse(content);
-      }
-    } catch (error) {
-      throw new Error(
-        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-
-    return this.validateWithSchema(
-      config,
-      unifiedTestSchema,
-      resolvedPath,
-      'Unified test configuration'
-    ) as UnifiedTestConfig;
-  }
-
-  /**
-   * Load evaluation test configuration from YAML file
-   */
-  static loadEvaluationConfig(filePath: string): EvaluationTestConfig {
-    const resolvedPath = this.resolvePath(filePath);
-    const content = this.readFile(resolvedPath);
-
-    let config: unknown;
-    try {
-      if (this.isYamlFile(resolvedPath)) {
-        config = YAML.parse(content);
-      } else {
-        config = JSON.parse(content);
-      }
-    } catch (error) {
-      throw new Error(
-        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-
-    return this.validateWithSchema(
-      config,
-      evaluationTestSchema,
-      resolvedPath,
-      'Evaluation test configuration'
-    ) as EvaluationTestConfig;
+      'Test configuration'
+    ) as TestConfig;
   }
 
   /**

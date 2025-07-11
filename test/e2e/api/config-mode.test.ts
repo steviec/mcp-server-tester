@@ -4,6 +4,7 @@
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
 import { CapabilitiesTestRunner } from '../../../src/testing/capabilities/runner.js';
+import { ConfigLoader } from '../../../src/config/loader.js';
 import {
   TestServerLauncher,
   createTestServerLauncher,
@@ -30,8 +31,9 @@ describe('API Tests - Config Mode', () => {
 
   test('should connect to server via config file and discover tools', async () => {
     const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
+    const config = ConfigLoader.loadTestConfig(testConfigPath);
 
-    const runner = new CapabilitiesTestRunner(testConfigPath, {
+    const runner = new CapabilitiesTestRunner(config.tools!, {
       serverConfig: testServerConfigPath,
       serverName: 'test-server',
     });
@@ -44,121 +46,114 @@ describe('API Tests - Config Mode', () => {
   }, 15000);
 
   test('should execute echo tool correctly via config mode', async () => {
-    const testConfig = `
-discovery:
-  expect_tools: ['echo']
-  validate_schemas: true
+    const toolsConfig = {
+      expected_tool_list: ['echo'],
+      tests: [
+        {
+          name: 'Echo test via config mode',
+          calls: [
+            {
+              tool: 'echo',
+              params: {
+                message: 'Hello from config mode',
+              },
+              expect: {
+                success: true,
+                result: {
+                  contains: 'Echo: Hello from config mode',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
 
-tests:
-  - name: 'Echo test via config mode'
-    calls:
-      - tool: 'echo'
-        params:
-          message: 'Hello from config mode'
-        expect:
-          success: true
-          result:
-            contains: 'Echo: Hello from config mode'
-`;
+    const runner = new CapabilitiesTestRunner(toolsConfig, {
+      serverConfig: testServerConfigPath,
+      serverName: 'test-server',
+    });
 
-    // Write temporary test file
-    const fs = await import('fs');
-    const tempTestPath = path.resolve(process.cwd(), 'test/e2e/temp-config-test.yaml');
-    fs.writeFileSync(tempTestPath, testConfig);
+    const summary = await runner.run();
 
-    try {
-      const runner = new CapabilitiesTestRunner(tempTestPath, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
-      });
-
-      const summary = await runner.run();
-
-      expect(summary.total).toBe(1);
-      expect(summary.passed).toBe(1);
-      expect(summary.failed).toBe(0);
-      expect(summary.results[0].name).toBe('Echo test via config mode');
-      expect(summary.results[0].passed).toBe(true);
-    } finally {
-      // Clean up temp file
-      fs.unlinkSync(tempTestPath);
-    }
+    expect(summary.total).toBe(1);
+    expect(summary.passed).toBe(1);
+    expect(summary.failed).toBe(0);
+    expect(summary.results[0].name).toBe('Echo test via config mode');
+    expect(summary.results[0].passed).toBe(true);
   }, 15000);
 
   test('should execute add tool correctly via config mode', async () => {
-    const testConfig = `
-tests:
-  - name: 'Add numbers via config mode'
-    calls:
-      - tool: 'add'
-        params:
-          a: 15
-          b: 25
-        expect:
-          success: true
-          result:
-            contains: '15 + 25 = 40'
-`;
+    const toolsConfig = {
+      tests: [
+        {
+          name: 'Add numbers via config mode',
+          calls: [
+            {
+              tool: 'add',
+              params: {
+                a: 15,
+                b: 25,
+              },
+              expect: {
+                success: true,
+                result: {
+                  contains: '15 + 25 = 40',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
 
-    // Write temporary test file
-    const fs = await import('fs');
-    const tempTestPath = path.resolve(process.cwd(), 'test/e2e/temp-add-test.yaml');
-    fs.writeFileSync(tempTestPath, testConfig);
+    const runner = new CapabilitiesTestRunner(toolsConfig, {
+      serverConfig: testServerConfigPath,
+      serverName: 'test-server',
+    });
 
-    try {
-      const runner = new CapabilitiesTestRunner(tempTestPath, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
-      });
+    const summary = await runner.run();
 
-      const summary = await runner.run();
-
-      expect(summary.total).toBe(1);
-      expect(summary.passed).toBe(1);
-      expect(summary.failed).toBe(0);
-      expect(summary.results[0].name).toBe('Add numbers via config mode');
-      expect(summary.results[0].passed).toBe(true);
-    } finally {
-      // Clean up temp file
-      fs.unlinkSync(tempTestPath);
-    }
+    expect(summary.total).toBe(1);
+    expect(summary.passed).toBe(1);
+    expect(summary.failed).toBe(0);
+    expect(summary.results[0].name).toBe('Add numbers via config mode');
+    expect(summary.results[0].passed).toBe(true);
   }, 15000);
 
   test('should handle tool errors correctly via config mode', async () => {
-    const testConfig = `
-tests:
-  - name: 'Error handling via config mode'
-    calls:
-      - tool: 'echo'
-        params: {}  # Missing required 'message' parameter
-        expect:
-          success: false
-          error:
-            contains: 'Missing required parameter'
-`;
+    const toolsConfig = {
+      tests: [
+        {
+          name: 'Error handling via config mode',
+          calls: [
+            {
+              tool: 'echo',
+              params: {}, // Missing required 'message' parameter
+              expect: {
+                success: false,
+                error: {
+                  contains: 'Missing required parameter',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
 
-    // Write temporary test file
-    const fs = await import('fs');
-    const tempTestPath = path.resolve(process.cwd(), 'test/e2e/temp-error-test.yaml');
-    fs.writeFileSync(tempTestPath, testConfig);
+    const runner = new CapabilitiesTestRunner(toolsConfig, {
+      serverConfig: testServerConfigPath,
+      serverName: 'test-server',
+    });
 
-    try {
-      const runner = new CapabilitiesTestRunner(tempTestPath, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
-      });
+    const summary = await runner.run();
 
-      const summary = await runner.run();
-
-      expect(summary.total).toBe(1);
-      expect(summary.passed).toBe(1);
-      expect(summary.failed).toBe(0);
-      expect(summary.results[0].name).toBe('Error handling via config mode');
-      expect(summary.results[0].passed).toBe(true);
-    } finally {
-      // Clean up temp file
-      fs.unlinkSync(tempTestPath);
-    }
+    expect(summary.total).toBe(1);
+    expect(summary.passed).toBe(1);
+    expect(summary.failed).toBe(0);
+    expect(summary.results[0].name).toBe('Error handling via config mode');
+    expect(summary.results[0].passed).toBe(true);
   }, 15000);
 
   test('should handle multi-server config and require server name', async () => {
@@ -183,15 +178,17 @@ tests:
     const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
 
     try {
+      const config = ConfigLoader.loadTestConfig(testConfigPath);
+
       // Should fail without server name
-      const runnerWithoutName = new CapabilitiesTestRunner(testConfigPath, {
+      const runnerWithoutName = new CapabilitiesTestRunner(config.tools!, {
         serverConfig: tempConfigPath,
       });
 
       await expect(runnerWithoutName.run()).rejects.toThrow('Multiple servers found');
 
       // Should work with server name
-      const runnerWithName = new CapabilitiesTestRunner(testConfigPath, {
+      const runnerWithName = new CapabilitiesTestRunner(config.tools!, {
         serverConfig: tempConfigPath,
         serverName: 'server-1',
       });

@@ -8,13 +8,15 @@ import {
   createServerConfigFromCli,
 } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
-import type {
-  CapabilitiesTestConfig,
-  CapabilitiesTest,
-  CapabilitiesTestCall,
-  TestResult,
-  TestCallResult,
-  TestSummary,
+import {
+  type ToolsConfig,
+  type CapabilitiesTest,
+  type CapabilitiesTestCall,
+  type TestResult,
+  type TestCallResult,
+  type TestSummary,
+  isSingleToolTest,
+  isMultiStepTest,
 } from '../../core/types.js';
 
 interface ServerOptions {
@@ -27,11 +29,11 @@ interface ServerOptions {
 
 export class CapabilitiesTestRunner {
   private mcpClient: McpClient;
-  private config: CapabilitiesTestConfig;
+  private config: ToolsConfig;
   private serverOptions: ServerOptions;
 
-  constructor(configPath: string, serverOptions: ServerOptions) {
-    this.config = ConfigLoader.loadCapabilitiesConfig(configPath);
+  constructor(config: ToolsConfig, serverOptions: ServerOptions) {
+    this.config = config;
     this.serverOptions = serverOptions;
     this.mcpClient = new McpClient();
   }
@@ -65,7 +67,7 @@ export class CapabilitiesTestRunner {
       await this.mcpClient.connect(transportOptions);
 
       // Run discovery tests if configured
-      if (this.config.discovery) {
+      if (this.config.expected_tool_list) {
         await this.runDiscoveryTests();
       }
 
@@ -97,45 +99,41 @@ export class CapabilitiesTestRunner {
   }
 
   private async runDiscoveryTests(): Promise<void> {
-    if (!this.config.discovery) {
+    if (!this.config.expected_tool_list) {
       return;
     }
 
     // Running discovery tests
 
     // Test tool discovery
-    if (this.config.discovery.expect_tools) {
-      const toolsResult = await this.mcpClient.listTools();
-      const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
+    const toolsResult = await this.mcpClient.listTools();
+    const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
 
-      for (const expectedTool of this.config.discovery.expect_tools) {
-        if (!availableTools.includes(expectedTool)) {
-          throw new Error(
-            `Expected tool '${expectedTool}' not found. Available tools: ${availableTools.join(', ')}`
-          );
-        }
+    for (const expectedTool of this.config.expected_tool_list) {
+      if (!availableTools.includes(expectedTool)) {
+        throw new Error(
+          `Expected tool '${expectedTool}' not found. Available tools: ${availableTools.join(', ')}`
+        );
       }
-
-      // Discovery: Found all expected tools
     }
 
-    // Test schema validation
-    if (this.config.discovery.validate_schemas) {
-      const toolsResult = await this.mcpClient.listTools();
-      const tools = toolsResult.tools || [];
+    // Discovery: Found all expected tools
 
-      for (const tool of tools) {
-        if (!tool.name) {
-          throw new Error(`Tool missing name property`);
-        }
+    // Always validate tool schemas
+    const toolsResultForValidation = await this.mcpClient.listTools();
+    const tools = toolsResultForValidation.tools || [];
 
-        if (!tool.inputSchema) {
-          throw new Error(`Tool '${tool.name}' missing input schema`);
-        }
+    for (const tool of tools) {
+      if (!tool.name) {
+        throw new Error(`Tool missing name property`);
       }
 
-      // Discovery: All tool schemas valid
+      if (!tool.inputSchema) {
+        throw new Error(`Tool '${tool.name}' missing input schema`);
+      }
     }
+
+    // Discovery: All tool schemas valid
   }
 
   private async runTest(test: CapabilitiesTest): Promise<TestResult> {
@@ -144,13 +142,31 @@ export class CapabilitiesTestRunner {
     const errors: string[] = [];
     let passed = true;
 
-    for (const call of test.calls) {
-      const callResult = await this.runCall(call);
+    if (isSingleToolTest(test)) {
+      // Handle single tool test format
+      const callToMake: CapabilitiesTestCall = {
+        tool: test.tool,
+        params: test.params,
+        expect: test.expect,
+      };
+
+      const callResult = await this.runCall(callToMake);
       callResults.push(callResult);
 
       if (!callResult.success) {
         passed = false;
-        errors.push(`Tool call ${call.tool} failed: ${callResult.error}`);
+        errors.push(`Tool call ${test.tool} failed: ${callResult.error}`);
+      }
+    } else if (isMultiStepTest(test)) {
+      // Handle multi-step test format
+      for (const call of test.calls) {
+        const callResult = await this.runCall(call);
+        callResults.push(callResult);
+
+        if (!callResult.success) {
+          passed = false;
+          errors.push(`Tool call ${call.tool} failed: ${callResult.error}`);
+        }
       }
     }
 

@@ -13,57 +13,12 @@ describe('Schema Validation', () => {
   const fixturesDir = path.join(__dirname, '../fixtures');
   const invalidConfigsDir = path.join(fixturesDir, 'invalid-configs');
 
-  describe('Capabilities Test Configuration', () => {
-    test('should load valid capabilities config', () => {
-      const validConfig = path.join(fixturesDir, 'valid-capabilities.yaml');
-
-      expect(() => {
-        const config = ConfigLoader.loadCapabilitiesConfig(validConfig);
-        expect(config).toHaveProperty('tests');
-        expect(config.tests).toBeInstanceOf(Array);
-        expect(config.tests.length).toBeGreaterThan(0);
-        expect(config.tests[0]).toHaveProperty('name');
-        expect(config.tests[0]).toHaveProperty('calls');
-      }).not.toThrow();
-    });
-
-    test('should reject config missing tests array', () => {
-      const invalidConfig = path.join(invalidConfigsDir, 'missing-tests.yaml');
-
-      expect(() => {
-        ConfigLoader.loadCapabilitiesConfig(invalidConfig);
-      }).toThrow(/must have required property 'tests'/);
-    });
-
-    test('should reject test with invalid structure', () => {
-      const invalidConfig = path.join(invalidConfigsDir, 'invalid-test-structure.yaml');
-
-      expect(() => {
-        ConfigLoader.loadCapabilitiesConfig(invalidConfig);
-      }).toThrow(/must have required property 'calls'/);
-    });
-
-    test('should provide helpful error messages', () => {
-      const invalidConfig = path.join(invalidConfigsDir, 'missing-tests.yaml');
-
-      try {
-        ConfigLoader.loadCapabilitiesConfig(invalidConfig);
-        throw new Error('Should have thrown an error');
-      } catch (error) {
-        const errorMessage = (error as Error).message;
-        expect(errorMessage).toContain('Capabilities test configuration validation failed');
-        expect(errorMessage).toContain('missing-tests.yaml');
-        expect(errorMessage).toContain('Please check your configuration format');
-      }
-    });
-  });
-
-  describe('Unified Test Configuration', () => {
-    test('should load valid unified config', () => {
+  describe('Test Configuration', () => {
+    test('should load valid test config with tools section', () => {
       const validConfig = path.join(fixturesDir, 'valid-integration.yaml');
 
       expect(() => {
-        const config = ConfigLoader.loadUnifiedConfig(validConfig);
+        const config = ConfigLoader.loadTestConfig(validConfig);
         expect(config).toHaveProperty('tools');
         expect(config.tools).toHaveProperty('tests');
         expect(config.tools?.tests).toBeInstanceOf(Array);
@@ -73,11 +28,11 @@ describe('Schema Validation', () => {
       }).not.toThrow();
     });
 
-    test('should load valid unified config with evaluations', () => {
+    test('should load valid test config with evaluations section', () => {
       const validConfig = path.join(fixturesDir, 'valid-evaluation.yaml');
 
       expect(() => {
-        const config = ConfigLoader.loadUnifiedConfig(validConfig);
+        const config = ConfigLoader.loadTestConfig(validConfig);
         expect(config).toHaveProperty('evaluations');
         expect(config.evaluations).toHaveProperty('tests');
         expect(config.evaluations?.tests).toBeInstanceOf(Array);
@@ -86,43 +41,29 @@ describe('Schema Validation', () => {
         expect(config.evaluations?.tests[0]).toHaveProperty('prompt');
       }).not.toThrow();
     });
-  });
-
-  describe('Evaluation Test Configuration', () => {
-    test('should load valid evaluation config', () => {
-      const validConfig = path.join(fixturesDir, 'valid-evals.yaml');
-
-      expect(() => {
-        const config = ConfigLoader.loadEvaluationConfig(validConfig);
-        expect(config).toHaveProperty('options');
-        expect(config).toHaveProperty('tests');
-        expect(config.options).toHaveProperty('models');
-        expect(config.options.models).toBeInstanceOf(Array);
-        expect(config.tests).toBeInstanceOf(Array);
-        expect(config.tests.length).toBeGreaterThan(0);
-        expect(config.tests[0]).toHaveProperty('name');
-        expect(config.tests[0]).toHaveProperty('prompt');
-      }).not.toThrow();
-    });
 
     test('should validate test structure', () => {
-      const config = ConfigLoader.loadEvaluationConfig(path.join(fixturesDir, 'valid-evals.yaml'));
+      const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
 
       // Check that expected_tool_calls doesn't have prohibited field
-      const testWithToolCalls = config.tests.find(t => t.expected_tool_calls);
-      if (testWithToolCalls?.expected_tool_calls) {
-        expect(testWithToolCalls.expected_tool_calls).not.toHaveProperty('prohibited');
-        expect(testWithToolCalls.expected_tool_calls).toHaveProperty('allowed');
+      if (config.evaluations?.tests) {
+        const testWithToolCalls = config.evaluations.tests.find(t => t.expected_tool_calls);
+        if (testWithToolCalls?.expected_tool_calls) {
+          expect(testWithToolCalls.expected_tool_calls).not.toHaveProperty('prohibited');
+          expect(testWithToolCalls.expected_tool_calls).toHaveProperty('allowed');
+        }
       }
     });
 
     test('should validate response scorer types', () => {
-      const config = ConfigLoader.loadEvaluationConfig(path.join(fixturesDir, 'valid-evals.yaml'));
+      const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
 
-      const testWithScorers = config.tests.find(t => t.response_scorers);
-      if (testWithScorers?.response_scorers) {
-        for (const scorer of testWithScorers.response_scorers) {
-          expect(['regex', 'json-schema', 'llm-judge']).toContain(scorer.type);
+      if (config.evaluations?.tests) {
+        const testWithScorers = config.evaluations.tests.find(t => t.response_scorers);
+        if (testWithScorers?.response_scorers) {
+          for (const scorer of testWithScorers.response_scorers) {
+            expect(['regex', 'json-schema', 'llm-judge']).toContain(scorer.type);
+          }
         }
       }
     });
@@ -181,7 +122,7 @@ describe('Schema Validation', () => {
   describe('File Handling', () => {
     test('should handle non-existent files gracefully', () => {
       expect(() => {
-        ConfigLoader.loadCapabilitiesConfig('non-existent.yaml');
+        ConfigLoader.loadTestConfig('non-existent.yaml');
       }).toThrow(/Configuration file not found/);
     });
 
@@ -197,7 +138,7 @@ describe('Schema Validation', () => {
     test('should handle both YAML and JSON extensions', () => {
       // Test that .yaml files work
       expect(() => {
-        ConfigLoader.loadCapabilitiesConfig(path.join(fixturesDir, 'valid-capabilities.yaml'));
+        ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-integration.yaml'));
       }).not.toThrow();
 
       // Test that .json files work for server config
@@ -212,48 +153,36 @@ describe('Schema Validation', () => {
 
   describe('Schema Features', () => {
     test('should validate required fields are present', () => {
-      const config = ConfigLoader.loadCapabilitiesConfig(
-        path.join(fixturesDir, 'valid-capabilities.yaml')
-      );
+      const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-integration.yaml'));
 
       // Every test should have required fields
-      for (const test of config.tests) {
-        expect(test).toHaveProperty('name');
-        expect(test).toHaveProperty('calls');
-        expect(test.name).toBeTruthy();
-        expect(test.calls.length).toBeGreaterThan(0);
+      if (config.tools?.tests) {
+        for (const test of config.tools.tests) {
+          expect(test).toHaveProperty('name');
+          expect(test).toHaveProperty('calls');
+          expect(test.name).toBeTruthy();
+          expect(test.calls.length).toBeGreaterThan(0);
 
-        for (const call of test.calls) {
-          expect(call).toHaveProperty('tool');
-          expect(call).toHaveProperty('params');
-          expect(call).toHaveProperty('expect');
-          expect(call.expect).toHaveProperty('success');
+          for (const call of test.calls) {
+            expect(call).toHaveProperty('tool');
+            expect(call).toHaveProperty('params');
+            expect(call).toHaveProperty('expect');
+            expect(call.expect).toHaveProperty('success');
+          }
         }
       }
     });
 
-    test('should not require description field', () => {
-      const config = ConfigLoader.loadCapabilitiesConfig(
-        path.join(fixturesDir, 'valid-capabilities.yaml')
-      );
-
-      // Description should not be required (we removed it)
-      for (const test of config.tests) {
-        expect(test).not.toHaveProperty('description');
-      }
-    });
-
     test('should validate evaluation config structure', () => {
-      const config = ConfigLoader.loadEvaluationConfig(path.join(fixturesDir, 'valid-evals.yaml'));
+      const config = ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
 
-      expect(config.options.models).toBeInstanceOf(Array);
-      expect(config.options.models.length).toBeGreaterThan(0);
-
-      for (const test of config.tests) {
-        expect(typeof test.name).toBe('string');
-        expect(typeof test.prompt).toBe('string');
-        expect(test.name.length).toBeGreaterThan(0);
-        expect(test.prompt.length).toBeGreaterThan(0);
+      if (config.evaluations?.tests) {
+        for (const test of config.evaluations.tests) {
+          expect(typeof test.name).toBe('string');
+          expect(typeof test.prompt).toBe('string');
+          expect(test.name.length).toBeGreaterThan(0);
+          expect(test.prompt.length).toBeGreaterThan(0);
+        }
       }
     });
   });

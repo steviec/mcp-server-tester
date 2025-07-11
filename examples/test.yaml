@@ -3,29 +3,29 @@
 
 # Tool capability tests
 tools:
-  expect_tools: ['echo', 'add']
+  expected_tool_list: ['echo', 'add']
   tests:
+    # Single tool test format (simplified for simple cases)
     - name: 'Echoes a simple message'
-      calls:
-        - tool: 'echo'
-          params:
-            message: 'Hello World'
-          expect:
-            success: true
-            result:
-              contains: 'Echo: Hello World'
+      tool: 'echo'
+      params:
+        message: 'Hello World'
+      expect:
+        success: true
+        result:
+          contains: 'Echo: Hello World'
 
     - name: 'Adds two numbers correctly'
-      calls:
-        - tool: 'add'
-          params:
-            a: 5
-            b: 3
-          expect:
-            success: true
-            result:
-              contains: '5 + 3 = 8'
+      tool: 'add'
+      params:
+        a: 5
+        b: 3
+      expect:
+        success: true
+        result:
+          contains: '5 + 3 = 8'
 
+    # Multi-step test format (for complex workflows)
     - name: 'Handles multiple tool calls in sequence'
       calls:
         - tool: 'echo'
@@ -45,8 +45,8 @@ tools:
             result:
               contains: '10 + 20 = 30'
 
-# LLM evaluation tests
-evaluations:
+# LLM eval tests
+evals:
   models: ['claude-3-haiku-20240307']
   timeout: 30000
   max_steps: 3
