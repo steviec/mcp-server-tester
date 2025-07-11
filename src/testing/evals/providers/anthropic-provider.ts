@@ -110,7 +110,8 @@ Conversation:
 ${conversationContext}
 
 Please provide a score from 0.0 to 1.0 (where 1.0 is perfect) and explain your reasoning.
-Respond in the following JSON format:
+IMPORTANT: When providing your rationale, ensure all quotes are properly escaped for JSON.
+Respond in the following JSON format only, with no additional text:
 {
   "score": 0.8,
   "rationale": "The assistant successfully..."
@@ -127,18 +128,33 @@ Respond in the following JSON format:
         abortSignal: AbortSignal.timeout(30000), // 30 second timeout for judge
       });
 
-      // Parse the JSON response
+      // Parse the JSON response with better error handling
       try {
-        const response = JSON.parse(result.text);
+        // Clean the response text to handle potential extra text around JSON
+        const cleanedText = result.text.trim();
+        const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+        const jsonText = jsonMatch ? jsonMatch[0] : cleanedText;
+
+        const response = JSON.parse(jsonText);
+
+        // Validate response structure
+        if (typeof response.score !== 'number' || typeof response.rationale !== 'string') {
+          throw new Error('Invalid response structure');
+        }
+
+        // Ensure score is within valid range
+        const normalizedScore = Math.max(0, Math.min(1, response.score));
+
         return {
-          score: response.score,
+          score: normalizedScore,
           rationale: response.rationale,
         };
-      } catch {
-        // Fallback if JSON parsing fails
+      } catch (parseError) {
+        // Enhanced fallback with more detailed error information
+        const errorDetails = parseError instanceof Error ? parseError.message : String(parseError);
         return {
           score: 0.0,
-          rationale: `Failed to parse judge response: ${result.text}`,
+          rationale: `Failed to parse judge response: ${errorDetails}. Raw response: ${result.text.substring(0, 200)}...`,
         };
       }
     } catch (error) {
