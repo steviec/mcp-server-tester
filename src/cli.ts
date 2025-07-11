@@ -6,6 +6,13 @@
 
 import { Command } from 'commander';
 import { TestRunner } from './testing/runner.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
 
 interface CliOptions {
   serverConfig?: string;
@@ -77,7 +84,7 @@ async function main(): Promise<void> {
   program
     .name('mcp-server-tester')
     .description('Standalone CLI tool for testing MCP servers')
-    .version('1.0.0');
+    .version(packageJson.version);
 
   // Unified test command
   program
