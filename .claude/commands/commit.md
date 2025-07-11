@@ -24,7 +24,7 @@ Handle the complete commit workflow:
    - Add body only if needed to explain WHY or list distinct subsections
    - Use bullet points for multiple logical components or subsections
    - NEVER mention specific files, methods, classes, or implementation details
-   - Focus on user/business impact, not technical implementation
+   - Focus on functional changes and purpose, not technical implementation
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
