@@ -10,6 +10,8 @@ import {
 import { ConfigLoader } from '../../config/loader.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
 import type { EvalsConfig, EvalTest, EvalResult } from '../../core/types.js';
+import type { DisplayManager } from '../display/DisplayManager.js';
+import type { CoreMessage, ToolCall } from 'ai';
 
 export interface EvalSummary {
   total: number;
@@ -34,9 +36,13 @@ export class EvalTestRunner {
   private serverOptions: EvalServerOptions;
   private models: string[];
   private llmProvider: AnthropicProvider;
-  private displayManager?: any; // Will be injected from outside
+  private displayManager?: DisplayManager;
 
-  constructor(config: EvalsConfig, serverOptions: EvalServerOptions, displayManager?: any) {
+  constructor(
+    config: EvalsConfig,
+    serverOptions: EvalServerOptions,
+    displayManager?: DisplayManager
+  ) {
     this.config = config;
     this.serverOptions = serverOptions;
     this.displayManager = displayManager;
@@ -213,7 +219,7 @@ export class EvalTestRunner {
   }
 
   private validateToolCalls(
-    actualToolCalls: any[],
+    actualToolCalls: ToolCall<string, Record<string, unknown>>[],
     expectedToolCalls: NonNullable<EvalTest['expected_tool_calls']>
   ): string[] {
     const errors: string[] = [];
@@ -249,7 +255,7 @@ export class EvalTestRunner {
   }
 
   private async runResponseScorers(
-    messages: any[],
+    messages: CoreMessage[],
     scorers: NonNullable<EvalTest['response_scorers']>
   ): Promise<string[]> {
     const errors: string[] = [];
@@ -272,11 +278,6 @@ export class EvalTestRunner {
               `LLM judge failed: score ${result.score} < threshold ${scorer.threshold || 0.7}. Rationale: ${result.rationale}`
             );
           }
-        } else if (scorer.type === 'json-schema') {
-          const success = await this.runJsonSchemaScorer(messages, scorer.schema!);
-          if (!success) {
-            errors.push(`JSON schema scorer failed: response does not match schema`);
-          }
         }
       } catch (error) {
         errors.push(
@@ -288,7 +289,7 @@ export class EvalTestRunner {
     return errors;
   }
 
-  private async runRegexScorer(messages: any[], pattern: string): Promise<boolean> {
+  private async runRegexScorer(messages: CoreMessage[], pattern: string): Promise<boolean> {
     const regex = new RegExp(pattern, 'i');
 
     for (const message of messages) {
@@ -298,45 +299,6 @@ export class EvalTestRunner {
 
         if (regex.test(content)) {
           return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  private async runJsonSchemaScorer(messages: any[], schema: any): Promise<boolean> {
-    // Basic JSON schema validation - would need full implementation with ajv
-    for (const message of messages) {
-      if (message.role === 'assistant') {
-        const content =
-          typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
-
-        // Try to parse as JSON and do basic validation
-        try {
-          const jsonData = JSON.parse(content);
-
-          // Very basic schema validation - in practice would use ajv
-          if (schema.type === 'string' && typeof jsonData === 'string') {
-            if (schema.minLength && jsonData.length < schema.minLength) {
-              continue;
-            }
-            if (schema.pattern && !new RegExp(schema.pattern).test(jsonData)) {
-              continue;
-            }
-            return true;
-          }
-
-          if (schema.type === 'object' && typeof jsonData === 'object') {
-            return true; // Basic object validation
-          }
-        } catch {
-          // If schema expects a string but content is not JSON, check if it matches
-          if (schema.type === 'string') {
-            if (schema.pattern && new RegExp(schema.pattern).test(content)) {
-              return true;
-            }
-          }
         }
       }
     }

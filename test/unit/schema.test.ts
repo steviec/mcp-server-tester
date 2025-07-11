@@ -62,7 +62,7 @@ describe('Schema Validation', () => {
         const testWithScorers = config.evals.tests.find(t => t.response_scorers);
         if (testWithScorers?.response_scorers) {
           for (const scorer of testWithScorers.response_scorers) {
-            expect(['regex', 'json-schema', 'llm-judge']).toContain(scorer.type);
+            expect(['regex', 'llm-judge']).toContain(scorer.type);
           }
         }
       }

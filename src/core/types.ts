@@ -3,6 +3,8 @@
  * Focus on capabilities testing initially
  */
 
+import type { CoreMessage } from 'ai';
+
 // Server configuration (standard MCP format)
 export interface ServerConfig {
   command: string;
@@ -136,11 +138,17 @@ export interface EvalTest {
 }
 
 export interface ResponseScorer {
-  type: 'regex' | 'json-schema' | 'llm-judge';
+  type: 'regex' | 'llm-judge';
   pattern?: string;
-  schema?: any;
   criteria?: string;
   threshold?: number;
+}
+
+export interface ScorerResult {
+  type: 'regex' | 'llm-judge';
+  passed: boolean;
+  score?: number;
+  details?: string;
 }
 
 export interface EvalResult {
@@ -148,8 +156,8 @@ export interface EvalResult {
   model: string;
   passed: boolean;
   errors: string[];
-  scorer_results: any[];
-  messages?: any[];
+  scorer_results: ScorerResult[];
+  messages?: CoreMessage[];
 }
 
 // Main test configuration

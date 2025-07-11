@@ -226,15 +226,12 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["regex", "json-schema", "llm-judge"],
+          "enum": ["regex", "llm-judge"],
           "description": "Type of scorer to use"
         },
         "pattern": {
           "type": "string",
           "description": "Regex pattern to match (required for regex type)"
-        },
-        "schema": {
-          "description": "JSON schema to validate against (required for json-schema type)"
         },
         "criteria": {
           "type": "string",
@@ -255,14 +252,6 @@
           },
           "then": {
             "required": ["pattern"]
-          }
-        },
-        {
-          "if": {
-            "properties": { "type": { "const": "json-schema" } }
-          },
-          "then": {
-            "required": ["schema"]
           }
         },
         {
