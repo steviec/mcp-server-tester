@@ -1,6 +1,6 @@
 {
   "name": "mcp-server-tester",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Standalone CLI tool for testing Model Context Protocol (MCP) servers",
   "main": "dist/cli.js",
   "bin": {
