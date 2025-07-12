@@ -10,6 +10,7 @@ export interface LlmConversationConfig {
   model: string;
   maxSteps: number;
   timeout: number;
+  allowedTools?: string[]; // Tools that are allowed to be called
 }
 
 export interface LlmConversationResult {

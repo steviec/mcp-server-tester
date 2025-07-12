@@ -38,6 +38,7 @@ Handle the complete commit workflow:
    - Analyze staged changes: !`git diff --cached`
 
 2. **Generate commit message** using standards above:
+   - NO agent signatures or Claude branding
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
@@ -46,7 +47,7 @@ Handle the complete commit workflow:
      - TypeScript/test errors: show errors, ask user to fix manually
    - **NEVER use --no-verify** - always respect hooks
 
-4. **Create clean commit** with generated message (no Claude branding)
+4. **Create clean commit** with generated message
    - Use `git commit --no-gpg-sign` to bypass GPG signing requirements
 
 5. **Verify success**: !`git log -1 --oneline`

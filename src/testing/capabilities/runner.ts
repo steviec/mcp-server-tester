@@ -3,7 +3,6 @@
  */
 
 import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
-import { ConfigLoader } from '../../config/loader.js';
 import {
   type ToolsConfig,
   type CapabilitiesTest,
@@ -11,13 +10,13 @@ import {
   type TestResult,
   type TestCallResult,
   type TestSummary,
+  type ServerConfig,
   isSingleToolTest,
   isMultiStepTest,
 } from '../../core/types.js';
 
 interface ServerOptions {
-  serverConfig: string;
-  serverName?: string;
+  serverConfig: ServerConfig;
   timeout?: number;
   quiet?: boolean;
   verbose?: boolean;
@@ -38,12 +37,7 @@ export class CapabilitiesTestRunner {
     const startTime = Date.now();
 
     try {
-      // Load server configuration from config file
-      const serverConfig = ConfigLoader.loadServerConfig(
-        this.serverOptions.serverConfig,
-        this.serverOptions.serverName
-      );
-      const transportOptions = createTransportOptions(serverConfig);
+      const transportOptions = createTransportOptions(this.serverOptions.serverConfig);
 
       await this.mcpClient.connect(transportOptions);
 
