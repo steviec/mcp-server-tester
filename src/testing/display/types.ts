@@ -62,4 +62,5 @@ export interface DisplayOptions {
   formatter?: string;
   quiet?: boolean;
   verbose?: boolean;
+  junitXml?: string;
 }
