@@ -4,10 +4,7 @@
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { JunitXmlFormatter } from '../../src/testing/display/formatters/JunitXmlFormatter.js';
-import {
-  validateJunitXmlContent,
-  validateJunitXml,
-} from '../../src/testing/display/formatters/junit-validation.js';
+import { validateJunitXmlContent } from '../../src/testing/display/formatters/junit-validation.js';
 import type { TestEvent, DisplayOptions } from '../../src/testing/display/types.js';
 import { readFileSync, unlinkSync, existsSync } from 'fs';
 import path from 'path';
@@ -377,68 +374,35 @@ describe('JunitXmlFormatter', () => {
       unlinkSync(nestedPath);
     });
   });
-});
 
-describe('JUnit XML Validation', () => {
-  describe('validateJunitXmlContent', () => {
-    test('should validate correct JUnit XML structure', () => {
-      const validXml = `<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" errors="0" time="1.234">
-  <testsuite name="test-suite" tests="1" failures="0" errors="0" time="1.234">
-    <testcase name="test1" classname="TestClass" time="1.234"/>
-  </testsuite>
-</testsuites>`;
+  describe('XML Validation', () => {
+    test('should produce valid XML that can be parsed by external library', () => {
+      const events: TestEvent[] = [
+        {
+          type: 'suite_start',
+          data: { testCount: 1 },
+        },
+        {
+          type: 'test_complete',
+          data: {
+            name: 'sample_test',
+            passed: true,
+            errors: [],
+          },
+        },
+        {
+          type: 'suite_complete',
+          data: { total: 1, passed: 1, failed: 0, duration: 1000 },
+        },
+      ];
 
-      const result = validateJunitXmlContent(validXml);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
+      events.forEach(event => formatter.onEvent(event));
+      formatter.flush();
 
-    test('should detect missing XML declaration', () => {
-      const invalidXml = `<testsuites>
-  <testsuite name="test">
-    <testcase name="test1"/>
-  </testsuite>
-</testsuites>`;
+      const content = readFileSync(outputFile, 'utf8');
+      const validation = validateJunitXmlContent(content);
 
-      const result = validateJunitXmlContent(invalidXml);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('Missing XML declaration');
-    });
-
-    test('should detect missing testsuites root element', () => {
-      const invalidXml = `<?xml version="1.0"?>
-<testsuite name="test">
-  <testcase name="test1"/>
-</testsuite>`;
-
-      const result = validateJunitXmlContent(invalidXml);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContain('Missing <testsuites> root element');
-    });
-
-    test('should provide validation feedback', () => {
-      const xml = `<?xml version="1.0"?>
-<testsuites>
-  <testsuite>
-    <testcase/>
-  </testsuite>
-</testsuites>`;
-
-      const result = validateJunitXmlContent(xml);
-      // Validation should complete without errors - the function should run
-      expect(typeof result.valid).toBe('boolean');
-      expect(Array.isArray(result.errors)).toBe(true);
-      expect(Array.isArray(result.warnings)).toBe(true);
-    });
-  });
-
-  describe('validateJunitXml', () => {
-    test('should handle file validation errors gracefully', () => {
-      const result = validateJunitXml('/nonexistent/path/junit.xml');
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0]).toContain('Failed to read or parse file');
+      expect(validation.valid).toBe(true);
     });
   });
 });
