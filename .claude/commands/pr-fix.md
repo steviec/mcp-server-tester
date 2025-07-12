@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(gh*,git*,npm*), WebFetch, Grep, Glob, Read, Edit, MultiEdit
+allowed-tools: Bash(gh*,git*,npm*,.claude/commands/get-pr-feedback.sh), WebFetch, Grep, Glob, Read, Edit, MultiEdit
 description: Review PR comments and implement only the requested fixes
 ---
 
@@ -16,15 +16,14 @@ First, you will be given a PR ID for the current repository:
 To complete this task, follow these steps:
 
 1. **Extract PR information**:
-   - Use GitHub CLI to fetch PR details and review comments
-   - Identify all actionable review feedback
+   - Use the get-pr-feedback.sh script to fetch comprehensive PR feedback
+   - This script provides unresolved review comments grouped with their review summaries
 
 2. **Analyze review comments**:
-   - Focus only on comments that request specific code changes
-   - Ignore general discussion or approved comments
-   - Categorize feedback by file and line number where applicable
-   - Distinguish between suggestions, required fixes, and questions
-   - **Track comment IDs**: Note the `id` field from comments that will be addressed
+   - The script automatically filters for unresolved comments only
+   - Review summaries are grouped with their specific unresolved comments
+   - Focus on actionable feedback that requests specific code changes
+   - **Track comment IDs**: Note the `Comment ID` field from comments that will be addressed
 
 3. **Plan implementation**:
    - Create a focused plan addressing only the requested changes
@@ -43,20 +42,16 @@ To complete this task, follow these steps:
    - Include reference to the original PR in commit message
 
 6. **Resolve addressed comments**:
-   - Use `.claude/commands/resolve-pr-comments.sh` script with comment IDs that were implemented
+   - Use resolve-pr-comments.sh script (see below) with comment IDs that were implemented
    - Pass only the specific comment IDs where changes were actually made
-   - Example: `.claude/commands/resolve-pr-comments.sh $PR_NUM 1234567890 1234567891`
 
 ## GitHub CLI Commands
 
 **Fetch PR information:**
 
 ```bash
-# Use the provided PR ID for the current repository
-PR_NUM="$ARGUMENTS"
-
-# Get all line-by-line review comments (critical for detailed feedback)
-gh api repos/:owner/:repo/pulls/$PR_NUM/comments
+# Get comprehensive PR feedback with unresolved comments grouped by review
+.claude/commands/get-pr-feedback.sh {{PR_NUM}}
 ```
 
 **Check current repository context:**
@@ -66,14 +61,14 @@ gh api repos/:owner/:repo/pulls/$PR_NUM/comments
 git fetch origin
 
 # Checkout the PR branch
-gh pr checkout $PR_NUM
+gh pr checkout {{PR_NUM}}
 ```
 
 **Resolve addressed review comments:**
 
 ```bash
 # Use the resolve-pr-comments.sh script with specific comment IDs that were addressed
-# Example: .claude/commands/resolve-pr-comments.sh $PR_NUM 1234567890 1234567891
+.claude/commands/resolve-pr-comments.sh {{PR_NUM}} {{COMMENT_1}} {{COMMMENT_2}}
 #
 # During implementation, track which comment IDs were actually addressed and pass them to the script
 # Only resolve comments where the requested change was implemented
