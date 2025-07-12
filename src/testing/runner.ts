@@ -15,6 +15,7 @@ interface ServerOptions {
   timeout?: number;
   quiet?: boolean;
   verbose?: boolean;
+  junitXml?: string;
 }
 
 export class TestRunner {
@@ -31,6 +32,7 @@ export class TestRunner {
       formatter: 'console',
       quiet: serverOptions.quiet,
       verbose: serverOptions.verbose,
+      junitXml: serverOptions.junitXml,
     };
     this.displayManager = new DisplayManager(displayOptions);
   }
