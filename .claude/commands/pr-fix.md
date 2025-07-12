@@ -24,6 +24,7 @@ To complete this task, follow these steps:
    - Ignore general discussion or approved comments
    - Categorize feedback by file and line number where applicable
    - Distinguish between suggestions, required fixes, and questions
+   - **Track comment IDs**: Note the `id` field from comments that will be addressed
 
 3. **Plan implementation**:
    - Create a focused plan addressing only the requested changes
@@ -40,6 +41,11 @@ To complete this task, follow these steps:
    - Review that all requested changes have been addressed
    - Use commit standards from @.claude/commands/commit.md
    - Include reference to the original PR in commit message
+
+6. **Resolve addressed comments**:
+   - Use `.claude/commands/resolve-pr-comments.sh` script with comment IDs that were implemented
+   - Pass only the specific comment IDs where changes were actually made
+   - Example: `.claude/commands/resolve-pr-comments.sh $PR_NUM 1234567890 1234567891`
 
 ## GitHub CLI Commands
 
@@ -63,6 +69,16 @@ git fetch origin
 gh pr checkout $PR_NUM
 ```
 
+**Resolve addressed review comments:**
+
+```bash
+# Use the resolve-pr-comments.sh script with specific comment IDs that were addressed
+# Example: .claude/commands/resolve-pr-comments.sh $PR_NUM 1234567890 1234567891
+#
+# During implementation, track which comment IDs were actually addressed and pass them to the script
+# Only resolve comments where the requested change was implemented
+```
+
 ## Implementation Guidelines
 
 - **Scope limitation**: Address only explicitly requested changes in review comments
@@ -70,6 +86,7 @@ gh pr checkout $PR_NUM
 - **Minimal changes**: Make the smallest possible changes to satisfy reviewer requests
 - **Testing**: Run existing tests if available, don't add new tests unless specifically requested
 - **Documentation**: Update only if reviewers specifically request documentation changes
+- **Comment resolution**: Resolve review threads only for changes that were actually implemented
 
 ## Output Format
 
