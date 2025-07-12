@@ -4,12 +4,12 @@ pre-commit:
     format:
       run: npm run format
       stage_fixed: true
-      fail_text: 'Formatting fixes applied and staged'
+      fail_text: 'Format fixes applied and staged. RETRY THE SAME COMMIT COMMAND.'
 
     lint:
       run: npm run lint:fix
       stage_fixed: true
-      fail_text: 'Linting fixes applied and staged'
+      fail_text: 'Lint fixes applied and staged. RETRY THE SAME COMMIT COMMAND.'
 
     typecheck:
       run: npm run typecheck
