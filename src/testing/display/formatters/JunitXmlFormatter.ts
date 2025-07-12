@@ -1,11 +1,13 @@
 /**
  * JUnit XML formatter for standardized test output
  * Generates JUnit XML format compatible with CI/CD systems
+ * Uses fast-xml-parser XMLBuilder for robust XML generation
  */
 
 import type { TestEvent, TestFormatter, DisplayOptions } from '../types.js';
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
+import { XMLBuilder } from 'fast-xml-parser';
 import { validateJunitXmlContent } from './junit-validation.js';
 
 interface TestCase {
@@ -44,10 +46,18 @@ export class JunitXmlFormatter implements TestFormatter {
   private currentSuite: TestSuite | null = null;
   private startTime: number = 0;
   private testStartTimes: Map<string, number> = new Map();
+  private xmlBuilder: XMLBuilder;
 
   constructor(options: DisplayOptions = {}, outputFile: string = 'junit.xml') {
     this.options = options;
     this.outputFile = outputFile;
+    this.xmlBuilder = new XMLBuilder({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+      format: true,
+      indentBy: '  ',
+      suppressEmptyNode: true,
+    });
   }
 
   onEvent(event: TestEvent): void {
@@ -250,7 +260,7 @@ export class JunitXmlFormatter implements TestFormatter {
     // Finalize any remaining suite
     this.finalizeCurrentSuite();
 
-    // Generate JUnit XML
+    // Generate JUnit XML using XMLBuilder
     const xml = this.generateXml();
 
     // Ensure output directory exists
@@ -281,84 +291,80 @@ export class JunitXmlFormatter implements TestFormatter {
     const totalErrors = this.suites.reduce((sum, suite) => sum + suite.errors, 0);
     const totalTime = this.suites.reduce((sum, suite) => sum + suite.time, 0);
 
-    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-    xml += `<testsuites tests="${totalTests}" failures="${totalFailures}" errors="${totalErrors}" time="${totalTime.toFixed(3)}">\n`;
+    // Build the XML structure using XMLBuilder
+    const xmlData = {
+      '?xml': {
+        '@_version': '1.0',
+        '@_encoding': 'UTF-8',
+      },
+      testsuites: {
+        '@_tests': totalTests,
+        '@_failures': totalFailures,
+        '@_errors': totalErrors,
+        '@_time': totalTime.toFixed(3),
+        testsuite: this.suites.map(suite => this.buildTestSuiteData(suite)),
+      },
+    };
 
-    for (const suite of this.suites) {
-      xml += this.generateTestSuiteXml(suite);
-    }
-
-    xml += '</testsuites>\n';
-    return xml;
+    return this.xmlBuilder.build(xmlData);
   }
 
-  private generateTestSuiteXml(suite: TestSuite): string {
-    let xml = `  <testsuite name="${this.escapeXml(suite.name)}" `;
-    xml += `tests="${suite.tests}" `;
-    xml += `failures="${suite.failures}" `;
-    xml += `errors="${suite.errors}" `;
-    xml += `skipped="${suite.skipped}" `;
-    xml += `time="${suite.time.toFixed(3)}" `;
-    xml += `timestamp="${suite.timestamp}">\n`;
+  private buildTestSuiteData(suite: TestSuite) {
+    const testsuiteData: any = {
+      '@_name': suite.name,
+      '@_tests': suite.tests,
+      '@_failures': suite.failures,
+      '@_errors': suite.errors,
+      '@_skipped': suite.skipped,
+      '@_time': suite.time.toFixed(3),
+      '@_timestamp': suite.timestamp,
+    };
 
     // Add properties if they exist
     if (suite.properties && Object.keys(suite.properties).length > 0) {
-      xml += '    <properties>\n';
-      for (const [key, value] of Object.entries(suite.properties)) {
-        xml += `      <property name="${this.escapeXml(key)}" value="${this.escapeXml(value)}"/>\n`;
-      }
-      xml += '    </properties>\n';
+      testsuiteData.properties = {
+        property: Object.entries(suite.properties).map(([key, value]) => ({
+          '@_name': key,
+          '@_value': value,
+        })),
+      };
     }
 
     // Add test cases
-    for (const testcase of suite.testcases) {
-      xml += this.generateTestCaseXml(testcase);
+    if (suite.testcases.length > 0) {
+      testsuiteData.testcase = suite.testcases.map(testcase => this.buildTestCaseData(testcase));
     }
 
-    xml += '  </testsuite>\n';
-    return xml;
+    return testsuiteData;
   }
 
-  private generateTestCaseXml(testcase: TestCase): string {
-    let xml = `    <testcase name="${this.escapeXml(testcase.name)}" `;
-    xml += `classname="${this.escapeXml(testcase.classname)}" `;
-    xml += `time="${testcase.time.toFixed(3)}"`;
+  private buildTestCaseData(testcase: TestCase) {
+    const testcaseData: any = {
+      '@_name': testcase.name,
+      '@_classname': testcase.classname,
+      '@_time': testcase.time.toFixed(3),
+    };
 
-    if (testcase.failure || testcase.error || testcase.skipped) {
-      xml += '>\n';
-
-      if (testcase.failure) {
-        xml += `      <failure message="${this.escapeXml(testcase.failure.message)}" `;
-        xml += `type="${this.escapeXml(testcase.failure.type)}">\n`;
-        xml += this.escapeXml(testcase.failure.content);
-        xml += '\n      </failure>\n';
-      }
-
-      if (testcase.error) {
-        xml += `      <error message="${this.escapeXml(testcase.error.message)}" `;
-        xml += `type="${this.escapeXml(testcase.error.type)}">\n`;
-        xml += this.escapeXml(testcase.error.content);
-        xml += '\n      </error>\n';
-      }
-
-      if (testcase.skipped) {
-        xml += '      <skipped/>\n';
-      }
-
-      xml += '    </testcase>\n';
-    } else {
-      xml += '/>\n';
+    if (testcase.failure) {
+      testcaseData.failure = {
+        '@_message': testcase.failure.message,
+        '@_type': testcase.failure.type,
+        '#text': testcase.failure.content,
+      };
     }
 
-    return xml;
-  }
+    if (testcase.error) {
+      testcaseData.error = {
+        '@_message': testcase.error.message,
+        '@_type': testcase.error.type,
+        '#text': testcase.error.content,
+      };
+    }
 
-  private escapeXml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
+    if (testcase.skipped) {
+      testcaseData.skipped = {};
+    }
+
+    return testcaseData;
   }
 }
