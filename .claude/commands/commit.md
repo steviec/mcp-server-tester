@@ -41,11 +41,9 @@ Handle the complete commit workflow:
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
-   - If hooks fail, auto-fix when possible:
-     - Format issues: `npm run format` → re-stage → retry
-     - Lint issues: `npm run lint:fix` → re-stage → retry
+   - **If hooks show "fixes applied and staged"**: Commit was aborted (not failed) - RETRY THE SAME COMMIT COMMAND
+   - **If hooks show actual errors**:
      - TypeScript/test errors: show errors, ask user to fix manually
-   - **If hooks show "fixes applied and staged"**: Commit was aborted (not failed) - retry same commit command
    - **NEVER use --no-verify** - always respect hooks
 
 4. **Create clean commit** with generated message (no Claude branding)
