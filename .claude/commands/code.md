@@ -37,48 +37,26 @@ To complete this task, follow these steps:
 
 To use the GitHub CLI for these operations, follow these guidelines:
 
-a. Repository setup and branch creation:
-<gh_cli># Check if already in the target repository
-if git remote get-url origin 2>/dev/null | grep -q "[repository-name]"; then
-echo "Already in target repository"
-git fetch origin
-else
-
-# Clone repository if not already present
-
-gh repo clone [repository-name]
-cd [repository-name]
+a. Working directory verification:
+<gh_cli># Verify working directory is clean before proceeding
+if [ -n "$(git status --porcelain)" ]; then
+echo "Error: Working directory is not clean. Please commit or stash changes before proceeding."
+exit 1
 fi
 
-# Create and checkout new branch with issue reference
-
-gh branch create issue-$ARGUMENTS-[short-description]
-git checkout issue-$ARGUMENTS-[short-description]</gh_cli>
+echo "Working directory is clean, proceeding with implementation..."</gh_cli>
 
 b. Commit changes with issue reference:
 <gh_cli>git add .
-git commit -m "<type>: <description>
 
-<optional body>
+# Follow commit standards defined in @.claude/commands/commit.md
 
-Fixes #$ARGUMENTS"
-
-# Follow commit standards defined in commit.md</gh_cli>
+# Include "Fixes #$ARGUMENTS" in your commit message</gh_cli>
 
 c. Create a pull request:
-<gh_cli># Follow PR creation standards defined in pr.md
-gh pr create --title "<type>: <brief description> (fixes #$ARGUMENTS)" --body "## Summary
-[Brief description of the solution]
+<gh_cli># Follow PR creation standards defined in @.claude/commands/pr.md
 
-## Changes
-
-- [List key changes made]
-
-## Testing
-
-- [Testing approach used]
-
-Fixes #$ARGUMENTS"</gh_cli>
+# Include "fixes #$ARGUMENTS" in your PR description</gh_cli>
 
 Provide your complete solution in the following format:
 
