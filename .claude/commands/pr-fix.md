@@ -9,20 +9,17 @@ description: Review PR comments and implement only the requested fixes
 
 You are an expert software engineer tasked with addressing PR review feedback. Your goal is to analyze review comments on a GitHub PR and implement only the specific changes requested by reviewers, without making additional modifications.
 
-First, you will be given a PR URL:
+First, you will be given a PR ID for the current repository:
 
-<pr_url>$ARGUMENTS</pr_url>
+<pr_id>$ARGUMENTS</pr_id>
 
 To complete this task, follow these steps:
 
 1. **Extract PR information**:
-   - Parse the PR URL to get repository and PR number
    - Use GitHub CLI to fetch PR details and review comments
    - Identify all actionable review feedback
 
 2. **Analyze review comments**:
-   - **ALWAYS fetch both PR comments AND review comments (on specific code lines)**
-   - Use `gh api repos/$REPO/pulls/$PR_NUM/comments` for review comments on code
    - Focus only on comments that request specific code changes
    - Ignore general discussion or approved comments
    - Categorize feedback by file and line number where applicable
@@ -41,7 +38,7 @@ To complete this task, follow these steps:
 
 5. **Verify and commit**:
    - Review that all requested changes have been addressed
-   - Use commit standards from `commit.md`
+   - Use commit standards from @.claude/commands/commit.md
    - Include reference to the original PR in commit message
 
 ## GitHub CLI Commands
@@ -49,34 +46,20 @@ To complete this task, follow these steps:
 **Fetch PR information:**
 
 ```bash
-# Extract repo and PR number from URL
-REPO=$(echo "$ARGUMENTS" | sed -n 's|.*github\.com/\([^/]*/[^/]*\)/pull/.*|\1|p')
-PR_NUM=$(echo "$ARGUMENTS" | sed -n 's|.*/pull/\([0-9]*\).*|\1|p')
+# Use the provided PR ID for the current repository
+PR_NUM="$ARGUMENTS"
 
-# Get PR details
-gh pr view $PR_NUM --repo $REPO --json title,body,reviews,comments
-
-# Get review comments with context
-gh pr view $PR_NUM --repo $REPO --comments
-
-# CRITICAL: Get review comments on specific code lines
-gh api repos/$REPO/pulls/$PR_NUM/comments --jq '.[] | {path, line, body, position}'
+# Get all line-by-line review comments (critical for detailed feedback)
+gh api repos/:owner/:repo/pulls/$PR_NUM/comments
 ```
 
 **Check current repository context:**
 
 ```bash
-# Ensure we're in the correct repository
-if git remote get-url origin 2>/dev/null | grep -q "$REPO"; then
-    echo "Already in target repository"
-    git fetch origin
-else
-    gh repo clone $REPO
-    cd $(basename $REPO)
-    git fetch origin
-fi
+# Fetch latest changes from origin
+git fetch origin
 
-# Checkout the PR branch if needed
+# Checkout the PR branch
 gh pr checkout $PR_NUM
 ```
 
