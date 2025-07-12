@@ -4,20 +4,36 @@
 
 import type { TestEvent, TestFormatter, DisplayOptions } from './types.js';
 import { ConsoleFormatter } from './formatters/ConsoleFormatter.js';
+import { JunitXmlFormatter } from './formatters/JunitXmlFormatter.js';
 
 export class DisplayManager {
-  private formatter: TestFormatter;
+  private formatters: TestFormatter[];
 
   constructor(options: DisplayOptions = {}) {
-    // For now, always use ConsoleFormatter. Later we can switch based on options.formatter
-    this.formatter = new ConsoleFormatter(options);
+    this.formatters = [];
+
+    // Always include console formatter unless quiet mode
+    if (!options.quiet) {
+      this.formatters.push(new ConsoleFormatter(options));
+    }
+
+    // Add JUnit XML formatter if requested
+    if (options.junitXml !== undefined) {
+      const filename = options.junitXml || 'junit.xml';
+      this.formatters.push(new JunitXmlFormatter(options, filename));
+    }
+
+    // Ensure we have at least one formatter
+    if (this.formatters.length === 0) {
+      this.formatters.push(new ConsoleFormatter(options));
+    }
   }
 
   /**
-   * Emit a test event to the active formatter
+   * Emit a test event to all active formatters
    */
   emit(event: TestEvent): void {
-    this.formatter.onEvent(event);
+    this.formatters.forEach(formatter => formatter.onEvent(event));
   }
 
   /**
@@ -69,9 +85,9 @@ export class DisplayManager {
   }
 
   /**
-   * Flush any pending output
+   * Flush any pending output from all formatters
    */
   flush(): void {
-    this.formatter.flush();
+    this.formatters.forEach(formatter => formatter.flush());
   }
 }

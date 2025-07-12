@@ -8,16 +8,19 @@ import { ConfigLoader } from '../../../src/config/loader.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
 
-describe.skip('API Tests - CLI Launch Mode', () => {
+describe('API Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
 
   test('should launch server and discover tools via CLI mode', async () => {
     const testConfigPath = path.resolve(process.cwd(), 'test/fixtures/valid-capabilities.yaml');
     const config = ConfigLoader.loadTestConfig(testConfigPath);
 
+    const serverConfig = {
+      command: 'node',
+      args: [testServerPath],
+    };
     const runner = new CapabilitiesTestRunner(config.tools!, {
-      serverCommand: 'node',
-      serverArgs: testServerPath,
+      serverConfig,
     });
 
     const summary = await runner.run();
@@ -51,9 +54,12 @@ describe.skip('API Tests - CLI Launch Mode', () => {
       ],
     };
 
+    const serverConfig = {
+      command: 'node',
+      args: [testServerPath],
+    };
     const runner = new CapabilitiesTestRunner(toolsConfig, {
-      serverCommand: 'node',
-      serverArgs: testServerPath,
+      serverConfig,
     });
 
     const summary = await runner.run();
@@ -89,9 +95,12 @@ describe.skip('API Tests - CLI Launch Mode', () => {
       ],
     };
 
+    const serverConfig = {
+      command: 'node',
+      args: [testServerPath],
+    };
     const runner = new CapabilitiesTestRunner(toolsConfig, {
-      serverCommand: 'node',
-      serverArgs: testServerPath,
+      serverConfig,
     });
 
     const summary = await runner.run();
@@ -151,9 +160,12 @@ describe.skip('API Tests - CLI Launch Mode', () => {
       ],
     };
 
+    const serverConfig = {
+      command: 'node',
+      args: [testServerPath],
+    };
     const runner = new CapabilitiesTestRunner(toolsConfig, {
-      serverCommand: 'node',
-      serverArgs: testServerPath,
+      serverConfig,
     });
 
     const summary = await runner.run();
@@ -192,10 +204,13 @@ describe.skip('API Tests - CLI Launch Mode', () => {
       ],
     };
 
+    const serverConfig = {
+      command: 'node',
+      args: [testServerPath],
+      env: { NODE_ENV: 'test', TEST_VAR: 'value' },
+    };
     const runner = new CapabilitiesTestRunner(toolsConfig, {
-      serverCommand: 'node',
-      serverArgs: testServerPath,
-      serverEnv: 'NODE_ENV=test,TEST_VAR=value',
+      serverConfig,
     });
 
     const summary = await runner.run();
@@ -221,9 +236,12 @@ describe.skip('API Tests - CLI Launch Mode', () => {
       ],
     };
 
+    const serverConfig = {
+      command: 'nonexistent-command',
+      args: ['some-args'],
+    };
     const runner = new CapabilitiesTestRunner(toolsConfig, {
-      serverCommand: 'nonexistent-command',
-      serverArgs: 'some-args',
+      serverConfig,
     });
 
     await expect(runner.run()).rejects.toThrow(/Failed to connect to MCP server/);

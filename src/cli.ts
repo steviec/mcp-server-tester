@@ -20,6 +20,7 @@ interface CliOptions {
   timeout?: number;
   quiet?: boolean;
   verbose?: boolean;
+  junitXml?: string;
 }
 
 function handleError(error: unknown): never {
@@ -72,6 +73,7 @@ async function main(): Promise<void> {
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--quiet', 'Suppress non-essential output')
     .option('--verbose', 'Enable verbose output with additional details')
+    .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
     .action(async (testFile: string, options: CliOptions) => {
       await runTests(testFile, options);
     });

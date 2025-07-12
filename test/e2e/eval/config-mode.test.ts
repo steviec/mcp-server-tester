@@ -12,17 +12,15 @@ import {
 } from '../server-launcher.js';
 import path from 'path';
 
-const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
-
-describe.skipIf(!hasApiKey)('Eval Tests - Config Mode', () => {
+describe('Eval Tests - Config Mode', () => {
   let serverLauncher: TestServerLauncher;
   const testServerConfigPath = getTestServerConfigPath();
 
   beforeAll(async () => {
-    if (!hasApiKey) {
-      console.warn('⚠️  ANTHROPIC_API_KEY not set - skipping evaluation tests');
-      console.warn('   To run eval tests: export ANTHROPIC_API_KEY="your-key-here"');
-      return;
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error(
+        'ANTHROPIC_API_KEY not set - skipping evaluation tests. Set with: export ANTHROPIC_API_KEY="your-key-here"'
+      );
     }
 
     // Start the test server before running tests
@@ -61,9 +59,10 @@ evals:
 
       try {
         const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+        // Load server config from file
+        const serverConfig = ConfigLoader.loadServerConfig(testServerConfigPath, 'test-server');
         const runner = new EvalTestRunner(testConfigData.evals!, {
-          serverConfig: testServerConfigPath,
-          serverName: 'test-server',
+          serverConfig,
         });
 
         await expect(runner.run()).rejects.toThrow(
@@ -103,9 +102,10 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      // Load server config from file
+      const serverConfig = ConfigLoader.loadServerConfig(testServerConfigPath, 'test-server');
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -148,9 +148,10 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      // Load server config from file
+      const serverConfig = ConfigLoader.loadServerConfig(testServerConfigPath, 'test-server');
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -193,9 +194,10 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      // Load server config from file
+      const serverConfig = ConfigLoader.loadServerConfig(testServerConfigPath, 'test-server');
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -234,10 +236,10 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      // Load server config from file
+      const serverConfig = ConfigLoader.loadServerConfig(testServerConfigPath, 'test-server');
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverConfig: testServerConfigPath,
-        serverName: 'test-server',
-        models: 'claude-3-haiku-20240307', // Override the config
+        serverConfig,
       });
 
       const summary = await runner.run();

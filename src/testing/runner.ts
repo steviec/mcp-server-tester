@@ -15,6 +15,7 @@ interface ServerOptions {
   timeout?: number;
   quiet?: boolean;
   verbose?: boolean;
+  junitXml?: string;
 }
 
 export class TestRunner {
@@ -31,6 +32,7 @@ export class TestRunner {
       formatter: 'console',
       quiet: serverOptions.quiet,
       verbose: serverOptions.verbose,
+      junitXml: serverOptions.junitXml,
     };
     this.displayManager = new DisplayManager(displayOptions);
   }
@@ -55,7 +57,17 @@ export class TestRunner {
     // Run capabilities tests if tools section exists
     if (hasTools) {
       this.displayManager.progress('Running tools tests...');
-      const capabilitiesRunner = new CapabilitiesTestRunner(this.config.tools!, this.serverOptions);
+      // Load server config from file
+      const serverConfig = ConfigLoader.loadServerConfig(
+        this.serverOptions.serverConfig,
+        this.serverOptions.serverName
+      );
+      const capabilitiesRunner = new CapabilitiesTestRunner(this.config.tools!, {
+        serverConfig,
+        timeout: this.serverOptions.timeout,
+        quiet: this.serverOptions.quiet,
+        verbose: this.serverOptions.verbose,
+      });
       const capabilitiesResult = await capabilitiesRunner.run();
       capabilitiesResults.push(...capabilitiesResult.results);
     }
@@ -63,9 +75,19 @@ export class TestRunner {
     // Run LLM evaluation (eval) tests if evals section exists
     if (hasEvals) {
       this.displayManager.progress('Running LLM evaluation (eval) tests...');
+      // Load server config from file
+      const serverConfig = ConfigLoader.loadServerConfig(
+        this.serverOptions.serverConfig,
+        this.serverOptions.serverName
+      );
       const evalRunner = new EvalTestRunner(
         this.config.evals!,
-        this.serverOptions,
+        {
+          serverConfig,
+          timeout: this.serverOptions.timeout,
+          quiet: this.serverOptions.quiet,
+          verbose: this.serverOptions.verbose,
+        },
         this.displayManager
       );
       const evalResult = await evalRunner.run();

@@ -38,15 +38,16 @@ Handle the complete commit workflow:
    - Analyze staged changes: !`git diff --cached`
 
 2. **Generate commit message** using standards above:
+   - NO agent signatures or Claude branding
 
 3. **Handle pre-commit hooks**:
    - Attempt commit to trigger lefthook checks
-   - If hooks fail, auto-fix when possible:
-     - Format issues: `npm run format` → re-stage → retry
-     - Lint issues: `npm run lint:fix` → re-stage → retry
+   - **If hooks show "fixes applied and staged"**: Commit was aborted (not failed) - RETRY THE SAME COMMIT COMMAND
+   - **If hooks show actual errors**:
      - TypeScript/test errors: show errors, ask user to fix manually
    - **NEVER use --no-verify** - always respect hooks
 
-4. **Create clean commit** with generated message (no Claude branding)
+4. **Create clean commit** with generated message
+   - Use `git commit --no-gpg-sign` to bypass GPG signing requirements
 
 5. **Verify success**: !`git log -1 --oneline`

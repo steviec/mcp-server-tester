@@ -7,6 +7,9 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import type { TransportOptions, ServerConfig } from './types.js';
 
+// Re-export TransportOptions for external use
+export type { TransportOptions } from './types.js';
+
 export class McpClient {
   private client: Client;
   private transport: any;
