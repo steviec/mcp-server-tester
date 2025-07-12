@@ -11,34 +11,35 @@ Here they are:
 
 Follow these steps to complete the task, make a todo list and think ultrahard:
 
-1. Research the repository:
+1. Ask the user for additional details
+   - Ask the user to provide additional details on the issue and wait for the user to respond
+
+2. Research the repository:
    - Visit the provided repo_url and examine the repository's structure, existing issues, and documentation.
    - Look for any CONTRIBUTING.md, ISSUE_TEMPLATE.md, or similar files that might contain guidelines for creating issues.
    - Note the project's coding style, naming conventions, and any specific requirements for submitting issues.
 
-2. Research best practices:
+3. Research best practices:
    - Search for current best practices in writing GitHub issues, focusing on clarity, completeness, and actionability.
    - Look for examples of well-written issues in popular open-source projects for inspiration.
 
-3. Present a plan:
+4. Present a plan:
+   - Based on your research, outline a plan for creating the GitHub issue.
+   - Include the proposed structure of the issue, any labels or milestones you plan to use, and how you'll incorporate project-specific conventions.
+   - Present this plan in <plan> tags.
 
-- Based on your research, outline a plan for creating the GitHub issue.
-- Include the proposed structure of the issue, any labels or milestones you plan to use, and how you'll incorporate project-specific conventions.
-- Present this plan in <plan> tags.
+5. Draft the GitHub issue and get it approved:
+   - Draft the GitHub issue content.
+   - Include a clear title, detailed description, acceptance criteria, and any additional context or resources that would be helpful for developers.
+   - Use appropriate formatting (e.g., Markdown) to enhance readability.
+   - Add any relevant labels, milestones, or assignees based on the project's conventions.
+   - Present the fully defined Github issue content to the user and wait for approval ("yes" or "no")
 
-4. Create the GitHub issue:
-
-- Once the plan is approved, draft the GitHub issue content.
-- Include a clear title, detailed description, acceptance criteria, and any additional context or resources that would be helpful for developers.
-- Use appropriate formatting (e.g., Markdown) to enhance readability.
-- Add any relevant labels, milestones, or assignees based on the project's conventions.
-
-5. Final output:
-
-- Present the complete GitHub issue content in <github_issue> tags.
-- Do not include any explanations or notes outside of these tags in your final output.
-- Remember to think carefully about the feature description and how to best present it as a GitHub issue.
-- Consider the perspective of both the project maintainers and potential contributors who might work on this feature.
-- Your final output should consist of only the content within the <github_issue> tags, ready to be copied and pasted directly into GitHub.
-- Make sure to use the GitHub CLI `gh issue create` to create the actual issue after you generate it.
-- Assign either the label `bug` or `enhancement` based on the nature of the issue.
+6. Final output:
+   - Present the complete GitHub issue content in <github_issue> tags.
+   - Do not include any explanations or notes outside of these tags in your final output.
+   - Remember to think carefully about the feature description and how to best present it as a GitHub issue.
+   - Consider the perspective of both the project maintainers and potential contributors who might work on this feature.
+   - Your final output should consist of only the content within the <github_issue> tags, ready to be copied and pasted directly into GitHub.
+   - Make sure to use the GitHub CLI `gh issue create` to create the actual issue after you generate it.
+   - Assign either the label `bug` or `enhancement` based on the nature of the issue.
