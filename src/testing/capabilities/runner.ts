@@ -14,6 +14,7 @@ import {
   isSingleToolTest,
   isMultiStepTest,
 } from '../../core/types.js';
+import { DisplayManager } from '../display/DisplayManager.js';
 
 interface ServerOptions {
   serverConfig: ServerConfig;
@@ -26,10 +27,12 @@ export class CapabilitiesTestRunner {
   private mcpClient: McpClient;
   private config: ToolsConfig;
   private serverOptions: ServerOptions;
+  private displayManager?: DisplayManager;
 
-  constructor(config: ToolsConfig, serverOptions: ServerOptions) {
+  constructor(config: ToolsConfig, serverOptions: ServerOptions, displayManager?: DisplayManager) {
     this.config = config;
     this.serverOptions = serverOptions;
+    this.displayManager = displayManager;
     this.mcpClient = new McpClient();
   }
 
@@ -41,17 +44,44 @@ export class CapabilitiesTestRunner {
 
       await this.mcpClient.connect(transportOptions);
 
+      // Emit suite start event
+      if (this.displayManager) {
+        const totalTests = this.config.tests.length + (this.config.expected_tool_list ? 1 : 0);
+        this.displayManager.suiteStart({
+          testCount: totalTests,
+          totalRuns: totalTests
+        });
+      }
+
       // Run discovery tests if configured
+      const results: TestResult[] = [];
       if (this.config.expected_tool_list) {
-        await this.runDiscoveryTests();
+        const discoveryResult = await this.runDiscoveryTests();
+        if (discoveryResult) {
+          results.push(discoveryResult);
+        }
       }
 
       // Run capabilities tests
-      const results: TestResult[] = [];
 
       for (const test of this.config.tests) {
+        // Emit test start event
+        if (this.displayManager) {
+          this.displayManager.testStart({ name: test.name });
+        }
+
         const result = await this.runTest(test);
         results.push(result);
+
+        // Emit test complete event
+        if (this.displayManager) {
+          this.displayManager.testComplete({
+            name: result.name,
+            passed: result.passed,
+            errors: result.errors,
+            duration: result.duration
+          });
+        }
       }
 
       const endTime = Date.now();
@@ -65,7 +95,14 @@ export class CapabilitiesTestRunner {
         results,
       };
 
-      // Results logged by Jest framework
+      // Emit suite complete event  
+      if (this.displayManager) {
+        this.displayManager.suiteComplete({
+          total: summary.total,
+          passed: summary.passed,
+          duration: summary.duration
+        });
+      }
 
       return summary;
     } finally {
@@ -73,42 +110,107 @@ export class CapabilitiesTestRunner {
     }
   }
 
-  private async runDiscoveryTests(): Promise<void> {
+  private async runDiscoveryTests(): Promise<TestResult | null> {
     if (!this.config.expected_tool_list) {
-      return;
+      return null;
     }
 
-    // Running discovery tests
+    const startTime = Date.now();
+    const testName = `Tool discovery: ${this.config.expected_tool_list.length}/${this.config.expected_tool_list.length} expected tools found (${this.config.expected_tool_list.join(', ')})`;
 
-    // Test tool discovery
-    const toolsResult = await this.mcpClient.listTools();
-    const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
-
-    for (const expectedTool of this.config.expected_tool_list) {
-      if (!availableTools.includes(expectedTool)) {
-        throw new Error(
-          `Expected tool '${expectedTool}' not found. Available tools: ${availableTools.join(', ')}`
-        );
-      }
+    // Emit test start event
+    if (this.displayManager) {
+      this.displayManager.testStart({ name: testName });
     }
 
-    // Discovery: Found all expected tools
+    try {
+      // Test tool discovery
+      const toolsResult = await this.mcpClient.listTools();
+      const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
 
-    // Always validate tool schemas
-    const toolsResultForValidation = await this.mcpClient.listTools();
-    const tools = toolsResultForValidation.tools || [];
-
-    for (const tool of tools) {
-      if (!tool.name) {
-        throw new Error(`Tool missing name property`);
+      const missingTools: string[] = [];
+      for (const expectedTool of this.config.expected_tool_list) {
+        if (!availableTools.includes(expectedTool)) {
+          missingTools.push(expectedTool);
+        }
       }
 
-      if (!tool.inputSchema) {
-        throw new Error(`Tool '${tool.name}' missing input schema`);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      let result: TestResult;
+      if (missingTools.length > 0) {
+        const adjustedTestName = `Tool discovery: ${availableTools.filter(t => this.config.expected_tool_list!.includes(t)).length}/${this.config.expected_tool_list.length} expected tools found (missing: ${missingTools.join(', ')})`;
+        result = {
+          name: adjustedTestName,
+          passed: false,
+          errors: [`Expected tools not found: ${missingTools.join(', ')}. Available tools: ${availableTools.join(', ')}`],
+          calls: [],
+          duration
+        };
+      } else {
+        result = {
+          name: testName,
+          passed: true,
+          errors: [],
+          calls: [],
+          duration
+        };
       }
+
+      // Emit test complete event
+      if (this.displayManager) {
+        this.displayManager.testComplete({
+          name: result.name,
+          passed: result.passed,
+          errors: result.errors,
+          duration: result.duration
+        });
+      }
+
+      if (!result.passed) {
+        throw new Error(result.errors[0]);
+      }
+
+      // Always validate tool schemas
+      const toolsResultForValidation = await this.mcpClient.listTools();
+      const tools = toolsResultForValidation.tools || [];
+
+      for (const tool of tools) {
+        if (!tool.name) {
+          throw new Error(`Tool missing name property`);
+        }
+
+        if (!tool.inputSchema) {
+          throw new Error(`Tool '${tool.name}' missing input schema`);
+        }
+      }
+
+      return result;
+    } catch (error) {
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      
+      const failedResult: TestResult = {
+        name: testName,
+        passed: false,
+        errors: [error instanceof Error ? error.message : String(error)],
+        calls: [],
+        duration
+      };
+
+      // Emit test complete event for failed discovery
+      if (this.displayManager) {
+        this.displayManager.testComplete({
+          name: failedResult.name,
+          passed: failedResult.passed,
+          errors: failedResult.errors,
+          duration: failedResult.duration
+        });
+      }
+
+      return failedResult;
     }
-
-    // Discovery: All tool schemas valid
   }
 
   private async runTest(test: CapabilitiesTest): Promise<TestResult> {

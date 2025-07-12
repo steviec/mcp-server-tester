@@ -67,7 +67,7 @@ export class TestRunner {
         timeout: this.serverOptions.timeout,
         quiet: this.serverOptions.quiet,
         verbose: this.serverOptions.verbose,
-      });
+      }, this.displayManager);
       const capabilitiesResult = await capabilitiesRunner.run();
       capabilitiesResults.push(...capabilitiesResult.results);
     }
