@@ -3,9 +3,8 @@
  */
 
 import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
-import { ConfigLoader } from '../../config/loader.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
-import type { EvalsConfig, EvalTest, EvalResult } from '../../core/types.js';
+import type { EvalsConfig, EvalTest, EvalResult, ServerConfig } from '../../core/types.js';
 import type { DisplayManager } from '../display/DisplayManager.js';
 import type { CoreMessage, ToolCall } from 'ai';
 
@@ -18,8 +17,7 @@ export interface EvalSummary {
 }
 
 interface EvalServerOptions {
-  serverConfig: string;
-  serverName?: string;
+  serverConfig: ServerConfig;
   timeout?: number;
   quiet?: boolean;
   verbose?: boolean;
@@ -59,12 +57,8 @@ export class EvalTestRunner {
         );
       }
 
-      // Load server configuration from config file
-      const serverConfig = ConfigLoader.loadServerConfig(
-        this.serverOptions.serverConfig,
-        this.serverOptions.serverName
-      );
-      const transportOptions = createTransportOptions(serverConfig);
+      // Use the provided server configuration
+      const transportOptions = createTransportOptions(this.serverOptions.serverConfig);
 
       await this.mcpClient.connect(transportOptions);
 
@@ -134,7 +128,15 @@ export class EvalTestRunner {
     let passed = true;
 
     try {
-      // Execute LLM conversation
+      // Determine allowed tools from test configuration
+      let allowedTools: string[] | undefined;
+      if (test.expected_tool_calls?.allowed !== undefined) {
+        allowedTools = test.expected_tool_calls.allowed;
+      } else if (test.expected_tool_calls?.required) {
+        // If only required tools are specified, allow those
+        allowedTools = test.expected_tool_calls.required;
+      }
+
       const conversationResult = await this.llmProvider.executeConversation(
         this.mcpClient,
         test.prompt,
@@ -142,6 +144,7 @@ export class EvalTestRunner {
           model,
           maxSteps: this.config.max_steps || 3,
           timeout: this.config.timeout || 30000,
+          allowedTools,
         }
       );
 

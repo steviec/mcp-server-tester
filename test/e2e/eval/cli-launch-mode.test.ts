@@ -8,15 +8,14 @@ import { ConfigLoader } from '../../../src/config/loader.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
 
-const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
-
-describe.skip('Eval Tests - CLI Launch Mode', () => {
+describe('Eval Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
 
   beforeAll(() => {
-    if (!hasApiKey) {
-      console.warn('⚠️  ANTHROPIC_API_KEY not set - skipping evaluation tests');
-      console.warn('   To run eval tests: export ANTHROPIC_API_KEY="your-key-here"');
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error(
+        'ANTHROPIC_API_KEY not set - skipping evaluation tests. Set with: export ANTHROPIC_API_KEY="your-key-here"'
+      );
     }
   });
 
@@ -43,9 +42,12 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const serverConfig = {
+        command: 'node',
+        args: [testServerPath],
+      };
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverCommand: 'node',
-        serverArgs: testServerPath,
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -88,9 +90,12 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const serverConfig = {
+        command: 'node',
+        args: [testServerPath],
+      };
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverCommand: 'node',
-        serverArgs: testServerPath,
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -114,7 +119,7 @@ evals:
   max_steps: 5
   tests:
     - name: 'Solves complex math via CLI launch mode'
-      prompt: 'Please calculate the sum of 127 and 384, then echo the result with "The answer is: " prefix'
+      prompt: 'Please use the add tool to calculate the sum of 127 and 384, then use the echo tool to output the result with "The answer is: " prefix'
       expected_tool_calls:
         required: ['add', 'echo']
       response_scorers:
@@ -132,9 +137,12 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const serverConfig = {
+        command: 'node',
+        args: [testServerPath],
+      };
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverCommand: 'node',
-        serverArgs: testServerPath,
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -176,9 +184,12 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const serverConfig = {
+        command: 'node',
+        args: [testServerPath],
+      };
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverCommand: 'node',
-        serverArgs: testServerPath,
+        serverConfig,
       });
 
       const summary = await runner.run();
@@ -217,10 +228,13 @@ evals:
 
     try {
       const testConfigData = ConfigLoader.loadTestConfig(tempTestPath);
+      const serverConfig = {
+        command: 'node',
+        args: [testServerPath],
+        env: { NODE_ENV: 'test', EVAL_TEST: 'true' },
+      };
       const runner = new EvalTestRunner(testConfigData.evals!, {
-        serverCommand: 'node',
-        serverArgs: testServerPath,
-        serverEnv: 'NODE_ENV=test,EVAL_TEST=true',
+        serverConfig,
       });
 
       const summary = await runner.run();
