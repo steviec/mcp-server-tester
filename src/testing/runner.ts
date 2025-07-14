@@ -74,32 +74,40 @@ export class TestRunner {
 
     // Run LLM evaluation (eval) tests if evals section exists
     if (hasEvals) {
-      this.displayManager.progress('Running LLM evaluation (eval) tests...');
-      // Load server config from file
-      const serverConfig = ConfigLoader.loadServerConfig(
-        this.serverOptions.serverConfig,
-        this.serverOptions.serverName
-      );
-      const evalRunner = new EvalTestRunner(
-        this.config.evals!,
-        {
-          serverConfig,
-          timeout: this.serverOptions.timeout,
-          quiet: this.serverOptions.quiet,
-          verbose: this.serverOptions.verbose,
-        },
-        this.displayManager
-      );
-      const evalResult = await evalRunner.run();
-      // Convert eval results to test results format
-      const convertedResults: TestResult[] = evalResult.results.map(evalRes => ({
-        name: `${evalRes.name} (${evalRes.model})`,
-        passed: evalRes.passed,
-        errors: evalRes.errors,
-        calls: [], // Evals don't have tool calls in the same format
-        duration: 0, // Individual test duration not tracked in evals
-      }));
-      evalResults.push(...convertedResults);
+      // Check for API key before running eval tests
+      if (!process.env.ANTHROPIC_API_KEY) {
+        console.warn('⚠️  ANTHROPIC_API_KEY not set - skipping LLM evaluation (eval) tests');
+        console.warn(
+          '   Set your Anthropic API key to run eval tests: export ANTHROPIC_API_KEY="your-key-here"'
+        );
+      } else {
+        this.displayManager.progress('Running LLM evaluation (eval) tests...');
+        // Load server config from file
+        const serverConfig = ConfigLoader.loadServerConfig(
+          this.serverOptions.serverConfig,
+          this.serverOptions.serverName
+        );
+        const evalRunner = new EvalTestRunner(
+          this.config.evals!,
+          {
+            serverConfig,
+            timeout: this.serverOptions.timeout,
+            quiet: this.serverOptions.quiet,
+            verbose: this.serverOptions.verbose,
+          },
+          this.displayManager
+        );
+        const evalResult = await evalRunner.run();
+        // Convert eval results to test results format
+        const convertedResults: TestResult[] = evalResult.results.map(evalRes => ({
+          name: `${evalRes.name} (${evalRes.model})`,
+          passed: evalRes.passed,
+          errors: evalRes.errors,
+          calls: [], // Evals don't have tool calls in the same format
+          duration: 0, // Individual test duration not tracked in evals
+        }));
+        evalResults.push(...convertedResults);
+      }
     }
 
     const endTime = Date.now();

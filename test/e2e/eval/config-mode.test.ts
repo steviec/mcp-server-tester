@@ -12,17 +12,11 @@ import {
 } from '../server-launcher.js';
 import path from 'path';
 
-describe('Eval Tests - Config Mode', () => {
+describe.skipIf(!process.env.ANTHROPIC_API_KEY)('Eval Tests - Config Mode', () => {
   let serverLauncher: TestServerLauncher;
   const testServerConfigPath = getTestServerConfigPath();
 
   beforeAll(async () => {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error(
-        'ANTHROPIC_API_KEY not set - skipping evaluation tests. Set with: export ANTHROPIC_API_KEY="your-key-here"'
-      );
-    }
-
     // Start the test server before running tests
     serverLauncher = createTestServerLauncher();
     await serverLauncher.start();

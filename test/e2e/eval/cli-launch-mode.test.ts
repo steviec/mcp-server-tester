@@ -2,22 +2,14 @@
  * E2E tests for evaluation functionality using CLI launch mode
  */
 
-import { describe, beforeAll, test, expect } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { EvalTestRunner } from '../../../src/testing/evals/runner.js';
 import { ConfigLoader } from '../../../src/config/loader.js';
 import { getTestServerPath } from '../server-launcher.js';
 import path from 'path';
 
-describe('Eval Tests - CLI Launch Mode', () => {
+describe.skipIf(!process.env.ANTHROPIC_API_KEY)('Eval Tests - CLI Launch Mode', () => {
   const testServerPath = getTestServerPath();
-
-  beforeAll(() => {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      throw new Error(
-        'ANTHROPIC_API_KEY not set - skipping evaluation tests. Set with: export ANTHROPIC_API_KEY="your-key-here"'
-      );
-    }
-  });
 
   test('should launch server and run basic evaluation via CLI mode', async () => {
     const testConfig = `
