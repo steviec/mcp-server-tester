@@ -8,6 +8,7 @@ import type { TestEvent, TestFormatter, DisplayOptions } from '../types.js';
 export class ConsoleFormatter implements TestFormatter {
   private options: DisplayOptions;
   private currentModel: string | undefined;
+  private hasShownVersion = false;
 
   constructor(options: DisplayOptions = {}) {
     this.options = options;
@@ -21,6 +22,12 @@ export class ConsoleFormatter implements TestFormatter {
     switch (event.type) {
       case 'suite_start':
         this.handleSuiteStart(event.data);
+        break;
+      case 'section_start':
+        this.handleSectionStart(event.data);
+        break;
+      case 'tool_discovery':
+        this.handleToolDiscovery(event.data);
         break;
       case 'progress':
         this.handleProgress(event.data);
@@ -37,22 +44,44 @@ export class ConsoleFormatter implements TestFormatter {
     }
   }
 
-  private handleSuiteStart(data: any): void {
-    if (data.modelCount && data.testCount) {
+  private handleSuiteStart(_data: any): void {
+    // Show version info once at the very beginning
+    if (!this.hasShownVersion) {
+      const version = this.options.version || '1.0.7';
+      console.log(`\nMCP Server Tester v${version}`);
+      this.hasShownVersion = true;
+    }
+  }
+
+  private handleSectionStart(data: any): void {
+    console.log(`\n${data.title}`);
+  }
+
+  private handleToolDiscovery(data: any): void {
+    const { expectedTools, foundTools, passed } = data;
+    const icon = passed ? '✅' : '❌';
+
+    if (passed) {
       console.log(
-        `\nRunning ${data.testCount} eval tests across ${data.modelCount} model(s) (${data.totalRuns} total runs)...`
+        `${icon} Tool discovery: ${foundTools.length}/${expectedTools.length} expected tools found (${foundTools.join(', ')})`
       );
     } else {
-      console.log(`\nRunning ${data.testCount} tests...`);
+      const missing = expectedTools.filter((tool: string) => !foundTools.includes(tool));
+      console.log(
+        `${icon} Tool discovery: ${foundTools.length}/${expectedTools.length} expected tools found (missing: ${missing.join(', ')})`
+      );
     }
   }
 
   private handleProgress(data: any): void {
     if (data.model && data.model !== this.currentModel) {
       this.currentModel = data.model;
-      console.log(`\n🤖 Running tests with model: ${data.model}`);
-    } else if (data.message) {
-      console.log(data.message);
+      // Model changes are now handled by section headers
+    } else if (data.message && !this.options.quiet) {
+      // Only show progress messages in verbose mode or if explicitly needed
+      if (this.options.verbose) {
+        console.log(data.message);
+      }
     }
   }
 
@@ -83,12 +112,9 @@ export class ConsoleFormatter implements TestFormatter {
 
   private handleSuiteComplete(data: any): void {
     const { total, passed, duration } = data;
+    const durationInSeconds = (duration / 1000).toFixed(1);
 
-    console.log(`\nResults: ${passed}/${total} tests passed`);
-
-    if (this.options.verbose) {
-      console.log(`Duration: ${duration}ms`);
-    }
+    console.log(`\n📊 Results: ${passed}/${total} tests passed (${durationInSeconds}s)`);
   }
 
   flush(): void {

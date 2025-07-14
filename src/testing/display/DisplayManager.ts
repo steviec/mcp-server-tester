@@ -84,6 +84,20 @@ export class DisplayManager {
     });
   }
 
+  toolDiscovery(expectedTools: string[], foundTools: string[], passed: boolean): void {
+    this.emit({
+      type: 'tool_discovery',
+      data: { expectedTools, foundTools, passed },
+    });
+  }
+
+  sectionStart(section: 'tools' | 'evals', title: string): void {
+    this.emit({
+      type: 'section_start',
+      data: { section, title },
+    });
+  }
+
   /**
    * Flush any pending output from all formatters
    */

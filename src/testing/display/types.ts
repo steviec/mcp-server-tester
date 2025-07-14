@@ -3,7 +3,14 @@
  */
 
 export interface TestEvent {
-  type: 'test_start' | 'test_complete' | 'suite_start' | 'suite_complete' | 'progress';
+  type:
+    | 'test_start'
+    | 'test_complete'
+    | 'suite_start'
+    | 'suite_complete'
+    | 'progress'
+    | 'tool_discovery'
+    | 'section_start';
   data: any;
 }
 
@@ -53,6 +60,23 @@ export interface ProgressEvent extends TestEvent {
   };
 }
 
+export interface ToolDiscoveryEvent extends TestEvent {
+  type: 'tool_discovery';
+  data: {
+    expectedTools: string[];
+    foundTools: string[];
+    passed: boolean;
+  };
+}
+
+export interface SectionStartEvent extends TestEvent {
+  type: 'section_start';
+  data: {
+    section: 'tools' | 'evals';
+    title: string;
+  };
+}
+
 export interface TestFormatter {
   onEvent(_event: TestEvent): void;
   flush(): void;
@@ -63,4 +87,5 @@ export interface DisplayOptions {
   quiet?: boolean;
   verbose?: boolean;
   junitXml?: string;
+  version?: string;
 }

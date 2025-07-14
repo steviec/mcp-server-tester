@@ -8,6 +8,9 @@ import { EvalTestRunner } from './evals/runner.js';
 import { DisplayManager } from './display/DisplayManager.js';
 import type { TestConfig, TestSummary, TestResult } from '../core/types.js';
 import type { DisplayOptions } from './display/types.js';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 
 interface ServerOptions {
   serverConfig: string;
@@ -33,8 +36,20 @@ export class TestRunner {
       quiet: serverOptions.quiet,
       verbose: serverOptions.verbose,
       junitXml: serverOptions.junitXml,
+      version: this.getVersion(),
     };
     this.displayManager = new DisplayManager(displayOptions);
+  }
+
+  private getVersion(): string {
+    try {
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const packageJson = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf8'));
+      return packageJson.version;
+    } catch {
+      return '1.0.7'; // fallback version
+    }
   }
 
   async run(): Promise<TestSummary> {
@@ -42,7 +57,8 @@ export class TestRunner {
     const capabilitiesResults: TestResult[] = [];
     const evalResults: TestResult[] = [];
 
-    this.displayManager.progress('Detecting test types...');
+    // Initialize display with version info
+    this.displayManager.suiteStart(0);
 
     // Auto-detect which test types to run based on config sections
     const hasTools = !!this.config.tools;
@@ -56,18 +72,21 @@ export class TestRunner {
 
     // Run capabilities tests if tools section exists
     if (hasTools) {
-      this.displayManager.progress('Running tools tests...');
       // Load server config from file
       const serverConfig = ConfigLoader.loadServerConfig(
         this.serverOptions.serverConfig,
         this.serverOptions.serverName
       );
-      const capabilitiesRunner = new CapabilitiesTestRunner(this.config.tools!, {
-        serverConfig,
-        timeout: this.serverOptions.timeout,
-        quiet: this.serverOptions.quiet,
-        verbose: this.serverOptions.verbose,
-      });
+      const capabilitiesRunner = new CapabilitiesTestRunner(
+        this.config.tools!,
+        {
+          serverConfig,
+          timeout: this.serverOptions.timeout,
+          quiet: this.serverOptions.quiet,
+          verbose: this.serverOptions.verbose,
+        },
+        this.displayManager
+      );
       const capabilitiesResult = await capabilitiesRunner.run();
       capabilitiesResults.push(...capabilitiesResult.results);
     }
@@ -81,7 +100,6 @@ export class TestRunner {
           '   Set your Anthropic API key to run eval tests: export ANTHROPIC_API_KEY="your-key-here"'
         );
       } else {
-        this.displayManager.progress('Running LLM evaluation (eval) tests...');
         // Load server config from file
         const serverConfig = ConfigLoader.loadServerConfig(
           this.serverOptions.serverConfig,
@@ -123,9 +141,13 @@ export class TestRunner {
       results: allResults,
     };
 
-    // Final summary is handled by the individual test runners through DisplayManager
-    // For capabilities tests, we might need to add DisplayManager support later
-    // For now, only evals use the new display system
+    // Emit suite complete event
+    this.displayManager.suiteComplete(
+      combinedSummary.total,
+      combinedSummary.passed,
+      combinedSummary.failed,
+      duration
+    );
 
     this.displayManager.flush();
 
