@@ -78,11 +78,13 @@ describe('API Tests - Config Mode', () => {
 
     const summary = await runner.run();
 
-    expect(summary.total).toBe(1);
-    expect(summary.passed).toBe(1);
+    expect(summary.total).toBe(2);
+    expect(summary.passed).toBe(2);
     expect(summary.failed).toBe(0);
-    expect(summary.results[0].name).toBe('Echo test via config mode');
+    expect(summary.results[0].name).toBe('Tool discovery: 1/1 expected tools found (echo)');
     expect(summary.results[0].passed).toBe(true);
+    expect(summary.results[1].name).toBe('Echo test via config mode');
+    expect(summary.results[1].passed).toBe(true);
   }, 15000);
 
   test('should execute add tool correctly via config mode', async () => {
