@@ -3,51 +3,24 @@ allowed-tools: Bash(git*,npm*)
 description: Intelligently commit staged changes with generated message and pre-commit hook handling
 ---
 
-# Commit Standards Reference
-
-**This file defines the project-wide commit and PR standards used across all workflows.**
-
-## Commit Message Format
-
-**Structure**: `<type>: <description>`
-
-**Types**: feat, fix, docs, style, refactor, test, chore
-
-**Rules**:
-
-- Keep description concise (under 50 chars), focus on purpose/benefit
-- Add body only if needed to explain WHY or list distinct subsections
-- Using bullet points, focus on functional changes and purpose, not technical implementation
-- Use the minimum number of bullet points necessary
-- NEVER mention specific files, methods, classes, or implementation details
-
-## Issue Linking
-
-**Commit body**: Include `Fixes #123` or `Closes #123` to auto-close issues
-**Branch naming**: `issue-123-short-description`
-**PR titles**: `<type>: <description> (fixes #123)`
-
----
-
 # Task
 
-Handle the complete commit workflow:
+Create a new git commit following the template defined here: @.claude/context/COMMIT_MSG.md.
 
 1. **Stage and analyze changes**:
-   - Auto-stage relevant files with `git add .`
+   - Auto-stage relevant files with !`git add .`
    - Analyze staged changes: !`git diff --cached`
 
-2. **Generate commit message** using standards above:
+2. **Generate commit message**:
+   - Populate the commit template based on the changes
    - NO agent signatures or Claude branding
 
-3. **Handle pre-commit hooks**:
-   - Attempt commit to trigger lefthook checks
+3. **Attempt commit** with generated message:
+   - Use !`git commit --no-gpg-sign` to bypass GPG signing requirements
+   - **NEVER use "--no-verify" flag** - always respect hooks
    - **If hooks show "fixes applied and staged"**: Commit was aborted (not failed) - RETRY THE SAME COMMIT COMMAND
-   - **If hooks show actual errors**:
-     - TypeScript/test errors: show errors, ask user to fix manually
-   - **NEVER use --no-verify** - always respect hooks
+   - **If hooks show actual errors**: show errors, ask user to fix manually
 
-4. **Create clean commit** with generated message
-   - Use `git commit --no-gpg-sign` to bypass GPG signing requirements
+4. **Push the changes** upstream:
 
-5. **Verify success**: !`git log -1 --oneline`
+- Use !`git push` to push the changes to the remote repo

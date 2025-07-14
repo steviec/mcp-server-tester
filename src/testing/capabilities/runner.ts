@@ -14,6 +14,7 @@ import {
   isSingleToolTest,
   isMultiStepTest,
 } from '../../core/types.js';
+import type { DisplayManager } from '../display/DisplayManager.js';
 
 interface ServerOptions {
   serverConfig: ServerConfig;
@@ -26,10 +27,12 @@ export class CapabilitiesTestRunner {
   private mcpClient: McpClient;
   private config: ToolsConfig;
   private serverOptions: ServerOptions;
+  private displayManager?: DisplayManager;
 
-  constructor(config: ToolsConfig, serverOptions: ServerOptions) {
+  constructor(config: ToolsConfig, serverOptions: ServerOptions, displayManager?: DisplayManager) {
     this.config = config;
     this.serverOptions = serverOptions;
+    this.displayManager = displayManager;
     this.mcpClient = new McpClient();
   }
 
@@ -41,6 +44,9 @@ export class CapabilitiesTestRunner {
 
       await this.mcpClient.connect(transportOptions);
 
+      // Emit section start
+      this.displayManager?.sectionStart('tools', '📋 Tools Tests');
+
       // Run discovery tests if configured
       if (this.config.expected_tool_list) {
         await this.runDiscoveryTests();
@@ -50,8 +56,10 @@ export class CapabilitiesTestRunner {
       const results: TestResult[] = [];
 
       for (const test of this.config.tests) {
+        this.displayManager?.testStart(test.name);
         const result = await this.runTest(test);
         results.push(result);
+        this.displayManager?.testComplete(test.name, result.passed, result.errors);
       }
 
       const endTime = Date.now();
@@ -65,8 +73,6 @@ export class CapabilitiesTestRunner {
         results,
       };
 
-      // Results logged by Jest framework
-
       return summary;
     } finally {
       await this.mcpClient.disconnect();
@@ -78,21 +84,27 @@ export class CapabilitiesTestRunner {
       return;
     }
 
-    // Running discovery tests
-
     // Test tool discovery
     const toolsResult = await this.mcpClient.listTools();
     const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
 
+    const missingTools: string[] = [];
     for (const expectedTool of this.config.expected_tool_list) {
       if (!availableTools.includes(expectedTool)) {
-        throw new Error(
-          `Expected tool '${expectedTool}' not found. Available tools: ${availableTools.join(', ')}`
-        );
+        missingTools.push(expectedTool);
       }
     }
 
-    // Discovery: Found all expected tools
+    const passed = missingTools.length === 0;
+
+    // Emit tool discovery result
+    this.displayManager?.toolDiscovery(this.config.expected_tool_list, availableTools, passed);
+
+    if (!passed) {
+      throw new Error(
+        `Expected tool(s) not found: ${missingTools.join(', ')}. Available tools: ${availableTools.join(', ')}`
+      );
+    }
 
     // Always validate tool schemas
     const toolsResultForValidation = await this.mcpClient.listTools();
@@ -107,8 +119,6 @@ export class CapabilitiesTestRunner {
         throw new Error(`Tool '${tool.name}' missing input schema`);
       }
     }
-
-    // Discovery: All tool schemas valid
   }
 
   private async runTest(test: CapabilitiesTest): Promise<TestResult> {

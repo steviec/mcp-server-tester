@@ -1,75 +1,26 @@
-# PR Creation Standards
+---
+allowed-tools: Bash(git*,gh*)
+description: Create pull request with proper title, description, and issue linking
+---
 
-**Reusable GitHub CLI workflow for creating pull requests with proper formatting and issue linking.**
+# Task
 
-## PR Title Format
+Create a pull request using this template: @.claude/context/PULL_REQUEST_TEMPLATE.md.
 
-Follow commit standards from `commit.md`:
+1. **Prepare branch for PR**:
+   - Ensure current branch is pushed: !`git push -u origin HEAD`
+   - Check git status: !`git status`
 
-- **Structure**: `<type>: <description> (fixes #[issue])`
-- **Types**: feat, fix, docs, style, refactor, test, chore
-- **Example**: `fix: resolve authentication timeout (fixes #42)`
+2. **Generate PR content**:
+   - Create title using format: `<type>: <description> (fixes #issue)`
+   - Fill template sections based on commit history and changes
+   - Focus on functional changes and purpose, not implementation details
+   - Ensure issue linking is included in Related Issues section
 
-## Standard PR Body Template
+3. **Create pull request**:
+   - Use !`gh pr create` with generated title and template content
+   - Populate all relevant template sections
 
-```markdown
-## Summary
-
-[Brief description of what this PR accomplishes]
-
-## Changes
-
-- [Key change 1]
-- [Key change 2]
-- [Key change 3]
-
-## Testing
-
-- [How you tested these changes]
-- [Any manual testing performed]
-- [Test cases added/updated]
-
-Fixes #[issue-number]
-```
-
-## GitHub CLI Command
-
-**Basic PR creation:**
-
-```bash
-gh pr create --title "<type>: <description> (fixes #[issue])" --body "## Summary
-[Brief description]
-
-## Changes
-- [List key changes]
-
-## Testing
-- [Testing approach]
-
-Fixes #[issue]"
-```
-
-**With issue variable:**
-
-```bash
-ISSUE_NUM="123"
-gh pr create --title "<type>: <description> (fixes #$ISSUE_NUM)" --body "## Summary
-[Brief description]
-
-## Changes
-- [List key changes]
-
-## Testing
-- [Testing approach]
-
-Fixes #$ISSUE_NUM"
-```
-
-## Prerequisites
-
-Before creating PR, ensure:
-
-1. **Branch created**: `issue-[number]-[description]`
-2. **Changes committed**: Using standards from `commit.md`
-3. **Repository up to date**: `git fetch origin`
-4. **GitHub CLI authenticated**: `gh auth status`
+4. **Verify PR creation**:
+   - Display PR URL: !`gh pr view --web`
+   - Confirm issue linking worked correctly

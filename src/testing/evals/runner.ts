@@ -62,9 +62,11 @@ export class EvalTestRunner {
 
       await this.mcpClient.connect(transportOptions);
 
-      // Notify display manager about test suite start
-      if (this.displayManager) {
-        this.displayManager.suiteStart(this.config.tests.length, this.models.length);
+      // Emit section start for LLM evaluation tests
+      if (this.displayManager && this.models.length > 0) {
+        const modelText =
+          this.models.length === 1 ? this.models[0] : `${this.models.length} models`;
+        this.displayManager.sectionStart('evals', `🤖 LLM Evaluation Tests (${modelText})`);
       }
 
       // Run LLM evaluation (eval) tests for each model
