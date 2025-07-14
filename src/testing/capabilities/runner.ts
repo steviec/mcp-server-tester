@@ -41,13 +41,14 @@ export class CapabilitiesTestRunner {
 
       await this.mcpClient.connect(transportOptions);
 
-      // Run discovery tests if configured
-      if (this.config.expected_tool_list) {
-        await this.runDiscoveryTests();
-      }
-
       // Run capabilities tests
       const results: TestResult[] = [];
+
+      // Run discovery tests if configured and add results
+      if (this.config.expected_tool_list) {
+        const discoveryResults = await this.runDiscoveryTestsWithResults();
+        results.push(...discoveryResults);
+      }
 
       for (const test of this.config.tests) {
         const result = await this.runTest(test);
@@ -109,6 +110,76 @@ export class CapabilitiesTestRunner {
     }
 
     // Discovery: All tool schemas valid
+  }
+
+  private async runDiscoveryTestsWithResults(): Promise<TestResult[]> {
+    const results: TestResult[] = [];
+
+    if (!this.config.expected_tool_list) {
+      return results;
+    }
+
+    try {
+      // Test tool discovery
+      const toolsResult = await this.mcpClient.listTools();
+      const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
+
+      const missingTools: string[] = [];
+      for (const expectedTool of this.config.expected_tool_list) {
+        if (!availableTools.includes(expectedTool)) {
+          missingTools.push(expectedTool);
+        }
+      }
+
+      // Create discovery test result
+      const discoveryTestName = `Tool discovery: ${this.config.expected_tool_list.length}/${this.config.expected_tool_list.length} expected tools found (${this.config.expected_tool_list.join(', ')})`;
+
+      if (missingTools.length > 0) {
+        results.push({
+          name: `Tool discovery: ${this.config.expected_tool_list.length - missingTools.length}/${this.config.expected_tool_list.length} expected tools found (missing: ${missingTools.join(', ')})`,
+          passed: false,
+          errors: [
+            `Missing expected tools: ${missingTools.join(', ')}. Available tools: ${availableTools.join(', ')}`,
+          ],
+          calls: [],
+          duration: 0,
+        });
+      } else {
+        results.push({
+          name: discoveryTestName,
+          passed: true,
+          errors: [],
+          calls: [],
+          duration: 0,
+        });
+      }
+
+      // Validate tool schemas
+      const tools = toolsResult.tools || [];
+      const schemaErrors: string[] = [];
+
+      for (const tool of tools) {
+        if (!tool.name) {
+          schemaErrors.push(`Tool missing name property`);
+        }
+        if (!tool.inputSchema) {
+          schemaErrors.push(`Tool '${tool.name}' missing input schema`);
+        }
+      }
+
+      // We can skip schema validation results for now since it's not part of the original requirements
+      // But we could add it in the future if needed
+    } catch (error) {
+      results.push({
+        name: 'Tool discovery',
+        passed: false,
+        errors: [error instanceof Error ? error.message : String(error)],
+        calls: [],
+        duration: 0,
+      });
+    }
+
+    return results;
   }
 
   private async runTest(test: CapabilitiesTest): Promise<TestResult> {

@@ -37,12 +37,35 @@ export class TestRunner {
     this.displayManager = new DisplayManager(displayOptions);
   }
 
+  private calculateToolsTestCount(): number {
+    if (!this.config.tools) {
+      return 0;
+    }
+
+    let count = 0;
+    if (this.config.tools.expected_tool_list) {
+      count++;
+    }
+    if (this.config.tools.tests) {
+      count += this.config.tools.tests.length;
+    }
+    return count;
+  }
+
+  private calculateEvalsTestCount(): number {
+    if (!this.config.evals) {
+      return 0;
+    }
+
+    const testCount = this.config.evals.tests?.length || 0;
+    const modelCount = this.config.evals.models?.length || 1;
+    return testCount * modelCount;
+  }
+
   async run(): Promise<TestSummary> {
     const startTime = Date.now();
     const capabilitiesResults: TestResult[] = [];
     const evalResults: TestResult[] = [];
-
-    this.displayManager.progress('Detecting test types...');
 
     // Auto-detect which test types to run based on config sections
     const hasTools = !!this.config.tools;
@@ -54,9 +77,16 @@ export class TestRunner {
       );
     }
 
+    // Calculate total test count for progress tracking
+    const toolsTestCount = hasTools ? this.calculateToolsTestCount() : 0;
+    const evalsTestCount = hasEvals ? this.calculateEvalsTestCount() : 0;
+    const totalTestCount = toolsTestCount + evalsTestCount;
+
+    // Initialize the display with suite information
+    this.displayManager.suiteStart(totalTestCount, undefined, hasTools, hasEvals);
+
     // Run capabilities tests if tools section exists
     if (hasTools) {
-      this.displayManager.progress('Running tools tests...');
       // Load server config from file
       const serverConfig = ConfigLoader.loadServerConfig(
         this.serverOptions.serverConfig,
@@ -68,8 +98,21 @@ export class TestRunner {
         quiet: this.serverOptions.quiet,
         verbose: this.serverOptions.verbose,
       });
+
       const capabilitiesResult = await capabilitiesRunner.run();
       capabilitiesResults.push(...capabilitiesResult.results);
+
+      // Report tools test results to DisplayManager
+      for (const result of capabilitiesResult.results) {
+        this.displayManager.testComplete(
+          result.name,
+          result.passed,
+          result.errors,
+          undefined, // no model for tools tests
+          undefined, // no prompt for tools tests
+          'tool' // test type
+        );
+      }
     }
 
     // Run LLM evaluation (eval) tests if evals section exists
@@ -81,7 +124,6 @@ export class TestRunner {
           '   Set your Anthropic API key to run eval tests: export ANTHROPIC_API_KEY="your-key-here"'
         );
       } else {
-        this.displayManager.progress('Running LLM evaluation (eval) tests...');
         // Load server config from file
         const serverConfig = ConfigLoader.loadServerConfig(
           this.serverOptions.serverConfig,
@@ -123,9 +165,13 @@ export class TestRunner {
       results: allResults,
     };
 
-    // Final summary is handled by the individual test runners through DisplayManager
-    // For capabilities tests, we might need to add DisplayManager support later
-    // For now, only evals use the new display system
+    // Send final summary to DisplayManager
+    this.displayManager.suiteComplete(
+      combinedSummary.total,
+      combinedSummary.passed,
+      combinedSummary.failed,
+      duration
+    );
 
     this.displayManager.flush();
 

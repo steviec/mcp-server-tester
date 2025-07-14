@@ -90,7 +90,8 @@ export class EvalTestRunner {
               result.passed,
               result.errors,
               model,
-              test.prompt
+              test.prompt,
+              'eval'
             );
           }
         }
