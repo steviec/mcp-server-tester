@@ -5,10 +5,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { TestRegistry, registerDoctorTest } from '../../src/testing/doctor/TestRegistry.js';
 import { DiagnosticTest } from '../../src/testing/doctor/DiagnosticTest.js';
-import { TestSeverity } from '../../src/testing/doctor/types.js';
+import {
+  TestSeverity,
+  type DoctorConfig,
+  type DiagnosticResult,
+} from '../../src/testing/doctor/types.js';
 import { HealthReportGenerator } from '../../src/testing/doctor/HealthReport.js';
 import type { McpClient } from '../../src/core/mcp-client.js';
-import type { DoctorConfig, DiagnosticResult } from '../../src/testing/doctor/types.js';
 
 class MockDiagnosticTest extends DiagnosticTest {
   readonly name = 'Mock: Test';
@@ -16,7 +19,7 @@ class MockDiagnosticTest extends DiagnosticTest {
   readonly category = 'mock';
   readonly severity = TestSeverity.INFO;
 
-  async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
+  async execute(_client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     return this.createResult(true, 'Mock test passed');
   }
 }

@@ -3,8 +3,11 @@
  */
 
 export enum TestSeverity {
+  // eslint-disable-next-line no-unused-vars
   CRITICAL = 'critical',
+  // eslint-disable-next-line no-unused-vars
   WARNING = 'warning',
+  // eslint-disable-next-line no-unused-vars
   INFO = 'info',
 }
 

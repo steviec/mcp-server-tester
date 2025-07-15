@@ -6,8 +6,13 @@ import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import { TestRegistry } from './TestRegistry.js';
 import { HealthReportGenerator } from './HealthReport.js';
-import type { DiagnosticResult, DoctorOptions, HealthReport, DoctorConfig } from './types.js';
-import { TestSeverity } from './types.js';
+import {
+  TestSeverity,
+  type DiagnosticResult,
+  type DoctorOptions,
+  type HealthReport,
+  type DoctorConfig,
+} from './types.js';
 
 export class DoctorRunner {
   private config: DoctorConfig;

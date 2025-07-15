@@ -3,10 +3,9 @@
  */
 
 import { DiagnosticTest } from './DiagnosticTest.js';
-import { TestSeverity } from './types.js';
+import { TestSeverity, type DiagnosticResult } from './types.js';
 import { registerDoctorTest } from './TestRegistry.js';
 import type { McpClient } from '../../core/mcp-client.js';
-import type { DiagnosticResult } from './types.js';
 
 class PlaceholderProtocolTest extends DiagnosticTest {
   readonly name = 'Protocol: Basic Connectivity';
