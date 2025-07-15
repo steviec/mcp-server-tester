@@ -24,3 +24,6 @@ import './protocol/index.js';
 
 // Import lifecycle tests to register them
 import './lifecycle/index.js';
+
+// Import features tests to register them
+import './features/index.js';
