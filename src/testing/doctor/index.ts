@@ -18,3 +18,9 @@ export type {
 
 // Import placeholder tests to register them
 import './PlaceholderTests.js';
+
+// Import protocol tests to register them
+import './protocol/ConnectionHealthTests.js';
+import './protocol/JsonRpcComplianceTests.js';
+import './protocol/ProtocolVersionTests.js';
+import './protocol/SessionManagementTests.js';
