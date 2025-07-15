@@ -20,7 +20,3 @@ Create a pull request using this template: @.claude/context/PULL_REQUEST_TEMPLAT
 3. **Create pull request**:
    - Use !`gh pr create` with generated title and template content
    - Populate all relevant template sections
-
-4. **Verify PR creation**:
-   - Display PR URL: !`gh pr view --web`
-   - Confirm issue linking worked correctly

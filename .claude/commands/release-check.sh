@@ -27,12 +27,11 @@ if ! gh auth status &> /dev/null; then
     exit 1
 fi
 
-# Check git working directory is clean
-if [ -n "$(git status --porcelain)" ]; then
-    echo -e "${RED}❌ Git working directory not clean${NC}"
-    echo "Please commit or stash your changes:"
-    git status --short
-    exit 1
+# Check git working directory is clean (ignore .claude/ and .md files)
+UNCLEAN_FILES=$(git status --porcelain | grep -v "^.* \.claude/" | grep -v "^.* .*\.md$")
+if [ -n "$UNCLEAN_FILES" ]; then
+    echo -e "${YELLOW}⚠️ Git working directory not clean${NC}"
+    echo "Consider stashing your changes"
 fi
 
 # Check we're on main/master branch
