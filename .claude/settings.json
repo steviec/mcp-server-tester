@@ -54,7 +54,9 @@
       "TodoRead",
       "TodoWrite",
       "NotebookRead",
-      "NotebookEdit"
+      "NotebookEdit",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": ["Bash(rm -rf:*)", "Bash(sudo:*)", "Bash(chmod:*)", "Bash(chown:*)"]
   }
