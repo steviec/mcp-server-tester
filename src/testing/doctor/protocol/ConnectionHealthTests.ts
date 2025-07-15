@@ -5,7 +5,6 @@
 
 import { DiagnosticTest } from '../DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
-import { registerDoctorTest } from '../TestRegistry.js';
 import { McpClient, type McpClient as McpClientType } from '../../../core/mcp-client.js';
 
 class StdioConnectivityTest extends DiagnosticTest {
@@ -20,7 +19,7 @@ class StdioConnectivityTest extends DiagnosticTest {
 
       // Test basic connectivity by listing tools
       const result = await Promise.race([
-        client.listTools(),
+        client.sdk.listTools(),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Connection timeout')), config.timeouts.connection)
         ),
@@ -93,7 +92,7 @@ class ConnectionLifecycleTest extends DiagnosticTest {
 
       // Test that we can make requests
       const listResult = await Promise.race([
-        _client.listTools(),
+        _client.sdk.listTools(),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), config.timeouts.testExecution)
         ),
@@ -152,7 +151,7 @@ class TransportErrorHandlingTest extends DiagnosticTest {
       // Test timeout behavior
       try {
         await Promise.race([
-          client.listTools(),
+          client.sdk.listTools(),
           new Promise(
             (_, reject) => setTimeout(() => reject(new Error('Test timeout')), 50) // Very short timeout
           ),
@@ -170,9 +169,9 @@ class TransportErrorHandlingTest extends DiagnosticTest {
       // Test that server handles multiple concurrent requests
       try {
         const concurrentRequests = await Promise.allSettled([
-          client.listTools(),
-          client.listResources(),
-          client.listPrompts(),
+          client.sdk.listTools(),
+          client.sdk.listResources(),
+          client.sdk.listPrompts(),
         ]);
 
         const failedRequests = concurrentRequests.filter(result => result.status === 'rejected');
@@ -207,7 +206,5 @@ class TransportErrorHandlingTest extends DiagnosticTest {
   }
 }
 
-// Register connection health tests
-registerDoctorTest(new StdioConnectivityTest());
-registerDoctorTest(new ConnectionLifecycleTest());
-registerDoctorTest(new TransportErrorHandlingTest());
+// Export test classes for registration in index.ts
+export { StdioConnectivityTest, ConnectionLifecycleTest, TransportErrorHandlingTest };

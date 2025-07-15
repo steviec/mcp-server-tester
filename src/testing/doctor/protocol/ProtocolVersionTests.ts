@@ -5,7 +5,6 @@
 
 import { DiagnosticTest } from '../DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
-import { registerDoctorTest } from '../TestRegistry.js';
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class ProtocolVersionNegotiationTest extends DiagnosticTest {
@@ -21,7 +20,7 @@ class ProtocolVersionNegotiationTest extends DiagnosticTest {
     try {
       // Test basic connectivity which should involve version negotiation
       const response = await Promise.race([
-        client.listTools(),
+        client.sdk.listTools(),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Connection timeout')), config.timeouts.testExecution)
         ),
@@ -67,7 +66,7 @@ class ProtocolVersionNegotiationTest extends DiagnosticTest {
 
       // Test other endpoints to validate protocol consistency
       try {
-        const resourcesResponse = await client.listResources();
+        const resourcesResponse = await client.sdk.listResources();
         if (
           resourcesResponse &&
           typeof resourcesResponse === 'object' &&
@@ -87,7 +86,7 @@ class ProtocolVersionNegotiationTest extends DiagnosticTest {
       }
 
       try {
-        const promptsResponse = await client.listPrompts();
+        const promptsResponse = await client.sdk.listPrompts();
         if (
           promptsResponse &&
           typeof promptsResponse === 'object' &&
@@ -138,5 +137,5 @@ class ProtocolVersionNegotiationTest extends DiagnosticTest {
   }
 }
 
-// Register protocol version tests
-registerDoctorTest(new ProtocolVersionNegotiationTest());
+// Export test classes for registration in index.ts
+export { ProtocolVersionNegotiationTest };

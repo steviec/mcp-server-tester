@@ -5,14 +5,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import type {
-  ListToolsResult,
-  CallToolResult,
-  ListResourcesResult,
-  ReadResourceResult,
-  ListPromptsResult,
-  GetPromptResult,
-} from '@modelcontextprotocol/sdk/types.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { TransportOptions, ServerConfig } from './types.js';
 
@@ -60,85 +52,12 @@ export class McpClient {
     }
   }
 
-  async listTools(): Promise<ListToolsResult> {
-    this.ensureConnected();
-    try {
-      const result = await this.client.listTools();
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Failed to list tools: ${error instanceof Error ? error.message : String(error)}`
-      );
+  // Expose the raw client for direct SDK usage
+  get sdk(): Client {
+    if (!this.connected) {
+      throw new Error('Client is not connected. Call connect() first.');
     }
-  }
-
-  async callTool(name: string, arguments_: Record<string, unknown>): Promise<CallToolResult> {
-    this.ensureConnected();
-    try {
-      const result = await this.client.callTool({
-        name,
-        arguments: arguments_,
-      });
-      return result as CallToolResult;
-    } catch (error) {
-      throw new Error(
-        `Failed to call tool ${name}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  async listResources(): Promise<ListResourcesResult> {
-    this.ensureConnected();
-    try {
-      const result = await this.client.listResources();
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Failed to list resources: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  async readResource(uri: string): Promise<ReadResourceResult> {
-    this.ensureConnected();
-    try {
-      const result = await this.client.readResource({ uri });
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Failed to read resource ${uri}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  async listPrompts(): Promise<ListPromptsResult> {
-    this.ensureConnected();
-    try {
-      const result = await this.client.listPrompts();
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Failed to list prompts: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
-
-  async getPrompt(
-    name: string,
-    arguments_: Record<string, unknown> = {}
-  ): Promise<GetPromptResult> {
-    this.ensureConnected();
-    try {
-      const result = await this.client.getPrompt({
-        name,
-        arguments: arguments_ as Record<string, string>,
-      });
-      return result;
-    } catch (error) {
-      throw new Error(
-        `Failed to get prompt ${name}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
+    return this.client;
   }
 
   private async createTransport(options: TransportOptions): Promise<Transport> {
@@ -179,12 +98,6 @@ export class McpClient {
     }
 
     return new SSEClientTransport(new URL(options.url));
-  }
-
-  private ensureConnected(): void {
-    if (!this.connected) {
-      throw new Error('Client is not connected. Call connect() first.');
-    }
   }
 }
 

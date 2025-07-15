@@ -170,7 +170,7 @@ describe('LLM Provider Unit Tests', () => {
         return;
       }
 
-      const toolsResponse = await mcpClient.listTools();
+      const toolsResponse = await mcpClient.sdk.listTools();
       expect(toolsResponse.tools).toBeDefined();
 
       const toolNames = toolsResponse.tools.map((tool: any) => tool.name);

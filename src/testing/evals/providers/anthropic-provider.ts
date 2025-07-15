@@ -20,7 +20,7 @@ export class AnthropicProvider extends LlmProvider {
   ): Promise<LlmConversationResult> {
     try {
       // Get available tools from MCP server
-      const toolsResponse = await mcpClient.listTools();
+      const toolsResponse = await mcpClient.sdk.listTools();
       const mcpTools = toolsResponse.tools || [];
 
       // Filter tools based on allowed list if specified
@@ -40,10 +40,10 @@ export class AnthropicProvider extends LlmProvider {
           parameters: jsonSchema(mcpTool.inputSchema as object),
           execute: async (args: unknown) => {
             try {
-              const result = await mcpClient.callTool(
-                mcpTool.name,
-                args as Record<string, unknown>
-              );
+              const result = await mcpClient.sdk.callTool({
+                name: mcpTool.name,
+                arguments: args as Record<string, unknown>,
+              });
               return result;
             } catch (error) {
               throw new Error(

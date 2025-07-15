@@ -4,7 +4,6 @@
 
 import { DiagnosticTest } from './DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult } from './types.js';
-import { registerDoctorTest } from './TestRegistry.js';
 import type { McpClient } from '../../core/mcp-client.js';
 
 // PlaceholderProtocolTest removed - replaced with comprehensive protocol tests
@@ -35,7 +34,7 @@ class PlaceholderPerformanceTest extends DiagnosticTest {
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
       const startTime = Date.now();
-      await client.listTools();
+      await client.sdk.listTools();
       const endTime = Date.now();
       const responseTime = endTime - startTime;
 
@@ -73,9 +72,9 @@ class PlaceholderFeaturesTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
-      const tools = await client.listTools();
-      const resources = await client.listResources();
-      const prompts = await client.listPrompts();
+      const tools = await client.sdk.listTools();
+      const resources = await client.sdk.listResources();
+      const prompts = await client.sdk.listPrompts();
 
       const features = {
         tools: tools.tools?.length || 0,
@@ -117,8 +116,10 @@ class PlaceholderTransportTest extends DiagnosticTest {
   }
 }
 
-// Register all placeholder tests
-registerDoctorTest(new PlaceholderSecurityTest());
-registerDoctorTest(new PlaceholderPerformanceTest());
-registerDoctorTest(new PlaceholderFeaturesTest());
-registerDoctorTest(new PlaceholderTransportTest());
+// Export test classes for registration in index.ts
+export {
+  PlaceholderSecurityTest,
+  PlaceholderPerformanceTest,
+  PlaceholderFeaturesTest,
+  PlaceholderTransportTest,
+};

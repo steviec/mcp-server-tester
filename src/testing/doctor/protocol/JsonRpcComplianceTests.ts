@@ -5,7 +5,6 @@
 
 import { DiagnosticTest } from '../DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
-import { registerDoctorTest } from '../TestRegistry.js';
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class JsonRpcMessageFormatTest extends DiagnosticTest {
@@ -21,7 +20,7 @@ class JsonRpcMessageFormatTest extends DiagnosticTest {
     try {
       // Test basic JSON-RPC response structure
       const response = await Promise.race([
-        client.listTools(),
+        client.sdk.listTools(),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Request timeout')), config.timeouts.testExecution)
         ),
@@ -65,7 +64,7 @@ class JsonRpcMessageFormatTest extends DiagnosticTest {
       // Test error response format by making an invalid request
       try {
         // Attempt to call a non-existent tool to trigger an error response
-        await client.callTool('non_existent_tool_xyz', {});
+        await client.sdk.callTool({ name: 'non_existent_tool_xyz', arguments: {} });
       } catch (error) {
         // This should throw an error, which is expected
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -126,10 +125,10 @@ class RequestIdHandlingTest extends DiagnosticTest {
       // Make multiple concurrent requests to test ID handling
       const startTime = Date.now();
       const requests = await Promise.allSettled([
-        client.listTools(),
-        client.listResources(),
-        client.listPrompts(),
-        client.listTools(), // Duplicate request
+        client.sdk.listTools(),
+        client.sdk.listResources(),
+        client.sdk.listPrompts(),
+        client.sdk.listTools(), // Duplicate request
       ]);
 
       const duration = Date.now() - startTime;
@@ -221,7 +220,7 @@ class ErrorResponseFormatTest extends DiagnosticTest {
           name: 'Invalid tool name',
           test: async () => {
             try {
-              await client.callTool('invalid_tool_name_12345', {});
+              await client.sdk.callTool({ name: 'invalid_tool_name_12345', arguments: {} });
               return 'No error thrown for invalid tool';
             } catch (error) {
               return error instanceof Error ? error.message : String(error);
@@ -233,11 +232,11 @@ class ErrorResponseFormatTest extends DiagnosticTest {
           test: async () => {
             try {
               // First get a valid tool name
-              const tools = await client.listTools();
+              const tools = await client.sdk.listTools();
               if (tools.tools && tools.tools.length > 0) {
                 const toolName = tools.tools[0].name;
                 // Call with potentially invalid arguments
-                await client.callTool(toolName, { invalid_param: 'test' });
+                await client.sdk.callTool({ name: toolName, arguments: { invalid_param: 'test' } });
                 return 'No error thrown for potentially invalid arguments';
               } else {
                 return 'No tools available to test invalid arguments';
@@ -324,7 +323,10 @@ class JsonRpcErrorCodeTest extends DiagnosticTest {
           expectedCode: -32601,
           test: async () => {
             try {
-              await client.callTool('definitely_non_existent_method_12345', {});
+              await client.sdk.callTool({
+                name: 'definitely_non_existent_method_12345',
+                arguments: {},
+              });
               return 'No error thrown for non-existent method';
             } catch (error) {
               return error instanceof Error ? error.message : String(error);
@@ -336,13 +338,16 @@ class JsonRpcErrorCodeTest extends DiagnosticTest {
           test: async () => {
             try {
               // Get a valid tool first
-              const tools = await client.listTools();
+              const tools = await client.sdk.listTools();
               if (tools.tools && tools.tools.length > 0) {
                 const toolName = tools.tools[0].name;
                 // Call with potentially invalid parameters to trigger -32602
-                await client.callTool(toolName, {
-                  __invalid_param: null,
-                  __another_bad_param: undefined,
+                await client.sdk.callTool({
+                  name: toolName,
+                  arguments: {
+                    __invalid_param: null,
+                    __another_bad_param: undefined,
+                  },
                 });
                 return 'No error thrown for invalid parameters';
               } else {
@@ -391,7 +396,7 @@ class JsonRpcErrorCodeTest extends DiagnosticTest {
 
       // Test that normal operations still work (baseline validation)
       try {
-        await client.listTools();
+        await client.sdk.listTools();
         validations.push('Baseline: Normal operations work correctly');
       } catch (error) {
         issues.push(
@@ -432,8 +437,10 @@ class JsonRpcErrorCodeTest extends DiagnosticTest {
   }
 }
 
-// Register JSON-RPC compliance tests
-registerDoctorTest(new JsonRpcMessageFormatTest());
-registerDoctorTest(new RequestIdHandlingTest());
-registerDoctorTest(new ErrorResponseFormatTest());
-registerDoctorTest(new JsonRpcErrorCodeTest());
+// Export test classes for registration in index.ts
+export {
+  JsonRpcMessageFormatTest,
+  RequestIdHandlingTest,
+  ErrorResponseFormatTest,
+  JsonRpcErrorCodeTest,
+};
