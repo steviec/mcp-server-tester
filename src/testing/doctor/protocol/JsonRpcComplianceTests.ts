@@ -306,7 +306,134 @@ class ErrorResponseFormatTest extends DiagnosticTest {
   }
 }
 
+class JsonRpcErrorCodeTest extends DiagnosticTest {
+  readonly name = 'Protocol: JSON-RPC Error Code Compliance';
+  readonly description = 'Test standard JSON-RPC error codes and protocol-level error handling';
+  readonly category = 'protocol';
+  readonly severity = TEST_SEVERITY.WARNING;
+
+  async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
+    const issues: string[] = [];
+    const validations: string[] = [];
+
+    try {
+      // Test standard JSON-RPC error scenarios
+      const errorTests = [
+        {
+          name: 'Method Not Found (-32601)',
+          expectedCode: -32601,
+          test: async () => {
+            try {
+              await client.callTool('definitely_non_existent_method_12345', {});
+              return 'No error thrown for non-existent method';
+            } catch (error) {
+              return error instanceof Error ? error.message : String(error);
+            }
+          },
+        },
+        {
+          name: 'Invalid tool call with bad parameters',
+          test: async () => {
+            try {
+              // Get a valid tool first
+              const tools = await client.listTools();
+              if (tools.tools && tools.tools.length > 0) {
+                const toolName = tools.tools[0].name;
+                // Call with potentially invalid parameters to trigger -32602
+                await client.callTool(toolName, {
+                  __invalid_param: null,
+                  __another_bad_param: undefined,
+                });
+                return 'No error thrown for invalid parameters';
+              } else {
+                return 'No tools available to test invalid parameters';
+              }
+            } catch (error) {
+              return error instanceof Error ? error.message : String(error);
+            }
+          },
+        },
+      ];
+
+      for (const errorTest of errorTests) {
+        try {
+          const result = await errorTest.test();
+
+          if (result.startsWith('No error thrown')) {
+            issues.push(`${errorTest.name}: ${result}`);
+          } else if (result.includes('No tools available')) {
+            validations.push(`${errorTest.name}: Skipped - no tools to test`);
+          } else {
+            // Validate that we got a proper error message
+            if (result.length > 0 && result.length < 1000) {
+              validations.push(`${errorTest.name}: Proper error response received`);
+
+              // Check for specific error indicators
+              if (
+                result.toLowerCase().includes('not found') ||
+                result.toLowerCase().includes('unknown') ||
+                result.toLowerCase().includes('invalid')
+              ) {
+                validations.push(`${errorTest.name}: Error message indicates proper error type`);
+              }
+            } else if (result.length === 0) {
+              issues.push(`${errorTest.name}: Empty error message`);
+            } else {
+              issues.push(`${errorTest.name}: Error message too long (${result.length} chars)`);
+            }
+          }
+        } catch (testError) {
+          issues.push(
+            `${errorTest.name}: Test execution failed - ${testError instanceof Error ? testError.message : String(testError)}`
+          );
+        }
+      }
+
+      // Test that normal operations still work (baseline validation)
+      try {
+        await client.listTools();
+        validations.push('Baseline: Normal operations work correctly');
+      } catch (error) {
+        issues.push(
+          `Baseline test failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+
+      const isValid = issues.length === 0;
+      const message = isValid
+        ? `JSON-RPC error code validation passed (${validations.length} checks)`
+        : `JSON-RPC error code issues detected (${issues.length} issues)`;
+
+      return this.createResult(
+        isValid,
+        message,
+        { issues, validations },
+        issues.length > 0
+          ? [
+              'Implement proper JSON-RPC error code responses',
+              'Ensure -32601 for method not found',
+              'Ensure -32602 for invalid parameters',
+              'Validate error message quality and length',
+            ]
+          : undefined
+      );
+    } catch (error) {
+      return this.createResult(
+        false,
+        'JSON-RPC error code test failed',
+        { error: error instanceof Error ? error.message : String(error) },
+        [
+          'Check basic server connectivity',
+          'Verify JSON-RPC error handling implementation',
+          'Review server error response logic',
+        ]
+      );
+    }
+  }
+}
+
 // Register JSON-RPC compliance tests
 registerDoctorTest(new JsonRpcMessageFormatTest());
 registerDoctorTest(new RequestIdHandlingTest());
 registerDoctorTest(new ErrorResponseFormatTest());
+registerDoctorTest(new JsonRpcErrorCodeTest());

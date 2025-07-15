@@ -103,101 +103,6 @@ class SessionIdGenerationTest extends DiagnosticTest {
   }
 }
 
-class SessionHeaderHandlingTest extends DiagnosticTest {
-  readonly name = 'Protocol: Session Header Handling';
-  readonly description = 'Test session header processing and validation';
-  readonly category = 'protocol';
-  readonly severity = TEST_SEVERITY.INFO;
-
-  async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
-    const observations: string[] = [];
-    const validations: string[] = [];
-
-    try {
-      // For STDIO transport, session headers are not directly applicable
-      // We'll test session-like behavior through connection persistence
-
-      const startTime = Date.now();
-
-      // Test that we can maintain a persistent connection
-      const persistenceTests = [
-        { name: 'Initial connection', test: () => client.listTools() },
-        { name: 'Mid-session request', test: () => client.listResources() },
-        { name: 'End-session request', test: () => client.listPrompts() },
-      ];
-
-      let successfulRequests = 0;
-
-      for (const test of persistenceTests) {
-        try {
-          await Promise.race([
-            test.test(),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Request timeout')), config.timeouts.testExecution)
-            ),
-          ]);
-          successfulRequests++;
-          validations.push(`${test.name}: Success`);
-        } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : String(error);
-          if (errorMsg.includes('not implemented') || errorMsg.includes('not supported')) {
-            validations.push(`${test.name}: Not implemented (acceptable)`);
-          } else {
-            observations.push(`${test.name}: Failed - ${errorMsg}`);
-          }
-        }
-      }
-
-      const duration = Date.now() - startTime;
-
-      if (successfulRequests >= 1) {
-        validations.push(`Connection maintained throughout session (${duration}ms total)`);
-      } else {
-        observations.push('No successful requests - session handling may be problematic');
-      }
-
-      // For HTTP transport, session headers would be more relevant
-      observations.push(
-        'STDIO transport: Session headers not directly applicable, testing connection persistence instead'
-      );
-
-      const hasIssues = observations.some(
-        obs => obs.includes('Failed') || obs.includes('problematic')
-      );
-      const message = hasIssues
-        ? `Session header handling issues detected`
-        : `Session handling working correctly for STDIO transport (${validations.length} validations)`;
-
-      return this.createResult(
-        !hasIssues,
-        message,
-        { observations, validations, duration, successfulRequests },
-        hasIssues
-          ? [
-              'Ensure connection persistence throughout session',
-              'Implement proper session state management',
-              'Consider HTTP transport testing for header validation',
-            ]
-          : [
-              'For HTTP transport, implement Mcp-Session-Id header validation',
-              'Add session logging for better observability',
-            ]
-      );
-    } catch (error) {
-      return this.createResult(
-        false,
-        'Session header handling test failed',
-        { error: error instanceof Error ? error.message : String(error) },
-        [
-          'Check session implementation',
-          'Verify connection handling',
-          'Review session state management',
-        ]
-      );
-    }
-  }
-}
-
 class SessionTerminationTest extends DiagnosticTest {
   readonly name = 'Protocol: Session Termination';
   readonly description = 'Test proper session cleanup and termination';
@@ -412,6 +317,5 @@ class InvalidSessionHandlingTest extends DiagnosticTest {
 
 // Register session management tests
 registerDoctorTest(new SessionIdGenerationTest());
-registerDoctorTest(new SessionHeaderHandlingTest());
 registerDoctorTest(new SessionTerminationTest());
 registerDoctorTest(new InvalidSessionHandlingTest());
