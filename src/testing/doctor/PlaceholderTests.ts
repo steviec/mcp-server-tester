@@ -4,7 +4,6 @@
 
 import { DiagnosticTest } from './DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult } from './types.js';
-import { registerDoctorTest } from './TestRegistry.js';
 import type { McpClient } from '../../core/mcp-client.js';
 
 // PlaceholderProtocolTest removed - replaced with comprehensive protocol tests
@@ -117,8 +116,10 @@ class PlaceholderTransportTest extends DiagnosticTest {
   }
 }
 
-// Register all placeholder tests
-registerDoctorTest(new PlaceholderSecurityTest());
-registerDoctorTest(new PlaceholderPerformanceTest());
-registerDoctorTest(new PlaceholderFeaturesTest());
-registerDoctorTest(new PlaceholderTransportTest());
+// Export test classes for registration in index.ts
+export {
+  PlaceholderSecurityTest,
+  PlaceholderPerformanceTest,
+  PlaceholderFeaturesTest,
+  PlaceholderTransportTest,
+};

@@ -5,7 +5,6 @@
 
 import { DiagnosticTest } from '../DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
-import { registerDoctorTest } from '../TestRegistry.js';
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class SessionIdGenerationTest extends DiagnosticTest {
@@ -25,7 +24,7 @@ class SessionIdGenerationTest extends DiagnosticTest {
       const responses = [];
       for (let i = 0; i < 3; i++) {
         try {
-          const response = await client.listTools();
+          const response = await client.sdk.listTools();
           responses.push(response);
           validations.push(`Request ${i + 1}: Successful response received`);
         } catch (error) {
@@ -116,7 +115,7 @@ class SessionTerminationTest extends DiagnosticTest {
     try {
       // Test that the current session is working before testing termination
       try {
-        await client.listTools();
+        await client.sdk.listTools();
         validations.push('Session active and responding before termination test');
       } catch (error) {
         observations.push(
@@ -136,9 +135,9 @@ class SessionTerminationTest extends DiagnosticTest {
       // Test multiple rapid requests to ensure session can handle load before termination
       try {
         const rapidRequests = await Promise.allSettled([
-          client.listTools(),
-          client.listResources(),
-          client.listPrompts(),
+          client.sdk.listTools(),
+          client.sdk.listResources(),
+          client.sdk.listPrompts(),
         ]);
 
         const successful = rapidRequests.filter(r => r.status === 'fulfilled').length;
@@ -217,7 +216,7 @@ class InvalidSessionHandlingTest extends DiagnosticTest {
           test: async () => {
             try {
               // Test with potentially empty or minimal requests
-              const result = await client.listTools();
+              const result = await client.sdk.listTools();
               return result ? 'success' : 'empty_response';
             } catch (error) {
               return `error: ${error instanceof Error ? error.message : String(error)}`;
@@ -230,9 +229,9 @@ class InvalidSessionHandlingTest extends DiagnosticTest {
             try {
               // Test rapid requests that might stress session handling
               const results = await Promise.all([
-                client.listTools(),
-                client.listTools(),
-                client.listTools(),
+                client.sdk.listTools(),
+                client.sdk.listTools(),
+                client.sdk.listTools(),
               ]);
               return results.every(r => r && typeof r === 'object') ? 'success' : 'inconsistent';
             } catch (error) {
@@ -315,7 +314,5 @@ class InvalidSessionHandlingTest extends DiagnosticTest {
   }
 }
 
-// Register session management tests
-registerDoctorTest(new SessionIdGenerationTest());
-registerDoctorTest(new SessionTerminationTest());
-registerDoctorTest(new InvalidSessionHandlingTest());
+// Export test classes for registration in index.ts
+export { SessionIdGenerationTest, SessionTerminationTest, InvalidSessionHandlingTest };
