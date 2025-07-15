@@ -91,11 +91,21 @@ async function main(): Promise<void> {
   program
     .name('mcp-server-tester')
     .description('Standalone CLI tool for testing MCP servers')
-    .version(packageJson.version);
+    .version(packageJson.version)
+    .usage('<command> [options]')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  mcp-server-tester test test.yaml --server-config server.json
+  mcp-server-tester doctor --server-config server.json
+  mcp-server-tester test eval.yaml --server-config server.json --server-name filesystem`
+    );
 
-  // Unified test command
+  // Test command
   program
     .command('test')
+    .description('Run tests against MCP servers (tools and/or evals)')
     .argument('<test-file>', 'Test configuration file (YAML)')
     .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(

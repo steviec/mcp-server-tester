@@ -88,7 +88,7 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    const args = [testFile, '--server-config', serverConfig];
+    const args = ['test', testFile, '--server-config', serverConfig];
 
     if (options.serverName) {
       args.push('--server-name', options.serverName);
