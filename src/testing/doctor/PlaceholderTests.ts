@@ -7,38 +7,7 @@ import { TEST_SEVERITY, type DiagnosticResult } from './types.js';
 import { registerDoctorTest } from './TestRegistry.js';
 import type { McpClient } from '../../core/mcp-client.js';
 
-class PlaceholderProtocolTest extends DiagnosticTest {
-  readonly name = 'Protocol: Basic Connectivity';
-  readonly description = 'Basic protocol compliance validation';
-  readonly category = 'protocol';
-  readonly severity = TEST_SEVERITY.INFO;
-
-  async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
-    try {
-      // Simple connectivity test
-      const result = await client.listTools();
-
-      if (result.tools && Array.isArray(result.tools)) {
-        return this.createResult(
-          true,
-          `Server responds to basic requests (${result.tools.length} tools available)`,
-          { toolCount: result.tools.length }
-        );
-      } else {
-        return this.createResult(false, 'Server response format is invalid', { response: result }, [
-          'Check server implementation of listTools method',
-        ]);
-      }
-    } catch (error) {
-      return this.createResult(
-        false,
-        'Server not responding to basic requests',
-        { error: error instanceof Error ? error.message : String(error) },
-        ['Check server configuration and ensure server is running']
-      );
-    }
-  }
-}
+// PlaceholderProtocolTest removed - replaced with comprehensive protocol tests
 
 class PlaceholderSecurityTest extends DiagnosticTest {
   readonly name = 'Security: Basic Validation';
@@ -149,7 +118,6 @@ class PlaceholderTransportTest extends DiagnosticTest {
 }
 
 // Register all placeholder tests
-registerDoctorTest(new PlaceholderProtocolTest());
 registerDoctorTest(new PlaceholderSecurityTest());
 registerDoctorTest(new PlaceholderPerformanceTest());
 registerDoctorTest(new PlaceholderFeaturesTest());
