@@ -177,3 +177,12 @@ export interface EvalsConfig {
   max_steps?: number;
   tests: EvalTest[];
 }
+
+// Doctor types - re-export from doctor module
+export type {
+  DiagnosticResult,
+  HealthReport,
+  DoctorConfig,
+  DoctorOptions,
+  TestSeverity,
+} from '../testing/doctor/types.js';

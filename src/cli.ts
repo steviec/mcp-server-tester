@@ -6,6 +6,7 @@
 
 import { Command } from 'commander';
 import { TestRunner } from './testing/runner.js';
+import { DoctorRunner, formatReport } from './testing/doctor/index.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -21,6 +22,14 @@ interface CliOptions {
   quiet?: boolean;
   verbose?: boolean;
   junitXml?: string;
+}
+
+interface DoctorOptions {
+  serverConfig: string;
+  serverName?: string;
+  categories?: string;
+  output?: string;
+  timeout?: string;
 }
 
 function handleError(error: unknown): never {
@@ -54,6 +63,28 @@ async function runTests(testFile: string, options: CliOptions): Promise<void> {
   }
 }
 
+async function runDoctor(options: DoctorOptions): Promise<void> {
+  try {
+    console.log(`Running doctor diagnostics...`);
+
+    const doctorRunner = new DoctorRunner(options);
+    const report = await doctorRunner.runDiagnostics();
+
+    if (options.output === 'json') {
+      console.log(JSON.stringify(report, null, 2));
+    } else {
+      console.log(formatReport(report));
+    }
+
+    // Exit with error code if any tests failed
+    if (report.summary.testResults.failed > 0) {
+      process.exit(1);
+    }
+  } catch (error) {
+    handleError(error);
+  }
+}
+
 async function main(): Promise<void> {
   const program = new Command();
 
@@ -64,6 +95,7 @@ async function main(): Promise<void> {
 
   // Unified test command
   program
+    .command('test')
     .argument('<test-file>', 'Test configuration file (YAML)')
     .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
@@ -76,6 +108,22 @@ async function main(): Promise<void> {
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
     .action(async (testFile: string, options: CliOptions) => {
       await runTests(testFile, options);
+    });
+
+  // Doctor command
+  program
+    .command('doctor')
+    .description('Run diagnostic tests for MCP server health')
+    .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
+    .option(
+      '--server-name <name>',
+      'Specific server name to use from config (if multiple servers defined)'
+    )
+    .option('--categories <list>', 'Test categories to run (comma-separated)')
+    .option('--output <format>', 'Output format: console, json', 'console')
+    .option('--timeout <ms>', 'Overall timeout for doctor tests', '300000')
+    .action(async (options: DoctorOptions) => {
+      await runDoctor(options);
     });
 
   // Parse command line arguments
