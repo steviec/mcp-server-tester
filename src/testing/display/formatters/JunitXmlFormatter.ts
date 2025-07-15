@@ -4,7 +4,16 @@
  * Uses fast-xml-parser XMLBuilder for robust XML generation
  */
 
-import type { TestEvent, TestFormatter, DisplayOptions } from '../types.js';
+import type {
+  TestEvent,
+  TestFormatter,
+  DisplayOptions,
+  SuiteStartEvent,
+  TestCompleteEvent,
+  ProgressEvent,
+  SuiteCompleteEvent,
+  TestStartEvent,
+} from '../types.js';
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { XMLBuilder } from 'fast-xml-parser';
@@ -63,24 +72,24 @@ export class JunitXmlFormatter implements TestFormatter {
   onEvent(event: TestEvent): void {
     switch (event.type) {
       case 'suite_start':
-        this.handleSuiteStart(event.data);
+        this.handleSuiteStart(event.data as SuiteStartEvent['data']);
         break;
       case 'test_start':
-        this.handleTestStart(event.data);
+        this.handleTestStart(event.data as TestStartEvent['data']);
         break;
       case 'test_complete':
-        this.handleTestComplete(event.data);
+        this.handleTestComplete(event.data as TestCompleteEvent['data']);
         break;
       case 'suite_complete':
-        this.handleSuiteComplete(event.data);
+        this.handleSuiteComplete(event.data as SuiteCompleteEvent['data']);
         break;
       case 'progress':
-        this.handleProgress(event.data);
+        this.handleProgress(event.data as ProgressEvent['data']);
         break;
     }
   }
 
-  private handleSuiteStart(data: any): void {
+  private handleSuiteStart(data: SuiteStartEvent['data']): void {
     this.startTime = Date.now();
 
     // Determine suite type based on data
@@ -99,7 +108,7 @@ export class JunitXmlFormatter implements TestFormatter {
     };
   }
 
-  private handleProgress(data: any): void {
+  private handleProgress(data: ProgressEvent['data']): void {
     // Handle model changes for eval tests
     if (data.model && this.currentSuite) {
       // If we detect a model change and already have testcases,
@@ -127,12 +136,12 @@ export class JunitXmlFormatter implements TestFormatter {
     }
   }
 
-  private handleTestStart(data: any): void {
+  private handleTestStart(data: TestStartEvent['data']): void {
     const testKey = this.getTestKey(data.name, data.model);
     this.testStartTimes.set(testKey, Date.now());
   }
 
-  private handleTestComplete(data: any): void {
+  private handleTestComplete(data: TestCompleteEvent['data']): void {
     if (!this.currentSuite) {
       // Create a default suite if none exists
       this.currentSuite = {
@@ -183,7 +192,7 @@ export class JunitXmlFormatter implements TestFormatter {
     this.testStartTimes.delete(testKey);
   }
 
-  private handleSuiteComplete(_data: any): void {
+  private handleSuiteComplete(_data: SuiteCompleteEvent['data']): void {
     this.finalizeCurrentSuite();
   }
 
@@ -203,7 +212,7 @@ export class JunitXmlFormatter implements TestFormatter {
     }
   }
 
-  private determineSuiteName(data: any): string {
+  private determineSuiteName(data: SuiteStartEvent['data']): string {
     if (data.modelCount && data.modelCount > 1) {
       return 'evals';
     } else if (data.testCount) {
@@ -216,7 +225,7 @@ export class JunitXmlFormatter implements TestFormatter {
     return model ? `${name}-${model}` : name;
   }
 
-  private getClassname(data: any): string {
+  private getClassname(data: TestCompleteEvent['data']): string {
     if (data.model) {
       return data.model;
     }
@@ -229,7 +238,7 @@ export class JunitXmlFormatter implements TestFormatter {
     return 'default';
   }
 
-  private extractProperties(data: any): Record<string, string> {
+  private extractProperties(data: SuiteStartEvent['data']): Record<string, string> {
     const properties: Record<string, string> = {};
 
     if (data.modelCount) {
@@ -242,7 +251,7 @@ export class JunitXmlFormatter implements TestFormatter {
     return properties;
   }
 
-  private formatFailureContent(data: any): string {
+  private formatFailureContent(data: TestCompleteEvent['data']): string {
     let content = '';
 
     if (data.prompt) {
@@ -310,7 +319,7 @@ export class JunitXmlFormatter implements TestFormatter {
   }
 
   private buildTestSuiteData(suite: TestSuite) {
-    const testsuiteData: any = {
+    const testsuiteData: Record<string, unknown> = {
       '@_name': suite.name,
       '@_tests': suite.tests,
       '@_failures': suite.failures,
@@ -339,7 +348,7 @@ export class JunitXmlFormatter implements TestFormatter {
   }
 
   private buildTestCaseData(testcase: TestCase) {
-    const testcaseData: any = {
+    const testcaseData: Record<string, unknown> = {
       '@_name': testcase.name,
       '@_classname': testcase.classname,
       '@_time': testcase.time.toFixed(3),

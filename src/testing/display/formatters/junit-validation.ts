@@ -13,6 +13,56 @@ export interface JunitValidationResult {
   warnings: string[];
 }
 
+interface XmlAttribute {
+  '@_message'?: string;
+  '@_type'?: string;
+}
+
+interface XmlTestCase {
+  '@_name'?: string;
+  '@_classname'?: string;
+  '@_time'?: string | number;
+  failure?: XmlAttribute | XmlAttribute[];
+  error?: XmlAttribute | XmlAttribute[];
+}
+
+interface XmlTestSuite {
+  '@_name'?: string;
+  '@_tests'?: string | number;
+  '@_failures'?: string | number;
+  '@_errors'?: string | number;
+  '@_time'?: string | number;
+  '@_timestamp'?: string;
+  testcase?: XmlTestCase | XmlTestCase[];
+}
+
+interface XmlTestSuites {
+  '@_tests'?: string | number;
+  '@_failures'?: string | number;
+  '@_errors'?: string | number;
+  '@_time'?: string | number;
+  testsuite?: XmlTestSuite | XmlTestSuite[];
+}
+
+interface ParsedXml {
+  testsuites?: XmlTestSuites;
+}
+
+function getAttributeFromElement(
+  element: XmlAttribute | XmlAttribute[] | undefined,
+  attributeName: '@_message' | '@_type'
+): string | undefined {
+  if (!element) {
+    return undefined;
+  }
+
+  if (Array.isArray(element)) {
+    return element[0]?.[attributeName];
+  }
+
+  return element[attributeName];
+}
+
 /**
  * Validates a JUnit XML file using fast-xml-parser
  */
@@ -54,7 +104,7 @@ export function validateJunitXmlContent(content: string): JunitValidationResult 
       attributeNamePrefix: '@_',
     });
 
-    const parsed = parser.parse(content);
+    const parsed = parser.parse(content) as ParsedXml;
 
     // Check for testsuites root element
     if (!parsed.testsuites) {
@@ -84,7 +134,7 @@ export function validateJunitXmlContent(content: string): JunitValidationResult 
         ? testsuites.testsuite
         : [testsuites.testsuite];
 
-      testsuiteArray.forEach((testsuite: any, index: number) => {
+      testsuiteArray.forEach((testsuite: XmlTestSuite, index: number) => {
         // Required attributes according to canonical schema
         if (!testsuite['@_name']) {
           result.errors.push(`<testsuite> ${index + 1} missing required name attribute`);
@@ -113,7 +163,7 @@ export function validateJunitXmlContent(content: string): JunitValidationResult 
             ? testsuite.testcase
             : [testsuite.testcase];
 
-          testcaseArray.forEach((testcase: any, testcaseIndex: number) => {
+          testcaseArray.forEach((testcase: XmlTestCase, testcaseIndex: number) => {
             // Required attributes according to canonical schema
             if (!testcase['@_name']) {
               result.errors.push(
@@ -134,12 +184,12 @@ export function validateJunitXmlContent(content: string): JunitValidationResult 
 
             // Validate failure/error elements structure
             if (testcase.failure) {
-              if (!testcase.failure['@_message']) {
+              if (!getAttributeFromElement(testcase.failure, '@_message')) {
                 result.warnings.push(
                   `<failure> in <testcase> ${testcaseIndex + 1} missing message attribute`
                 );
               }
-              if (!testcase.failure['@_type']) {
+              if (!getAttributeFromElement(testcase.failure, '@_type')) {
                 result.warnings.push(
                   `<failure> in <testcase> ${testcaseIndex + 1} missing type attribute`
                 );
@@ -147,12 +197,12 @@ export function validateJunitXmlContent(content: string): JunitValidationResult 
             }
 
             if (testcase.error) {
-              if (!testcase.error['@_message']) {
+              if (!getAttributeFromElement(testcase.error, '@_message')) {
                 result.warnings.push(
                   `<error> in <testcase> ${testcaseIndex + 1} missing message attribute`
                 );
               }
-              if (!testcase.error['@_type']) {
+              if (!getAttributeFromElement(testcase.error, '@_type')) {
                 result.warnings.push(
                   `<error> in <testcase> ${testcaseIndex + 1} missing type attribute`
                 );
