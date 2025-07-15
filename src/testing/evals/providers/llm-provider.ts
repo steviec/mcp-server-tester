@@ -15,8 +15,8 @@ export interface LlmConversationConfig {
 
 export interface LlmConversationResult {
   messages: CoreMessage[];
-  toolCalls: ToolCall<any, any>[];
-  toolResults: ToolResult<any, any, any>[];
+  toolCalls: ToolCall<string, Record<string, unknown>>[];
+  toolResults: ToolResult<string, Record<string, unknown>, unknown>[];
   success: boolean;
   error?: string;
 }
@@ -42,8 +42,8 @@ export abstract class LlmProvider {
   /**
    * Extract tool calls from AI SDK messages
    */
-  extractToolCalls(messages: CoreMessage[]): ToolCall<any, any>[] {
-    const toolCalls: ToolCall<any, any>[] = [];
+  extractToolCalls(messages: CoreMessage[]): ToolCall<string, Record<string, unknown>>[] {
+    const toolCalls: ToolCall<string, Record<string, unknown>>[] = [];
 
     for (const message of messages) {
       if (message.role === 'assistant') {
@@ -59,7 +59,7 @@ export abstract class LlmProvider {
               toolCalls.push({
                 toolCallId: part.toolCallId,
                 toolName: part.toolName,
-                args: part.args,
+                args: (part.args as Record<string, unknown>) || {},
               });
             }
           }
@@ -73,8 +73,10 @@ export abstract class LlmProvider {
   /**
    * Extract tool results from AI SDK messages
    */
-  extractToolResults(messages: CoreMessage[]): ToolResult<any, any, any>[] {
-    const toolResults: ToolResult<any, any, any>[] = [];
+  extractToolResults(
+    messages: CoreMessage[]
+  ): ToolResult<string, Record<string, unknown>, unknown>[] {
+    const toolResults: ToolResult<string, Record<string, unknown>, unknown>[] = [];
 
     for (const message of messages) {
       if (message.role === 'tool' && Array.isArray(message.content)) {

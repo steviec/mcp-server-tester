@@ -19,13 +19,13 @@ export interface McpServersConfig {
 // Capabilities test types
 export interface CapabilitiesTestCall {
   tool: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   expect: {
     success: boolean;
     result?: {
       contains?: string;
-      equals?: any;
-      schema?: any;
+      equals?: unknown;
+      schema?: object;
     };
     error?: {
       contains?: string;
@@ -37,13 +37,13 @@ export interface CapabilitiesTestCall {
 export interface SingleToolTest {
   name: string;
   tool: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   expect: {
     success: boolean;
     result?: {
       contains?: string;
-      equals?: any;
-      schema?: any;
+      equals?: unknown;
+      schema?: object;
     };
     error?: {
       contains?: string;
@@ -85,9 +85,9 @@ export interface CapabilitiesTestConfig {
 // Test results
 export interface TestCallResult {
   tool: string;
-  params: Record<string, any>;
+  params: Record<string, unknown>;
   success: boolean;
-  result?: any;
+  result?: unknown;
   error?: string;
   duration: number;
 }

@@ -5,7 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import YAML from 'yaml';
-import Ajv from 'ajv';
+import Ajv, { type ErrorObject } from 'ajv';
 import type { TestConfig, McpServersConfig, ServerConfig } from '../core/types.js';
 
 // Import JSON schemas
@@ -112,7 +112,7 @@ export class ConfigLoader {
    */
   private static validateWithSchema(
     config: unknown,
-    schema: any,
+    schema: object,
     filePath: string,
     configType: string
   ): unknown {
@@ -121,7 +121,7 @@ export class ConfigLoader {
 
     if (!valid) {
       const errors = validate.errors || [];
-      const errorMessages = errors.map((error: any) => {
+      const errorMessages = errors.map((error: ErrorObject) => {
         const path = error.instancePath ? `at '${error.instancePath}'` : 'at root';
         const message = error.message || 'validation failed';
         const data = error.data !== undefined ? ` (got: ${JSON.stringify(error.data)})` : '';
