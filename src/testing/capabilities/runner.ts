@@ -85,7 +85,7 @@ export class CapabilitiesTestRunner {
     }
 
     // Test tool discovery
-    const toolsResult = await this.mcpClient.listTools();
+    const toolsResult = await this.mcpClient.sdk.listTools();
     const availableTools = toolsResult.tools?.map((tool: { name: string }) => tool.name) || [];
 
     const missingTools: string[] = [];
@@ -107,7 +107,7 @@ export class CapabilitiesTestRunner {
     }
 
     // Always validate tool schemas
-    const toolsResultForValidation = await this.mcpClient.listTools();
+    const toolsResultForValidation = await this.mcpClient.sdk.listTools();
     const tools = toolsResultForValidation.tools || [];
 
     for (const tool of tools) {
@@ -171,7 +171,10 @@ export class CapabilitiesTestRunner {
     const startTime = Date.now();
 
     try {
-      const result = await this.mcpClient.callTool(call.tool, call.params);
+      const result = await this.mcpClient.sdk.callTool({
+        name: call.tool,
+        arguments: call.params,
+      });
       const endTime = Date.now();
       const duration = endTime - startTime;
 

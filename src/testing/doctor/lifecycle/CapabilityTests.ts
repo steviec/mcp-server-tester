@@ -92,7 +92,7 @@ export class CapabilityTests extends DiagnosticTest {
 
   private async testCapabilityAnnouncement(client: McpClient): Promise<unknown> {
     try {
-      const capabilities = await client.getServerCapabilities();
+      const capabilities = client.sdk.getServerCapabilities();
 
       if (!capabilities || typeof capabilities !== 'object') {
         throw new Error('Server did not announce capabilities properly');
@@ -118,7 +118,7 @@ export class CapabilityTests extends DiagnosticTest {
 
   private async testCapabilityFormat(client: McpClient): Promise<unknown> {
     try {
-      const capabilities = (await client.getServerCapabilities()) as ExpectedCapabilities;
+      const capabilities = client.sdk.getServerCapabilities() as ExpectedCapabilities;
       const validationResults: Record<string, unknown> = {};
 
       // Validate tools capability format
@@ -167,13 +167,13 @@ export class CapabilityTests extends DiagnosticTest {
 
   private async testFeatureAvailability(client: McpClient): Promise<unknown> {
     try {
-      const capabilities = (await client.getServerCapabilities()) as ExpectedCapabilities;
+      const capabilities = client.sdk.getServerCapabilities() as ExpectedCapabilities;
       const availability: Record<string, unknown> = {};
 
       // Test tools availability matches declaration
       if (capabilities.tools) {
         try {
-          const toolsResult = await client.listTools();
+          const toolsResult = await client.sdk.listTools();
           availability.tools = {
             declared: true,
             available: true,
@@ -189,7 +189,7 @@ export class CapabilityTests extends DiagnosticTest {
       } else {
         // Check if tools are available despite not being declared
         try {
-          const toolsResult = await client.listTools();
+          const toolsResult = await client.sdk.listTools();
           if (toolsResult.tools && toolsResult.tools.length > 0) {
             throw new Error('Server has tools but did not declare tools capability');
           }
@@ -202,7 +202,7 @@ export class CapabilityTests extends DiagnosticTest {
       // Test resources availability matches declaration
       if (capabilities.resources) {
         try {
-          const resourcesResult = await client.listResources();
+          const resourcesResult = await client.sdk.listResources();
           availability.resources = {
             declared: true,
             available: true,
@@ -220,7 +220,7 @@ export class CapabilityTests extends DiagnosticTest {
       // Test prompts availability matches declaration
       if (capabilities.prompts) {
         try {
-          const promptsResult = await client.listPrompts();
+          const promptsResult = await client.sdk.listPrompts();
           availability.prompts = {
             declared: true,
             available: true,
@@ -247,7 +247,7 @@ export class CapabilityTests extends DiagnosticTest {
 
   private async testListChangedSupport(client: McpClient): Promise<unknown> {
     try {
-      const capabilities = (await client.getServerCapabilities()) as ExpectedCapabilities;
+      const capabilities = client.sdk.getServerCapabilities() as ExpectedCapabilities;
       const listChangedSupport: Record<string, boolean> = {};
       const warnings: string[] = [];
 

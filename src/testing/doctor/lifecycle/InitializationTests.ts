@@ -67,8 +67,13 @@ export class InitializationTests extends DiagnosticTest {
   private async testInitializeRequest(client: McpClient): Promise<unknown> {
     // Test basic connectivity which implicitly tests initialization
     try {
-      const _result = await client.ping();
-      return { status: 'passed', message: 'Server responds to ping after initialization' };
+      // If we have a connected client, initialization succeeded
+      const tools = await client.sdk.listTools();
+      return {
+        status: 'passed',
+        message: 'Server responds to requests after initialization',
+        toolCount: tools.tools?.length || 0,
+      };
     } catch (error) {
       throw new Error(`InitializeRequest handling failed: ${error}`);
     }
@@ -77,8 +82,9 @@ export class InitializationTests extends DiagnosticTest {
   private async testInitializeResponse(client: McpClient): Promise<unknown> {
     // Test that server provides valid initialization response
     try {
-      const capabilities = await client.getServerCapabilities();
-      const version = await client.getServerVersion();
+      // Access server capabilities and version from the connected client
+      const capabilities = client.sdk.getServerCapabilities();
+      const version = client.sdk.getServerVersion();
 
       return {
         status: 'passed',
@@ -95,7 +101,7 @@ export class InitializationTests extends DiagnosticTest {
     // Test that server properly acknowledges initialization
     try {
       // If we can make any request, initialization was properly acknowledged
-      await client.listTools();
+      await client.sdk.listTools();
       return {
         status: 'passed',
         message: 'Server acknowledges initialization and accepts requests',
@@ -109,7 +115,7 @@ export class InitializationTests extends DiagnosticTest {
     // Test error handling during initialization (this is more of a validation)
     try {
       // Verify we have a working connection, which means error handling worked
-      const version = await client.getServerVersion();
+      const version = client.sdk.getServerVersion();
       return {
         status: 'passed',
         message: 'Server handled initialization without errors',

@@ -95,7 +95,7 @@ export class ServerMetadataTests extends DiagnosticTest {
 
   private async testServerInfo(client: McpClient): Promise<unknown> {
     try {
-      const serverVersion = await client.getServerVersion();
+      const serverVersion = client.sdk.getServerVersion();
 
       if (!serverVersion || typeof serverVersion !== 'object') {
         throw new Error('Server did not provide version information');
@@ -134,7 +134,7 @@ export class ServerMetadataTests extends DiagnosticTest {
 
   private async testImplementationDetails(client: McpClient): Promise<unknown> {
     try {
-      const serverVersion = await client.getServerVersion();
+      const serverVersion = client.sdk.getServerVersion();
       const implementationDetails = serverVersion as ImplementationDetails;
 
       // Validate implementation details structure
@@ -169,7 +169,7 @@ export class ServerMetadataTests extends DiagnosticTest {
 
   private async testInstructionsField(client: McpClient): Promise<unknown> {
     try {
-      const instructions = await client.getInstructions();
+      const instructions = client.sdk.getInstructions();
 
       if (instructions === null || instructions === undefined) {
         throw new Error('Server does not provide instructions field');
@@ -204,8 +204,8 @@ export class ServerMetadataTests extends DiagnosticTest {
 
   private async testMetadataFormat(client: McpClient): Promise<unknown> {
     try {
-      const serverVersion = await client.getServerVersion();
-      const capabilities = await client.getServerCapabilities();
+      const serverVersion = client.sdk.getServerVersion();
+      const capabilities = client.sdk.getServerCapabilities();
 
       // Validate overall metadata format compliance
       const formatValidation = {

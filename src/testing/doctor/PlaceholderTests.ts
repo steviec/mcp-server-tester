@@ -35,7 +35,7 @@ class PlaceholderPerformanceTest extends DiagnosticTest {
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
       const startTime = Date.now();
-      await client.listTools();
+      await client.sdk.listTools();
       const endTime = Date.now();
       const responseTime = endTime - startTime;
 
@@ -73,9 +73,9 @@ class PlaceholderFeaturesTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
-      const tools = await client.listTools();
-      const resources = await client.listResources();
-      const prompts = await client.listPrompts();
+      const tools = await client.sdk.listTools();
+      const resources = await client.sdk.listResources();
+      const prompts = await client.sdk.listPrompts();
 
       const features = {
         tools: tools.tools?.length || 0,
