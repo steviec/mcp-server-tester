@@ -2,14 +2,13 @@
  * Type definitions for the Doctor framework
  */
 
-export enum TestSeverity {
-  // eslint-disable-next-line no-unused-vars
-  CRITICAL = 'critical',
-  // eslint-disable-next-line no-unused-vars
-  WARNING = 'warning',
-  // eslint-disable-next-line no-unused-vars
-  INFO = 'info',
-}
+export const TEST_SEVERITY = {
+  CRITICAL: 'critical',
+  WARNING: 'warning',
+  INFO: 'info',
+} as const;
+
+export type TestSeverity = (typeof TEST_SEVERITY)[keyof typeof TEST_SEVERITY];
 
 export interface DiagnosticResult {
   testName: string;

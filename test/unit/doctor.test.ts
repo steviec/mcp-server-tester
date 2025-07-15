@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { TestRegistry, registerDoctorTest } from '../../src/testing/doctor/TestRegistry.js';
 import { DiagnosticTest } from '../../src/testing/doctor/DiagnosticTest.js';
 import {
-  TestSeverity,
+  TEST_SEVERITY,
   type DoctorConfig,
   type DiagnosticResult,
 } from '../../src/testing/doctor/types.js';
@@ -17,7 +17,7 @@ class MockDiagnosticTest extends DiagnosticTest {
   readonly name = 'Mock: Test';
   readonly description = 'Mock test for unit testing';
   readonly category = 'mock';
-  readonly severity = TestSeverity.INFO;
+  readonly severity = TEST_SEVERITY.INFO;
 
   async execute(_client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     return this.createResult(true, 'Mock test passed');
@@ -69,7 +69,7 @@ describe('Doctor Framework', () => {
       expect(result.status).toBe('passed');
       expect(result.message).toBe('Test passed');
       expect(result.details).toEqual({ data: 'test' });
-      expect(result.severity).toBe(TestSeverity.INFO);
+      expect(result.severity).toBe(TEST_SEVERITY.INFO);
     });
 
     it('should create failed result', () => {
@@ -99,14 +99,14 @@ describe('Doctor Framework', () => {
           testName: 'Protocol: Test',
           status: 'passed',
           message: 'Test passed',
-          severity: TestSeverity.INFO,
+          severity: TEST_SEVERITY.INFO,
           duration: 100,
         },
         {
           testName: 'Security: Test',
           status: 'failed',
           message: 'Test failed',
-          severity: TestSeverity.CRITICAL,
+          severity: TEST_SEVERITY.CRITICAL,
           duration: 50,
         },
       ];
@@ -136,7 +136,7 @@ describe('Doctor Framework', () => {
           testName: 'Protocol: Test',
           status: 'passed',
           message: 'Test passed',
-          severity: TestSeverity.INFO,
+          severity: TEST_SEVERITY.INFO,
           duration: 100,
         },
       ];

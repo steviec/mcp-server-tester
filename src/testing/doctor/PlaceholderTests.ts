@@ -3,7 +3,7 @@
  */
 
 import { DiagnosticTest } from './DiagnosticTest.js';
-import { TestSeverity, type DiagnosticResult } from './types.js';
+import { TEST_SEVERITY, type DiagnosticResult } from './types.js';
 import { registerDoctorTest } from './TestRegistry.js';
 import type { McpClient } from '../../core/mcp-client.js';
 
@@ -11,7 +11,7 @@ class PlaceholderProtocolTest extends DiagnosticTest {
   readonly name = 'Protocol: Basic Connectivity';
   readonly description = 'Basic protocol compliance validation';
   readonly category = 'protocol';
-  readonly severity = TestSeverity.INFO;
+  readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
@@ -44,7 +44,7 @@ class PlaceholderSecurityTest extends DiagnosticTest {
   readonly name = 'Security: Basic Validation';
   readonly description = 'Basic security compliance check';
   readonly category = 'security';
-  readonly severity = TestSeverity.WARNING;
+  readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(_client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     // This is a placeholder - actual implementation would check security features
@@ -61,7 +61,7 @@ class PlaceholderPerformanceTest extends DiagnosticTest {
   readonly name = 'Performance: Response Time';
   readonly description = 'Basic performance validation';
   readonly category = 'performance';
-  readonly severity = TestSeverity.INFO;
+  readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
@@ -100,7 +100,7 @@ class PlaceholderFeaturesTest extends DiagnosticTest {
   readonly name = 'Features: Tool Discovery';
   readonly description = 'Basic features validation';
   readonly category = 'features';
-  readonly severity = TestSeverity.INFO;
+  readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     try {
@@ -135,7 +135,7 @@ class PlaceholderTransportTest extends DiagnosticTest {
   readonly name = 'Transport: Connection Health';
   readonly description = 'Basic transport validation';
   readonly category = 'transport';
-  readonly severity = TestSeverity.INFO;
+  readonly severity = TEST_SEVERITY.INFO;
 
   async execute(_client: McpClient, _config: unknown): Promise<DiagnosticResult> {
     // This is a placeholder - actual implementation would test transport specifics

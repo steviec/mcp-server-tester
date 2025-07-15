@@ -7,7 +7,7 @@ import { ConfigLoader } from '../../config/loader.js';
 import { TestRegistry } from './TestRegistry.js';
 import { HealthReportGenerator } from './HealthReport.js';
 import {
-  TestSeverity,
+  TEST_SEVERITY,
   type DiagnosticResult,
   type DoctorOptions,
   type HealthReport,
@@ -44,7 +44,7 @@ export class DoctorRunner {
         testName: 'System: Connection',
         status: 'failed',
         message: `Failed to connect to server: ${error instanceof Error ? error.message : String(error)}`,
-        severity: TestSeverity.CRITICAL,
+        severity: TEST_SEVERITY.CRITICAL,
         duration: endTime - startTime,
         recommendations: ['Check server configuration and ensure server is running'],
       };
