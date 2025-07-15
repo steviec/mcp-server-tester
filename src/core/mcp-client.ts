@@ -5,6 +5,15 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import type {
+  ListToolsResult,
+  CallToolResult,
+  ListResourcesResult,
+  ReadResourceResult,
+  ListPromptsResult,
+  GetPromptResult,
+} from '@modelcontextprotocol/sdk/types.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { TransportOptions, ServerConfig } from './types.js';
 
 // Re-export TransportOptions for external use
@@ -12,7 +21,7 @@ export type { TransportOptions } from './types.js';
 
 export class McpClient {
   private client: Client;
-  private transport: any;
+  private transport: Transport | null = null;
   private connected = false;
 
   constructor() {
@@ -51,7 +60,7 @@ export class McpClient {
     }
   }
 
-  async listTools(): Promise<any> {
+  async listTools(): Promise<ListToolsResult> {
     this.ensureConnected();
     try {
       const result = await this.client.listTools();
@@ -63,14 +72,14 @@ export class McpClient {
     }
   }
 
-  async callTool(name: string, arguments_: Record<string, any>): Promise<any> {
+  async callTool(name: string, arguments_: Record<string, unknown>): Promise<CallToolResult> {
     this.ensureConnected();
     try {
       const result = await this.client.callTool({
         name,
         arguments: arguments_,
       });
-      return result;
+      return result as CallToolResult;
     } catch (error) {
       throw new Error(
         `Failed to call tool ${name}: ${error instanceof Error ? error.message : String(error)}`
@@ -78,7 +87,7 @@ export class McpClient {
     }
   }
 
-  async listResources(): Promise<any> {
+  async listResources(): Promise<ListResourcesResult> {
     this.ensureConnected();
     try {
       const result = await this.client.listResources();
@@ -90,7 +99,7 @@ export class McpClient {
     }
   }
 
-  async readResource(uri: string): Promise<any> {
+  async readResource(uri: string): Promise<ReadResourceResult> {
     this.ensureConnected();
     try {
       const result = await this.client.readResource({ uri });
@@ -102,7 +111,7 @@ export class McpClient {
     }
   }
 
-  async listPrompts(): Promise<any> {
+  async listPrompts(): Promise<ListPromptsResult> {
     this.ensureConnected();
     try {
       const result = await this.client.listPrompts();
@@ -114,12 +123,15 @@ export class McpClient {
     }
   }
 
-  async getPrompt(name: string, arguments_: Record<string, any> = {}): Promise<any> {
+  async getPrompt(
+    name: string,
+    arguments_: Record<string, unknown> = {}
+  ): Promise<GetPromptResult> {
     this.ensureConnected();
     try {
       const result = await this.client.getPrompt({
         name,
-        arguments: arguments_,
+        arguments: arguments_ as Record<string, string>,
       });
       return result;
     } catch (error) {
@@ -129,7 +141,7 @@ export class McpClient {
     }
   }
 
-  private async createTransport(options: TransportOptions): Promise<any> {
+  private async createTransport(options: TransportOptions): Promise<Transport> {
     switch (options.type) {
       case 'stdio':
         return this.createStdioTransport(options);
@@ -150,7 +162,14 @@ export class McpClient {
     return new StdioClientTransport({
       command: options.command,
       args: options.args || [],
-      env: { ...process.env, ...options.env } as Record<string, string>,
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env)
+            .filter(([_, value]) => value !== undefined)
+            .map(([key, value]) => [key, value as string])
+        ),
+        ...(options.env || {}),
+      },
     });
   }
 

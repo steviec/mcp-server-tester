@@ -3,7 +3,18 @@
  * Inspired by the old inspector output format
  */
 
-import type { TestEvent, TestFormatter, DisplayOptions } from '../types.js';
+import type {
+  TestEvent,
+  TestFormatter,
+  DisplayOptions,
+  SuiteStartEvent,
+  SectionStartEvent,
+  ToolDiscoveryEvent,
+  ProgressEvent,
+  TestStartEvent,
+  TestCompleteEvent,
+  SuiteCompleteEvent,
+} from '../types.js';
 
 export class ConsoleFormatter implements TestFormatter {
   private options: DisplayOptions;
@@ -21,30 +32,30 @@ export class ConsoleFormatter implements TestFormatter {
 
     switch (event.type) {
       case 'suite_start':
-        this.handleSuiteStart(event.data);
+        this.handleSuiteStart(event.data as SuiteStartEvent['data']);
         break;
       case 'section_start':
-        this.handleSectionStart(event.data);
+        this.handleSectionStart(event.data as SectionStartEvent['data']);
         break;
       case 'tool_discovery':
-        this.handleToolDiscovery(event.data);
+        this.handleToolDiscovery(event.data as ToolDiscoveryEvent['data']);
         break;
       case 'progress':
-        this.handleProgress(event.data);
+        this.handleProgress(event.data as ProgressEvent['data']);
         break;
       case 'test_start':
-        this.handleTestStart(event.data);
+        this.handleTestStart(event.data as TestStartEvent['data']);
         break;
       case 'test_complete':
-        this.handleTestComplete(event.data);
+        this.handleTestComplete(event.data as TestCompleteEvent['data']);
         break;
       case 'suite_complete':
-        this.handleSuiteComplete(event.data);
+        this.handleSuiteComplete(event.data as SuiteCompleteEvent['data']);
         break;
     }
   }
 
-  private handleSuiteStart(_data: any): void {
+  private handleSuiteStart(_data: SuiteStartEvent['data']): void {
     // Show version info once at the very beginning
     if (!this.hasShownVersion) {
       const version = this.options.version || '1.0.7';
@@ -53,11 +64,11 @@ export class ConsoleFormatter implements TestFormatter {
     }
   }
 
-  private handleSectionStart(data: any): void {
+  private handleSectionStart(data: SectionStartEvent['data']): void {
     console.log(`\n${data.title}`);
   }
 
-  private handleToolDiscovery(data: any): void {
+  private handleToolDiscovery(data: ToolDiscoveryEvent['data']): void {
     const { expectedTools, foundTools, passed } = data;
     const icon = passed ? '✅' : '❌';
 
@@ -73,7 +84,7 @@ export class ConsoleFormatter implements TestFormatter {
     }
   }
 
-  private handleProgress(data: any): void {
+  private handleProgress(data: ProgressEvent['data']): void {
     if (data.model && data.model !== this.currentModel) {
       this.currentModel = data.model;
       // Model changes are now handled by section headers
@@ -85,12 +96,12 @@ export class ConsoleFormatter implements TestFormatter {
     }
   }
 
-  private handleTestStart(_data: any): void {
+  private handleTestStart(_data: TestStartEvent['data']): void {
     // For now, we don't show individual test starts
     // Could add verbose mode later that shows "Running: test_name..."
   }
 
-  private handleTestComplete(data: any): void {
+  private handleTestComplete(data: TestCompleteEvent['data']): void {
     const { name, passed, errors, prompt } = data;
 
     if (passed) {
@@ -110,7 +121,7 @@ export class ConsoleFormatter implements TestFormatter {
     }
   }
 
-  private handleSuiteComplete(data: any): void {
+  private handleSuiteComplete(data: SuiteCompleteEvent['data']): void {
     const { total, passed, duration } = data;
     const durationInSeconds = (duration / 1000).toFixed(1);
 

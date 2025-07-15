@@ -1,5 +1,11 @@
 # Commands
 
+## Setup
+
+```bash
+npm install      # install node packages before starting development
+```
+
 ## Development
 
 ```bash

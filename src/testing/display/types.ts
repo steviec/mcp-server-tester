@@ -11,7 +11,7 @@ export interface TestEvent {
     | 'progress'
     | 'tool_discovery'
     | 'section_start';
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export interface TestStartEvent extends TestEvent {

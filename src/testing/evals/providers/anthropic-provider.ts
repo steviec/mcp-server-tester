@@ -26,15 +26,18 @@ export class AnthropicProvider extends LlmProvider {
       // Filter tools based on allowed list if specified
       let toolsToUse = mcpTools;
       if (config.allowedTools !== undefined) {
-        toolsToUse = mcpTools.filter((tool: any) => config.allowedTools!.includes(tool.name));
+        toolsToUse = mcpTools.filter((tool: { name: string }) =>
+          config.allowedTools!.includes(tool.name)
+        );
       }
 
       // Convert MCP tools to AI SDK format using tool() helper
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const aiTools: Record<string, any> = {};
       for (const mcpTool of toolsToUse) {
         aiTools[mcpTool.name] = tool({
           description: mcpTool.description,
-          parameters: jsonSchema(mcpTool.inputSchema),
+          parameters: jsonSchema(mcpTool.inputSchema as object),
           execute: async (args: unknown) => {
             try {
               const result = await mcpClient.callTool(
@@ -63,7 +66,8 @@ export class AnthropicProvider extends LlmProvider {
       const result = await generateText({
         model: anthropic(config.model),
         messages,
-        tools: aiTools,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        tools: aiTools as any,
         maxSteps: config.maxSteps,
         abortSignal: AbortSignal.timeout(config.timeout),
       });
