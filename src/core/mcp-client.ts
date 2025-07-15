@@ -141,6 +141,70 @@ export class McpClient {
     }
   }
 
+  async getServerCapabilities(): Promise<unknown> {
+    this.ensureConnected();
+    try {
+      // Check if the method exists
+      const clientWithMethod = this.client as { getServerCapabilities?: () => unknown };
+      if (typeof clientWithMethod.getServerCapabilities !== 'function') {
+        throw new Error('getServerCapabilities method not available in this MCP SDK version');
+      }
+      return clientWithMethod.getServerCapabilities();
+    } catch (error) {
+      throw new Error(
+        `Failed to get server capabilities: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  async getServerVersion(): Promise<unknown> {
+    this.ensureConnected();
+    try {
+      // Check if the method exists
+      const clientWithMethod = this.client as { getServerVersion?: () => unknown };
+      if (typeof clientWithMethod.getServerVersion !== 'function') {
+        throw new Error('getServerVersion method not available in this MCP SDK version');
+      }
+      return clientWithMethod.getServerVersion();
+    } catch (error) {
+      throw new Error(
+        `Failed to get server version: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  async getInstructions(): Promise<unknown> {
+    this.ensureConnected();
+    try {
+      // Check if the method exists
+      const clientWithMethod = this.client as { getInstructions?: () => unknown };
+      if (typeof clientWithMethod.getInstructions !== 'function') {
+        throw new Error('getInstructions method not available in this MCP SDK version');
+      }
+      return clientWithMethod.getInstructions();
+    } catch (error) {
+      throw new Error(
+        `Failed to get instructions: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  async ping(): Promise<unknown> {
+    this.ensureConnected();
+    try {
+      // Check if the method exists
+      const clientWithMethod = this.client as { ping?: () => Promise<unknown> };
+      if (typeof clientWithMethod.ping !== 'function') {
+        throw new Error('ping method not available in this MCP SDK version');
+      }
+      return await clientWithMethod.ping();
+    } catch (error) {
+      throw new Error(
+        `Failed to ping server: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
   private async createTransport(options: TransportOptions): Promise<Transport> {
     switch (options.type) {
       case 'stdio':
