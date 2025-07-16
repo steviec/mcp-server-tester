@@ -1,6 +1,6 @@
 # MCP Server Tester
 
-A tool to confirm that your MCP server provides the correct capabilities and can be used consistently by LLMs.
+A tool to confirm that your MCP server is spec-compliant and can be used consistently by LLMs.
 
 ## Overview
 
