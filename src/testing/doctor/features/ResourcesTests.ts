@@ -15,7 +15,7 @@ export class ResourcesCapabilityTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listResources();
+      const result = await client.sdk.listResources();
 
       if (result && typeof result === 'object' && 'resources' in result) {
         const hasSubscribe = 'subscribe' in result ? result.subscribe : undefined;
@@ -52,7 +52,7 @@ export class ResourceListingTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listResources();
+      const result = await client.sdk.listResources();
       const resources = result.resources || [];
 
       if (resources.length === 0) {
@@ -99,7 +99,7 @@ export class ResourceReadingTest extends DiagnosticTest {
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listResources();
+      const result = await client.sdk.listResources();
       const resources = result.resources || [];
 
       if (resources.length === 0) {
@@ -122,7 +122,7 @@ export class ResourceReadingTest extends DiagnosticTest {
       try {
         const startTime = Date.now();
         const readResult = (await Promise.race([
-          client.readResource(testResource.uri),
+          client.sdk.readResource({ uri: testResource.uri }),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Resource read timeout')), timeout)
           ),
@@ -181,7 +181,7 @@ export class MimeTypeHandlingTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listResources();
+      const result = await client.sdk.listResources();
       const resources = result.resources || [];
 
       if (resources.length === 0) {
@@ -256,7 +256,7 @@ export class UriValidationTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listResources();
+      const result = await client.sdk.listResources();
       const resources = result.resources || [];
 
       if (resources.length === 0) {
@@ -337,7 +337,7 @@ export class ResourceNotFoundTest extends DiagnosticTest {
       const nonExistentUri = 'test://nonexistent/resource/12345';
 
       try {
-        await client.readResource(nonExistentUri);
+        await client.sdk.readResource({ uri: nonExistentUri });
 
         return this.createResult(
           false,

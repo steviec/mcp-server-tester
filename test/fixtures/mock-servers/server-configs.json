@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "compliant-server": {
+      "command": "node",
+      "args": ["test/fixtures/mock-servers/compliant-server.js"],
+      "env": {
+        "NODE_ENV": "test"
+      }
+    },
+    "non-compliant-server": {
+      "command": "node",
+      "args": ["test/fixtures/mock-servers/non-compliant-server.js"],
+      "env": {
+        "NODE_ENV": "test"
+      }
+    },
+    "minimal-server": {
+      "command": "node",
+      "args": ["test/fixtures/mock-servers/minimal-server.js"],
+      "env": {
+        "NODE_ENV": "test"
+      }
+    }
+  }
+}

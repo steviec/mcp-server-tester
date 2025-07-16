@@ -15,7 +15,7 @@ export class PromptsCapabilityTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listPrompts();
+      const result = await client.sdk.listPrompts();
 
       if (result && typeof result === 'object' && 'prompts' in result) {
         const hasListChanged = 'listChanged' in result ? result.listChanged : undefined;
@@ -52,7 +52,7 @@ export class PromptListingTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listPrompts();
+      const result = await client.sdk.listPrompts();
       const prompts = result.prompts || [];
 
       if (prompts.length === 0) {
@@ -99,7 +99,7 @@ export class PromptRetrievalTest extends DiagnosticTest {
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listPrompts();
+      const result = await client.sdk.listPrompts();
       const prompts = result.prompts || [];
 
       if (prompts.length === 0) {
@@ -123,7 +123,7 @@ export class PromptRetrievalTest extends DiagnosticTest {
       try {
         const startTime = Date.now();
         const getResult = (await Promise.race([
-          client.getPrompt(testPrompt.name, testArgs),
+          client.sdk.getPrompt({ name: testPrompt.name, arguments: testArgs }),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Prompt retrieval timeout')), timeout)
           ),
@@ -235,7 +235,7 @@ export class ArgumentValidationTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listPrompts();
+      const result = await client.sdk.listPrompts();
       const prompts = result.prompts || [];
 
       if (prompts.length === 0) {
@@ -258,7 +258,7 @@ export class ArgumentValidationTest extends DiagnosticTest {
 
       try {
         // Call prompt without required arguments
-        await client.getPrompt(promptWithRequiredArgs.name, {});
+        await client.sdk.getPrompt({ name: promptWithRequiredArgs.name, arguments: {} });
 
         return this.createResult(
           false,
@@ -296,7 +296,7 @@ export class TemplateRenderingTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listPrompts();
+      const result = await client.sdk.listPrompts();
       const prompts = result.prompts || [];
 
       if (prompts.length === 0) {
@@ -320,7 +320,10 @@ export class TemplateRenderingTest extends DiagnosticTest {
       const testArgs = this.generateTestArguments(templatePrompt);
 
       try {
-        const getResult = await client.getPrompt(templatePrompt.name, testArgs);
+        const getResult = await client.sdk.getPrompt({
+          name: templatePrompt.name,
+          arguments: testArgs,
+        });
 
         // Check if template variables were substituted
         const rendered = this.analyzeTemplateRendering(getResult as any, testArgs);

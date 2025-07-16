@@ -56,6 +56,7 @@ export interface HealthReport {
   };
   categories: TestCategory[];
   issues: DiagnosticResult[];
+  results: DiagnosticResult[]; // Include raw results for testing/debugging
 }
 
 export interface DoctorConfig {

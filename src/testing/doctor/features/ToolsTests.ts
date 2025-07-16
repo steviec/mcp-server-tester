@@ -15,7 +15,7 @@ export class ToolsCapabilityTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listTools();
+      const result = await client.sdk.listTools();
 
       if (result && typeof result === 'object' && 'tools' in result) {
         const hasListChanged = 'listChanged' in result ? result.listChanged : undefined;
@@ -51,7 +51,7 @@ export class ToolListingTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listTools();
+      const result = await client.sdk.listTools();
       const tools = result.tools || [];
 
       if (tools.length === 0) {
@@ -96,7 +96,7 @@ export class ToolSchemaValidationTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listTools();
+      const result = await client.sdk.listTools();
       const tools = result.tools || [];
 
       if (tools.length === 0) {
@@ -167,7 +167,7 @@ export class ToolExecutionTest extends DiagnosticTest {
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listTools();
+      const result = await client.sdk.listTools();
       const tools = result.tools || [];
 
       if (tools.length === 0) {
@@ -195,7 +195,7 @@ export class ToolExecutionTest extends DiagnosticTest {
       try {
         const startTime = Date.now();
         const callResult = await Promise.race([
-          client.callTool(testTool.name, testArgs),
+          client.sdk.callTool({ name: testTool.name, arguments: testArgs }),
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Tool execution timeout')), timeout)
           ),
@@ -310,7 +310,7 @@ export class ToolErrorHandlingTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listTools();
+      const result = await client.sdk.listTools();
       const tools = result.tools || [];
 
       if (tools.length === 0) {
@@ -321,7 +321,10 @@ export class ToolErrorHandlingTest extends DiagnosticTest {
 
       try {
         // Call tool with invalid parameters
-        await client.callTool(testTool.name, { invalid_param: 'invalid_value' });
+        await client.sdk.callTool({
+          name: testTool.name,
+          arguments: { invalid_param: 'invalid_value' },
+        });
 
         return this.createResult(
           false,
@@ -356,7 +359,7 @@ export class ToolAnnotationsTest extends DiagnosticTest {
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
-      const result = await client.listTools();
+      const result = await client.sdk.listTools();
       const tools = result.tools || [];
 
       if (tools.length === 0) {

@@ -149,5 +149,223 @@ describe('Doctor Framework', () => {
       const report = HealthReportGenerator.generateReport(passedResults, serverInfo, 0, 1000);
       expect(report.summary.overallScore).toBeGreaterThan(90);
     });
+
+    describe('Scoring Algorithm', () => {
+      it('should handle critical failures correctly', () => {
+        const results: DiagnosticResult[] = [
+          {
+            testName: 'Protocol: Critical Test',
+            status: 'failed',
+            message: 'Critical failure',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 100,
+          },
+        ];
+
+        const serverInfo = { name: 'test', transport: 'stdio' };
+        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+
+        // Critical failure should significantly impact score
+        expect(report.summary.overallScore).toBeLessThan(80);
+      });
+
+      it('should weight categories correctly', () => {
+        const protocolResults: DiagnosticResult[] = [
+          {
+            testName: 'Protocol: Test',
+            status: 'failed',
+            message: 'Protocol failure',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 100,
+          },
+        ];
+
+        const featuresResults: DiagnosticResult[] = [
+          {
+            testName: 'Features: Test',
+            status: 'failed',
+            message: 'Features failure',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 100,
+          },
+        ];
+
+        const serverInfo = { name: 'test', transport: 'stdio' };
+
+        const protocolReport = HealthReportGenerator.generateReport(
+          protocolResults,
+          serverInfo,
+          0,
+          1000
+        );
+        const featuresReport = HealthReportGenerator.generateReport(
+          featuresResults,
+          serverInfo,
+          0,
+          1000
+        );
+
+        // Both should have same category score (70 = 100 - 30), but different weights
+        // Protocol weight: 0.3, Features weight: 0.15
+        // So protocol should have lower overall score due to higher weight
+        expect(protocolReport.summary.overallScore).toBe(70);
+        expect(featuresReport.summary.overallScore).toBe(70);
+
+        // Test with multiple categories to see weighting effect
+        const mixedResults: DiagnosticResult[] = [
+          {
+            testName: 'Protocol: Test',
+            status: 'failed',
+            message: 'Protocol failure',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 100,
+          },
+          {
+            testName: 'Features: Test',
+            status: 'passed',
+            message: 'Features success',
+            severity: TEST_SEVERITY.INFO,
+            duration: 100,
+          },
+        ];
+
+        const mixedReport = HealthReportGenerator.generateReport(mixedResults, serverInfo, 0, 1000);
+        // Should be between the two category scores due to weighting
+        expect(mixedReport.summary.overallScore).toBeGreaterThan(70);
+        expect(mixedReport.summary.overallScore).toBeLessThan(100);
+      });
+
+      it('should handle empty results gracefully', () => {
+        const serverInfo = { name: 'test', transport: 'stdio' };
+        const report = HealthReportGenerator.generateReport([], serverInfo, 0, 1000);
+
+        expect(report.summary.overallScore).toBe(0);
+        expect(report.summary.testResults.total).toBe(0);
+        expect(report.categories).toHaveLength(0);
+        expect(report.issues).toHaveLength(0);
+      });
+
+      it('should handle mixed severity levels correctly', () => {
+        const results: DiagnosticResult[] = [
+          {
+            testName: 'Protocol: Critical',
+            status: 'failed',
+            message: 'Critical issue',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 100,
+          },
+          {
+            testName: 'Protocol: Warning',
+            status: 'failed',
+            message: 'Warning issue',
+            severity: TEST_SEVERITY.WARNING,
+            duration: 100,
+          },
+          {
+            testName: 'Protocol: Info',
+            status: 'failed',
+            message: 'Info issue',
+            severity: TEST_SEVERITY.INFO,
+            duration: 100,
+          },
+        ];
+
+        const serverInfo = { name: 'test', transport: 'stdio' };
+        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+
+        // Critical should have most impact, warning medium, info least
+        // All same category, so base score 100 - 30 (critical) - 10 (warning) - 5 (info) = 55
+        expect(report.summary.overallScore).toBe(55);
+      });
+    });
+
+    describe('Error Handling', () => {
+      it('should sort issues by severity correctly', () => {
+        const results: DiagnosticResult[] = [
+          {
+            testName: 'Test: Info Issue',
+            status: 'failed',
+            message: 'Info issue',
+            severity: TEST_SEVERITY.INFO,
+            duration: 100,
+          },
+          {
+            testName: 'Test: Critical Issue',
+            status: 'failed',
+            message: 'Critical issue',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 100,
+          },
+          {
+            testName: 'Test: Warning Issue',
+            status: 'failed',
+            message: 'Warning issue',
+            severity: TEST_SEVERITY.WARNING,
+            duration: 100,
+          },
+        ];
+
+        const serverInfo = { name: 'test', transport: 'stdio' };
+        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+
+        // Issues should be sorted: critical, warning, info
+        expect(report.issues[0].severity).toBe(TEST_SEVERITY.CRITICAL);
+        expect(report.issues[1].severity).toBe(TEST_SEVERITY.WARNING);
+        expect(report.issues[2].severity).toBe(TEST_SEVERITY.INFO);
+      });
+
+      it('should extract categories from test names correctly', () => {
+        const results: DiagnosticResult[] = [
+          {
+            testName: 'Protocol: Test',
+            status: 'passed',
+            message: 'Test',
+            severity: TEST_SEVERITY.INFO,
+            duration: 100,
+          },
+          {
+            testName: 'Features: Test',
+            status: 'passed',
+            message: 'Test',
+            severity: TEST_SEVERITY.INFO,
+            duration: 100,
+          },
+          {
+            testName: 'Malformed Test Name',
+            status: 'passed',
+            message: 'Test',
+            severity: TEST_SEVERITY.INFO,
+            duration: 100,
+          },
+        ];
+
+        const serverInfo = { name: 'test', transport: 'stdio' };
+        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+
+        expect(report.categories).toHaveLength(3);
+
+        const categoryNames = report.categories.map(c => c.name).sort();
+        expect(categoryNames).toEqual(['features', 'general', 'protocol']);
+      });
+
+      it('should handle malformed test results gracefully', () => {
+        const results: DiagnosticResult[] = [
+          {
+            testName: '',
+            status: 'failed',
+            message: '',
+            severity: TEST_SEVERITY.CRITICAL,
+            duration: 0,
+          },
+        ];
+
+        const serverInfo = { name: 'test', transport: 'stdio' };
+
+        // Should not throw error
+        expect(() => {
+          HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+        }).not.toThrow();
+      });
+    });
   });
 });
