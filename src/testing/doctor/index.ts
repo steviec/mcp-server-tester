@@ -16,11 +16,11 @@ export type {
   HealthScore,
 } from './types.js';
 
-// Import placeholder tests to register them
-import './placeholder/index.js';
-
 // Import protocol tests to register them
 import './protocol/index.js';
 
 // Import lifecycle tests to register them
 import './lifecycle/index.js';
+
+// Import features tests to register them
+import './features/index.js';

@@ -29,14 +29,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build tool for e2e tests
+        run: npm run build
+
       - name: Check code formatting
         run: npm run format:check
 
       - name: Run linting
         run: npm run lint
 
-      # TypeScript compilation check temporarily disabled due to pre-existing type issues
-      # Tests provide comprehensive validation of functionality
+      - name: Run typecheck
+        run: npm run typecheck
 
       - name: Run unit tests
         run: npm run test:unit
@@ -47,6 +50,3 @@ jobs:
         run: npm run test:e2e
         env:
           NODE_ENV: test
-
-      # Note: E2E eval tests require ANTHROPIC_API_KEY and are skipped in CI
-      # They can be run locally with: npm run test:e2e:eval

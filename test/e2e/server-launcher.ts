@@ -131,3 +131,39 @@ export function createTestServerLauncher(): TestServerLauncher {
     },
   });
 }
+
+/**
+ * Get the path to the doctor mock servers config
+ */
+export function getDoctorMockServersConfigPath(): string {
+  return path.resolve(process.cwd(), 'test/fixtures/mock-servers/server-configs.json');
+}
+
+/**
+ * Create test server launchers for doctor testing
+ */
+export function createDoctorTestServers(): {
+  compliant: TestServerLauncher;
+  nonCompliant: TestServerLauncher;
+  minimal: TestServerLauncher;
+} {
+  const baseConfig = {
+    command: 'node',
+    env: { NODE_ENV: 'test' },
+  };
+
+  return {
+    compliant: new TestServerLauncher({
+      ...baseConfig,
+      args: [path.resolve(process.cwd(), 'test/fixtures/mock-servers/compliant-server.js')],
+    }),
+    nonCompliant: new TestServerLauncher({
+      ...baseConfig,
+      args: [path.resolve(process.cwd(), 'test/fixtures/mock-servers/non-compliant-server.js')],
+    }),
+    minimal: new TestServerLauncher({
+      ...baseConfig,
+      args: [path.resolve(process.cwd(), 'test/fixtures/mock-servers/minimal-server.js')],
+    }),
+  };
+}

@@ -40,6 +40,7 @@ export class HealthReportGenerator {
       },
       categories,
       issues,
+      results,
     };
   }
 
