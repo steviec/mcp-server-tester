@@ -57,7 +57,7 @@ describe('Doctor Tests - Existing Test Server', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'tools',
+      categories: 'features',
     });
 
     const report = await doctorRunner.runDiagnostics();

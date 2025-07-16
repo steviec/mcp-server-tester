@@ -55,7 +55,7 @@ describe('Doctor Tests - Test Server Minimal Analysis', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'tools',
+      categories: 'features',
     });
 
     const report = await doctorRunner.runDiagnostics();

@@ -42,7 +42,7 @@ describe('Doctor CLI Integration', () => {
     // Doctor may return exit code 1 if tests fail, but should still produce output
     expect([0, 1]).toContain(result.exitCode);
     expect(result.stdout).toContain('test-server');
-    expect(result.stdout).toContain('HEALTH SCORE');
+    expect(result.stdout).toContain('OVERALL MCP COMPLIANCE');
     expect(result.stderr).toContain('Test MCP server running'); // Server startup message
   }, 45000);
 
