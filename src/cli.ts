@@ -90,15 +90,15 @@ async function main(): Promise<void> {
   program
     .name('mcp-server-tester')
     .description('Standalone CLI tool for testing MCP servers')
-    .version(packageJson.version)
-    .usage('<command> [options]')
+    .version(packageJson.version, '--version')
+    .helpOption('--help', 'Show help for command')
     .addHelpText(
       'after',
       `
 Examples:
-  mcp-server-tester test test.yaml --server-config server.json
-  mcp-server-tester doctor --server-config server.json
-  mcp-server-tester test eval.yaml --server-config server.json --server-name filesystem`
+  $ mcp-server-tester test test.yaml --server-config server.json
+  $ mcp-server-tester doctor --server-config server.json
+  $ mcp-server-tester test eval.yaml --server-config server.json --server-name filesystem`
     );
 
   // Test command
