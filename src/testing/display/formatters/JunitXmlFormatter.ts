@@ -282,7 +282,7 @@ export class JunitXmlFormatter implements TestFormatter {
     writeFileSync(this.outputFile, xml, 'utf8');
 
     // Validate the generated XML
-    if (this.options.verbose) {
+    if (this.options.debug) {
       const validation = validateJunitXmlContent(xml);
       if (!validation.valid) {
         console.warn(`JUnit XML validation errors: ${validation.errors.join(', ')}`);

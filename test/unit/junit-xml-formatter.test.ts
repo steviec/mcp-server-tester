@@ -13,7 +13,7 @@ import { tmpdir } from 'os';
 describe('JunitXmlFormatter', () => {
   let formatter: JunitXmlFormatter;
   let outputFile: string;
-  const options: DisplayOptions = { verbose: false };
+  const options: DisplayOptions = { debug: false };
 
   beforeEach(() => {
     // Create a unique temp file for each test

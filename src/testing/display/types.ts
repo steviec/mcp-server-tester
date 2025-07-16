@@ -30,6 +30,7 @@ export interface TestCompleteEvent extends TestEvent {
     passed: boolean;
     errors: string[];
     prompt?: string;
+    messages?: any[]; // CoreMessage[] from 'ai' package
   };
 }
 
@@ -84,8 +85,7 @@ export interface TestFormatter {
 
 export interface DisplayOptions {
   formatter?: string;
-  quiet?: boolean;
-  verbose?: boolean;
+  debug?: boolean;
   junitXml?: string;
   version?: string;
 }

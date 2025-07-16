@@ -19,8 +19,7 @@ import type { DisplayManager } from '../display/DisplayManager.js';
 interface ServerOptions {
   serverConfig: ServerConfig;
   timeout?: number;
-  quiet?: boolean;
-  verbose?: boolean;
+  debug?: boolean;
 }
 
 export class CapabilitiesTestRunner {

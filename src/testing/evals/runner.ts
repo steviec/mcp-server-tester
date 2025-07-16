@@ -19,8 +19,7 @@ export interface EvalSummary {
 interface EvalServerOptions {
   serverConfig: ServerConfig;
   timeout?: number;
-  quiet?: boolean;
-  verbose?: boolean;
+  debug?: boolean;
 }
 
 export class EvalTestRunner {
@@ -92,7 +91,8 @@ export class EvalTestRunner {
               result.passed,
               result.errors,
               model,
-              test.prompt
+              test.prompt,
+              result.messages
             );
           }
         }
@@ -109,15 +109,7 @@ export class EvalTestRunner {
         results,
       };
 
-      // Notify display manager about test suite completion
-      if (this.displayManager) {
-        this.displayManager.suiteComplete(
-          summary.total,
-          summary.passed,
-          summary.failed,
-          summary.duration
-        );
-      }
+      // Note: suiteComplete is called by the main runner, not here
 
       return summary;
     } finally {
@@ -212,7 +204,9 @@ export class EvalTestRunner {
     if (expectedToolCalls.required) {
       for (const requiredTool of expectedToolCalls.required) {
         if (!actualToolNames.includes(requiredTool)) {
-          errors.push(`Required tool '${requiredTool}' was not called`);
+          errors.push(
+            `Required tool '${requiredTool}' was not called (actual calls: ${actualToolNames.length > 0 ? actualToolNames.join(', ') : 'none'})`
+          );
         }
       }
     }
@@ -229,7 +223,9 @@ export class EvalTestRunner {
 
       for (const actualTool of actualToolNames) {
         if (!allowedTools.includes(actualTool)) {
-          errors.push(`Tool '${actualTool}' was called but not in allowed list`);
+          errors.push(
+            `Tool '${actualTool}' was called but not in allowed list (allowed: ${allowedTools.join(', ')})`
+          );
         }
       }
     }

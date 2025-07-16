@@ -66,7 +66,11 @@ describe('Tool Call Validation', () => {
     const errors = validateToolCalls(actualToolCalls, expectedToolCalls);
 
     // This SHOULD produce an error
-    expect(errors).toContain("Tool 'unauthorized_tool' was called but not in allowed list");
+    expect(
+      errors.some(error =>
+        error.includes("Tool 'unauthorized_tool' was called but not in allowed list")
+      )
+    ).toBe(true);
   });
 
   test('should handle case with only required tools (no allowed list)', () => {

@@ -19,8 +19,7 @@ interface CliOptions {
   serverConfig: string;
   serverName?: string;
   timeout?: number;
-  quiet?: boolean;
-  verbose?: boolean;
+  debug?: boolean;
   junitXml?: string;
 }
 
@@ -113,8 +112,7 @@ Examples:
       'Specific server name to use from config (if multiple servers defined)'
     )
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
-    .option('--quiet', 'Suppress non-essential output')
-    .option('--verbose', 'Enable verbose output with additional details')
+    .option('--debug', 'Enable debug output with additional details')
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
     .action(async (testFile: string, options: CliOptions) => {
       await runTests(testFile, options);

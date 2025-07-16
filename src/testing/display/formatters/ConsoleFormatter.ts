@@ -15,6 +15,7 @@ import type {
   TestCompleteEvent,
   SuiteCompleteEvent,
 } from '../types.js';
+import { formatConversation } from '../utils/conversationFormatter.js';
 
 export class ConsoleFormatter implements TestFormatter {
   private options: DisplayOptions;
@@ -26,10 +27,6 @@ export class ConsoleFormatter implements TestFormatter {
   }
 
   onEvent(event: TestEvent): void {
-    if (this.options.quiet) {
-      return;
-    }
-
     switch (event.type) {
       case 'suite_start':
         this.handleSuiteStart(event.data as SuiteStartEvent['data']);
@@ -88,9 +85,9 @@ export class ConsoleFormatter implements TestFormatter {
     if (data.model && data.model !== this.currentModel) {
       this.currentModel = data.model;
       // Model changes are now handled by section headers
-    } else if (data.message && !this.options.quiet) {
-      // Only show progress messages in verbose mode or if explicitly needed
-      if (this.options.verbose) {
+    } else if (data.message) {
+      // Only show progress messages in debug mode
+      if (this.options.debug) {
         console.log(data.message);
       }
     }
@@ -98,11 +95,11 @@ export class ConsoleFormatter implements TestFormatter {
 
   private handleTestStart(_data: TestStartEvent['data']): void {
     // For now, we don't show individual test starts
-    // Could add verbose mode later that shows "Running: test_name..."
+    // Could add debug mode later that shows "Running: test_name..."
   }
 
   private handleTestComplete(data: TestCompleteEvent['data']): void {
-    const { name, passed, errors, prompt } = data;
+    const { name, passed, errors, prompt, messages } = data;
 
     if (passed) {
       console.log(`✅ ${name}: PASSED`);
@@ -118,6 +115,14 @@ export class ConsoleFormatter implements TestFormatter {
           console.log(`    • ${error}`);
         });
       }
+    }
+
+    // Show conversation in debug mode
+    if (this.options.debug && messages && messages.length > 0) {
+      console.log();
+      const formattedLines = formatConversation(messages, prompt);
+      formattedLines.forEach(line => console.log(line));
+      console.log();
     }
   }
 

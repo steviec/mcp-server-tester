@@ -20,7 +20,7 @@ export class JsonFormatter implements TestFormatter {
   flush(): void {
     // TODO: Implement JSON output
     // Could output to file or stdout depending on options
-    if (this.options.verbose) {
+    if (this.options.debug) {
       console.log('JSON formatter not yet implemented');
     }
   }

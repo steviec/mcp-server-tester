@@ -16,8 +16,7 @@ interface ServerOptions {
   serverConfig: string;
   serverName?: string;
   timeout?: number;
-  quiet?: boolean;
-  verbose?: boolean;
+  debug?: boolean;
   junitXml?: string;
 }
 
@@ -33,8 +32,7 @@ export class TestRunner {
     // Create display manager with options
     const displayOptions: DisplayOptions = {
       formatter: 'console',
-      quiet: serverOptions.quiet,
-      verbose: serverOptions.verbose,
+      debug: serverOptions.debug,
       junitXml: serverOptions.junitXml,
       version: this.getVersion(),
     };
@@ -82,8 +80,7 @@ export class TestRunner {
         {
           serverConfig,
           timeout: this.serverOptions.timeout,
-          quiet: this.serverOptions.quiet,
-          verbose: this.serverOptions.verbose,
+          debug: this.serverOptions.debug,
         },
         this.displayManager
       );
@@ -110,8 +107,7 @@ export class TestRunner {
           {
             serverConfig,
             timeout: this.serverOptions.timeout,
-            quiet: this.serverOptions.quiet,
-            verbose: this.serverOptions.verbose,
+            debug: this.serverOptions.debug,
           },
           this.displayManager
         );
