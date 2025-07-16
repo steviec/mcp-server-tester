@@ -4,7 +4,7 @@
  */
 
 import { DiagnosticTest } from '../DiagnosticTest.js';
-import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
+import { TEST_SEVERITY, ISSUE_TYPE, type DiagnosticResult, type DoctorConfig } from '../types.js';
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class JsonRpcMessageFormatTest extends DiagnosticTest {
@@ -12,7 +12,7 @@ class JsonRpcMessageFormatTest extends DiagnosticTest {
   readonly description = 'Validate JSON-RPC 2.0 message structure compliance';
   readonly category = 'protocol';
   readonly severity = TEST_SEVERITY.CRITICAL;
-  readonly mcpSpecSection = 'MCP Spec §2.1';
+  readonly mcpSpecSection = 'MCP Spec §2.1 - JSON-RPC 2.0';
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
     const issues: string[] = [];
@@ -85,18 +85,28 @@ class JsonRpcMessageFormatTest extends DiagnosticTest {
         ? `JSON-RPC format validation passed (${validations.length} checks)`
         : `JSON-RPC format issues detected (${issues.length} issues, ${validations.length} valid)`;
 
-      return this.createResult(
-        isValid,
-        message,
-        { issues, validations },
-        issues.length > 0
-          ? [
-              'Ensure all responses follow JSON-RPC 2.0 specification',
-              'Validate message structure before sending responses',
-              'Check error handling implementation',
-            ]
-          : undefined
-      );
+      if (isValid) {
+        return this.createResult(isValid, message, { issues, validations });
+      } else {
+        return this.createEnhancedResult({
+          success: false,
+          message,
+          details: { issues, validations },
+          issueType: ISSUE_TYPE.CRITICAL_FAILURE,
+          expected: 'JSON-RPC 2.0 compliant message structure with proper response format',
+          actual: `Invalid message structure: ${issues.join(', ')}`,
+          fixInstructions: [
+            'Ensure all responses follow JSON-RPC 2.0 specification structure',
+            'Validate message structure before sending responses',
+            'Implement proper error response formatting with correct error codes',
+            'Review MCP server response handling implementation',
+          ],
+          specLinks: [
+            'https://spec.modelcontextprotocol.io/specification/basic/json-rpc/',
+            'https://www.jsonrpc.org/specification',
+          ],
+        });
+      }
     } catch (error) {
       return this.createResult(
         false,

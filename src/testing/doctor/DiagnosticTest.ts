@@ -3,7 +3,13 @@
  */
 
 import type { McpClient } from '../../core/mcp-client.js';
-import type { DoctorConfig, DiagnosticResult, TestSeverity, TestCategory } from './types.js';
+import type {
+  DoctorConfig,
+  DiagnosticResult,
+  TestSeverity,
+  TestCategory,
+  IssueType,
+} from './types.js';
 import type { McpCapability } from './CapabilityDetector.js';
 
 export abstract class DiagnosticTest {
@@ -37,6 +43,36 @@ export abstract class DiagnosticTest {
       duration: 0, // Will be set by runner
       requiredCapability: this.requiredCapability,
       mcpSpecSection: this.mcpSpecSection,
+    };
+  }
+
+  protected createEnhancedResult(options: {
+    success: boolean;
+    message: string;
+    details?: unknown;
+    recommendations?: string[];
+    issueType?: IssueType;
+    expected?: string;
+    actual?: string;
+    fixInstructions?: string[];
+    specLinks?: string[];
+  }): DiagnosticResult {
+    return {
+      testName: this.name,
+      category: this.category,
+      status: options.success ? 'passed' : 'failed',
+      message: options.message,
+      details: options.details,
+      recommendations: options.recommendations || [],
+      severity: this.severity,
+      duration: 0, // Will be set by runner
+      requiredCapability: this.requiredCapability,
+      mcpSpecSection: this.mcpSpecSection,
+      issueType: options.issueType,
+      expected: options.expected,
+      actual: options.actual,
+      fixInstructions: options.fixInstructions,
+      specLinks: options.specLinks,
     };
   }
 

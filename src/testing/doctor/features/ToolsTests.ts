@@ -3,7 +3,7 @@
  */
 
 import { DiagnosticTest } from '../DiagnosticTest.js';
-import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
+import { TEST_SEVERITY, ISSUE_TYPE, type DiagnosticResult, type DoctorConfig } from '../types.js';
 import type { McpClient } from '../../../core/mcp-client.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
@@ -13,7 +13,7 @@ export class ToolsCapabilityTest extends DiagnosticTest {
   readonly category = 'features';
   readonly severity = TEST_SEVERITY.CRITICAL;
   readonly requiredCapability = 'tools';
-  readonly mcpSpecSection = 'MCP Spec §4.1';
+  readonly mcpSpecSection = 'MCP Spec §4.1 - Tool Interface';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -27,12 +27,20 @@ export class ToolsCapabilityTest extends DiagnosticTest {
           { hasListChanged, toolsCount: result.tools?.length || 0 }
         );
       } else {
-        return this.createResult(
-          false,
-          'Server does not properly declare tools capability',
-          { response: result },
-          ['Ensure server implements tools/list method according to MCP specification']
-        );
+        return this.createEnhancedResult({
+          success: false,
+          message: 'Server does not properly declare tools capability',
+          details: { response: result },
+          issueType: ISSUE_TYPE.CRITICAL_FAILURE,
+          expected: 'Response with tools array field from tools/list method',
+          actual: `Missing or invalid tools field in response: ${JSON.stringify(result)}`,
+          fixInstructions: [
+            'Implement tools/list method that returns {tools: Tool[]} structure',
+            'Ensure server declares tools capability in initialization',
+            'Verify tools array contains valid Tool objects with name and description fields',
+          ],
+          specLinks: ['https://spec.modelcontextprotocol.io/specification/server/tools/'],
+        });
       }
     } catch (error) {
       return this.createResult(
