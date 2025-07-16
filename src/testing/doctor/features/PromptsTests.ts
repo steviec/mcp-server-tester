@@ -5,7 +5,7 @@
 import { DiagnosticTest } from '../DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
 import type { McpClient } from '../../../core/mcp-client.js';
-import type { Prompt } from '@modelcontextprotocol/sdk/types.js';
+import type { Prompt, GetPromptResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class PromptsCapabilityTest extends DiagnosticTest {
   readonly name = 'Prompts: Capability Declaration';
@@ -127,7 +127,7 @@ export class PromptRetrievalTest extends DiagnosticTest {
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Prompt retrieval timeout')), timeout)
           ),
-        ])) as any;
+        ])) as GetPromptResult;
         const duration = Date.now() - startTime;
 
         const messages = Array.isArray(getResult.messages)
@@ -139,7 +139,6 @@ export class PromptRetrievalTest extends DiagnosticTest {
           duration,
           testArgs,
           messageCount: messages.length,
-          description: getResult.description,
         });
       } catch (error) {
         return this.createResult(
@@ -182,7 +181,11 @@ export class PromptRetrievalTest extends DiagnosticTest {
     );
   }
 
-  private isSimpleArgument(arg: any): boolean {
+  private isSimpleArgument(arg: {
+    name: string;
+    description?: string;
+    required?: boolean;
+  }): boolean {
     // Simple if it's a string argument without complex validation
     return !arg.required || (typeof arg.description === 'string' && arg.description.length < 100);
   }
@@ -201,7 +204,7 @@ export class PromptRetrievalTest extends DiagnosticTest {
     return args;
   }
 
-  private generateTestValue(arg: any): string {
+  private generateTestValue(arg: { name: string; description?: string }): string {
     // Generate safe test values based on argument description or name
     const name = arg.name.toLowerCase();
     const description = (arg.description || '').toLowerCase();
@@ -326,7 +329,7 @@ export class TemplateRenderingTest extends DiagnosticTest {
         });
 
         // Check if template variables were substituted
-        const rendered = this.analyzeTemplateRendering(getResult as any, testArgs);
+        const rendered = this.analyzeTemplateRendering(getResult, testArgs);
 
         if (rendered.hasSubstitution) {
           return this.createResult(true, `Template rendering working (${templatePrompt.name})`, {
@@ -376,7 +379,7 @@ export class TemplateRenderingTest extends DiagnosticTest {
     return args;
   }
 
-  private analyzeTemplateRendering(result: any, testArgs: Record<string, string>) {
+  private analyzeTemplateRendering(result: GetPromptResult, testArgs: Record<string, string>) {
     const messages = Array.isArray(result.messages) ? result.messages : [result.messages];
     let hasSubstitution = false;
     const substitutionFound: string[] = [];

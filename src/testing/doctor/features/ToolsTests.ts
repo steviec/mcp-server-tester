@@ -265,7 +265,10 @@ export class ToolExecutionTest extends DiagnosticTest {
 
     if (schema.type === 'object' && schema.properties) {
       const args: Record<string, unknown> = {};
-      const properties = schema.properties as Record<string, any>;
+      const properties = schema.properties as Record<
+        string,
+        { type?: string; description?: string; enum?: unknown[] }
+      >;
 
       // Only fill required properties with safe test values
       const required = Array.isArray(schema.required) ? schema.required : [];
@@ -283,7 +286,11 @@ export class ToolExecutionTest extends DiagnosticTest {
     return {};
   }
 
-  private generateTestValue(schema: any): unknown {
+  private generateTestValue(schema: {
+    type?: string;
+    description?: string;
+    enum?: unknown[];
+  }): unknown {
     switch (schema.type) {
       case 'string':
         return 'test';

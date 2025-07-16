@@ -5,7 +5,7 @@
 import { DiagnosticTest } from '../DiagnosticTest.js';
 import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../types.js';
 import type { McpClient } from '../../../core/mcp-client.js';
-import type { Resource } from '@modelcontextprotocol/sdk/types.js';
+import type { Resource, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class ResourcesCapabilityTest extends DiagnosticTest {
   readonly name = 'Resources: Capability Declaration';
@@ -126,7 +126,7 @@ export class ResourceReadingTest extends DiagnosticTest {
           new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Resource read timeout')), timeout)
           ),
-        ])) as any;
+        ])) as ReadResourceResult;
         const duration = Date.now() - startTime;
 
         const contents = Array.isArray(readResult.contents)
@@ -137,7 +137,7 @@ export class ResourceReadingTest extends DiagnosticTest {
           resourceUri: testResource.uri,
           duration,
           contentCount: contents.length,
-          mimeTypes: contents.map((c: any) => c.mimeType).filter(Boolean),
+          mimeTypes: contents.map(c => c.mimeType).filter(Boolean),
         });
       } catch (error) {
         return this.createResult(
