@@ -119,7 +119,15 @@ describe('Tool Call Validation', () => {
     // Test the validateToolCallSuccess method
     const validateToolCallSuccess = (runner as any).validateToolCallSuccess.bind(runner);
 
-    // Mock tool results with error
+    // Mock tool calls and results with error
+    const toolCalls = [
+      {
+        toolCallId: '1',
+        toolName: 'run_flow_files',
+        args: {},
+      },
+    ];
+
     const toolResults = [
       {
         toolCallId: '1',
@@ -134,7 +142,7 @@ describe('Tool Call Validation', () => {
 
     const requiredTools = ['run_flow_files'];
 
-    const errors = validateToolCallSuccess(toolResults, requiredTools);
+    const errors = validateToolCallSuccess(toolCalls, toolResults, requiredTools);
 
     // Should produce an error because the required tool failed
     expect(errors.length).toBeGreaterThan(0);
@@ -159,7 +167,15 @@ describe('Tool Call Validation', () => {
     // Test the validateToolCallSuccess method
     const validateToolCallSuccess = (runner as any).validateToolCallSuccess.bind(runner);
 
-    // Mock tool results with success
+    // Mock tool calls and results with success
+    const toolCalls = [
+      {
+        toolCallId: '1',
+        toolName: 'run_flow_files',
+        args: {},
+      },
+    ];
+
     const toolResults = [
       {
         toolCallId: '1',
@@ -174,7 +190,7 @@ describe('Tool Call Validation', () => {
 
     const requiredTools = ['run_flow_files'];
 
-    const errors = validateToolCallSuccess(toolResults, requiredTools);
+    const errors = validateToolCallSuccess(toolCalls, toolResults, requiredTools);
 
     // Should not produce any errors
     expect(errors).toEqual([]);

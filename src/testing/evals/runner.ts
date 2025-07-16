@@ -169,6 +169,7 @@ export class EvalTestRunner {
       // Validate tool call success for required tools
       if (test.expected_tool_calls?.required && conversationResult.success) {
         const toolSuccessErrors = this.validateToolCallSuccess(
+          conversationResult.toolCalls,
           conversationResult.toolResults,
           test.expected_tool_calls.required
         );
@@ -268,12 +269,19 @@ export class EvalTestRunner {
   }
 
   private validateToolCallSuccess(
+    toolCalls: ToolCall<string, Record<string, unknown>>[],
     toolResults: ToolResult<string, Record<string, unknown>, unknown>[],
     requiredTools: string[]
   ): string[] {
     const errors: string[] = [];
+    const calledToolNames = toolCalls.map(call => call.toolName);
 
     for (const requiredTool of requiredTools) {
+      // Only validate success if the tool was actually called
+      if (!calledToolNames.includes(requiredTool)) {
+        continue; // Skip - this case is already handled by validateToolCalls
+      }
+
       // Find results for this required tool
       const resultsForTool = toolResults.filter(tr => tr.toolName === requiredTool);
 
