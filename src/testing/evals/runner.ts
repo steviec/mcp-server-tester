@@ -378,7 +378,7 @@ export class EvalTestRunner {
             type: 'llm-judge',
             passed,
             score: result.score,
-            details: `Score: ${result.score} (threshold: ${threshold}). Criteria: ${scorer.criteria}. Rationale: ${result.rationale}`,
+            details: `Score: ${result.score} (threshold: ${threshold}). Rationale: ${result.rationale}`,
           });
         }
       } catch (error) {
