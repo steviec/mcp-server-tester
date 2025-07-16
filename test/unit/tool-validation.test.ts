@@ -101,4 +101,82 @@ describe('Tool Call Validation', () => {
     // Should not produce any errors
     expect(errors).toEqual([]);
   });
+
+  test('should fail test when required tool call returns error', () => {
+    const runner = new EvalTestRunner(
+      {
+        models: ['claude-3-haiku-20240307'],
+        timeout: 30000,
+        max_steps: 3,
+        tests: [],
+      },
+      {
+        serverCommand: 'node',
+        serverArgs: 'test.js',
+      }
+    );
+
+    // Test the validateToolCallSuccess method
+    const validateToolCallSuccess = (runner as any).validateToolCallSuccess.bind(runner);
+
+    // Mock tool results with error
+    const toolResults = [
+      {
+        toolCallId: '1',
+        toolName: 'run_flow_files',
+        args: {},
+        result: {
+          isError: true,
+          content: [{ type: 'text', text: 'Files not found: /path/to/file.yaml' }],
+        },
+      },
+    ];
+
+    const requiredTools = ['run_flow_files'];
+
+    const errors = validateToolCallSuccess(toolResults, requiredTools);
+
+    // Should produce an error because the required tool failed
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0]).toContain('run_flow_files');
+    expect(errors[0]).toContain('failed');
+  });
+
+  test('should pass when required tool call succeeds', () => {
+    const runner = new EvalTestRunner(
+      {
+        models: ['claude-3-haiku-20240307'],
+        timeout: 30000,
+        max_steps: 3,
+        tests: [],
+      },
+      {
+        serverCommand: 'node',
+        serverArgs: 'test.js',
+      }
+    );
+
+    // Test the validateToolCallSuccess method
+    const validateToolCallSuccess = (runner as any).validateToolCallSuccess.bind(runner);
+
+    // Mock tool results with success
+    const toolResults = [
+      {
+        toolCallId: '1',
+        toolName: 'run_flow_files',
+        args: {},
+        result: {
+          isError: false,
+          content: [{ type: 'text', text: 'Flow executed successfully' }],
+        },
+      },
+    ];
+
+    const requiredTools = ['run_flow_files'];
+
+    const errors = validateToolCallSuccess(toolResults, requiredTools);
+
+    // Should not produce any errors
+    expect(errors).toEqual([]);
+  });
 });

@@ -2,6 +2,8 @@
  * Type definitions for the Doctor framework
  */
 
+import type { McpCapability } from './CapabilityDetector.js';
+
 export const TEST_SEVERITY = {
   CRITICAL: 'critical',
   WARNING: 'warning',
@@ -10,23 +12,32 @@ export const TEST_SEVERITY = {
 
 export type TestSeverity = (typeof TEST_SEVERITY)[keyof typeof TEST_SEVERITY];
 
+/**
+ * Test organization categories (our internal grouping, not MCP spec)
+ */
+export type TestCategory = 'lifecycle' | 'protocol' | 'security' | 'performance' | 'features';
+
 export interface DiagnosticResult {
   testName: string;
+  category: TestCategory;
   status: 'passed' | 'failed' | 'skipped';
   message: string;
   details?: unknown;
   recommendations?: string[];
   severity: TestSeverity;
   duration: number;
+  requiredCapability?: McpCapability; // MCP spec capability requirement
+  mcpSpecSection?: string; // Reference to MCP specification section
 }
 
-export interface TestCategory {
+export interface TestCategorySummary {
   name: string;
   passed: number;
   failed: number;
   warnings: number;
   total: number;
   duration: number;
+  status: 'passed' | 'failed' | 'warning' | 'skipped';
 }
 
 export interface HealthScore {
@@ -41,20 +52,24 @@ export interface HealthReport {
     version?: string;
     transport: string;
   };
+  serverCapabilities: Set<McpCapability>;
+  skippedCapabilities: McpCapability[];
   metadata: {
     timestamp: string;
     duration: number;
     testCount: number;
+    skippedTestCount: number;
   };
   summary: {
     testResults: {
       passed: number;
       failed: number;
+      skipped: number;
       total: number;
     };
     overallScore: number;
   };
-  categories: TestCategory[];
+  categories: TestCategorySummary[];
   issues: DiagnosticResult[];
   results: DiagnosticResult[]; // Include raw results for testing/debugging
 }

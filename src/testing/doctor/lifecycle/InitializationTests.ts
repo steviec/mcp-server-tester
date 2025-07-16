@@ -11,6 +11,7 @@ export class InitializationTests extends DiagnosticTest {
   readonly description = 'Tests MCP server initialization sequence and responses';
   readonly category = 'lifecycle';
   readonly severity = TEST_SEVERITY.CRITICAL;
+  readonly mcpSpecSection = 'MCP Spec §3.1';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {

@@ -3,6 +3,7 @@
  */
 
 import type { TestEvent, TestFormatter, DisplayOptions } from './types.js';
+import type { ScorerResult } from '../../core/types.js';
 import { ConsoleFormatter } from './formatters/ConsoleFormatter.js';
 import { JunitXmlFormatter } from './formatters/JunitXmlFormatter.js';
 
@@ -63,11 +64,12 @@ export class DisplayManager {
     errors: string[],
     model?: string,
     prompt?: string,
-    messages?: any[]
+    messages?: any[],
+    scorer_results?: ScorerResult[]
   ): void {
     this.emit({
       type: 'test_complete',
-      data: { name, model, passed, errors, prompt, messages },
+      data: { name, model, passed, errors, prompt, messages, scorer_results },
     });
   }
 

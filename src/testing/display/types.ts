@@ -2,6 +2,8 @@
  * Types and interfaces for test output display and formatting
  */
 
+import type { ScorerResult } from '../../core/types.js';
+
 export interface TestEvent {
   type:
     | 'test_start'
@@ -31,6 +33,7 @@ export interface TestCompleteEvent extends TestEvent {
     errors: string[];
     prompt?: string;
     messages?: any[]; // CoreMessage[] from 'ai' package
+    scorer_results?: ScorerResult[];
   };
 }
 

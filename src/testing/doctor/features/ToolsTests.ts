@@ -10,8 +10,10 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 export class ToolsCapabilityTest extends DiagnosticTest {
   readonly name = 'Tools: Capability Declaration';
   readonly description = 'Verify server declares tools capability correctly';
-  readonly category = 'tools';
+  readonly category = 'features';
   readonly severity = TEST_SEVERITY.CRITICAL;
+  readonly requiredCapability = 'tools';
+  readonly mcpSpecSection = 'MCP Spec §4.1';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -46,8 +48,10 @@ export class ToolsCapabilityTest extends DiagnosticTest {
 export class ToolListingTest extends DiagnosticTest {
   readonly name = 'Tools: Tool Listing';
   readonly description = 'Verify tool listing functionality';
-  readonly category = 'tools';
+  readonly category = 'features';
   readonly severity = TEST_SEVERITY.WARNING;
+  readonly requiredCapability = 'tools';
+  readonly mcpSpecSection = 'MCP Spec §4.1.1';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -91,8 +95,10 @@ export class ToolListingTest extends DiagnosticTest {
 export class ToolSchemaValidationTest extends DiagnosticTest {
   readonly name = 'Tools: Schema Validation';
   readonly description = 'Verify tool schemas are valid';
-  readonly category = 'tools';
+  readonly category = 'features';
   readonly severity = TEST_SEVERITY.WARNING;
+  readonly requiredCapability = 'tools';
+  readonly mcpSpecSection = 'MCP Spec §4.1.2';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -162,7 +168,7 @@ export class ToolSchemaValidationTest extends DiagnosticTest {
 export class ToolExecutionTest extends DiagnosticTest {
   readonly name = 'Tools: Tool Execution';
   readonly description = 'Test tool execution capability';
-  readonly category = 'tools';
+  readonly category = 'features';
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -312,7 +318,7 @@ export class ToolExecutionTest extends DiagnosticTest {
 export class ToolErrorHandlingTest extends DiagnosticTest {
   readonly name = 'Tools: Error Handling';
   readonly description = 'Test tool error handling for invalid parameters';
-  readonly category = 'tools';
+  readonly category = 'features';
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -361,7 +367,7 @@ export class ToolErrorHandlingTest extends DiagnosticTest {
 export class ToolAnnotationsTest extends DiagnosticTest {
   readonly name = 'Tools: Annotations Support';
   readonly description = 'Check for recommended tool annotations';
-  readonly category = 'tools';
+  readonly category = 'features';
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {

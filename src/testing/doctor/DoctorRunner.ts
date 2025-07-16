@@ -6,6 +6,7 @@ import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
 import { ConfigLoader } from '../../config/loader.js';
 import { TestRegistry } from './TestRegistry.js';
 import { HealthReportGenerator } from './HealthReport.js';
+import { CapabilityDetector, type McpCapability } from './CapabilityDetector.js';
 import {
   TEST_SEVERITY,
   type DiagnosticResult,
@@ -26,22 +27,36 @@ export class DoctorRunner {
 
     try {
       const client = await this.connectToServer();
-      const tests = this.discoverTests();
-      const results = await this.executeTests(tests, client);
-      const endTime = Date.now();
 
+      // Detect server capabilities first
+      const serverCapabilities = await CapabilityDetector.detectCapabilities(client);
+
+      // Discover applicable tests based on capabilities
+      const applicableTests = this.discoverApplicableTests(serverCapabilities);
+      const skippedTests = TestRegistry.getSkippedTests(serverCapabilities);
+
+      // Execute applicable tests
+      const results = await this.executeTests(applicableTests, client);
+
+      // Add skipped test results
+      const skippedResults = this.createSkippedResults(skippedTests);
+      const allResults = [...results, ...skippedResults];
+
+      const endTime = Date.now();
       await client.disconnect();
 
-      return HealthReportGenerator.generateReport(
-        results,
-        this.getServerInfo(),
+      return HealthReportGenerator.generateReport({
+        results: allResults,
+        serverInfo: this.getServerInfo(),
         startTime,
-        endTime
-      );
+        endTime,
+        serverCapabilities,
+      });
     } catch (error) {
       const endTime = Date.now();
       const errorResult: DiagnosticResult = {
         testName: 'System: Connection',
+        category: 'lifecycle',
         status: 'failed',
         message: `Failed to connect to server: ${error instanceof Error ? error.message : String(error)}`,
         severity: TEST_SEVERITY.CRITICAL,
@@ -49,12 +64,12 @@ export class DoctorRunner {
         recommendations: ['Check server configuration and ensure server is running'],
       };
 
-      return HealthReportGenerator.generateReport(
-        [errorResult],
-        this.getServerInfo(),
+      return HealthReportGenerator.generateReport({
+        results: [errorResult],
+        serverInfo: this.getServerInfo(),
         startTime,
-        endTime
-      );
+        endTime,
+      });
     }
   }
 
@@ -70,16 +85,31 @@ export class DoctorRunner {
     return client;
   }
 
-  private discoverTests() {
-    const availableTests = TestRegistry.getAllTests();
+  private discoverApplicableTests(serverCapabilities: Set<McpCapability>) {
+    let applicableTests = TestRegistry.getApplicableTests(serverCapabilities);
 
     // Filter by categories if specified
     if (this._options.categories) {
-      const requestedCategories = this._options.categories.split(',').map(c => c.trim());
-      return availableTests.filter(test => requestedCategories.includes(test.category));
+      const requestedCategories = this._options.categories.split(',').map(c => c.trim() as any);
+      applicableTests = applicableTests.filter(test => requestedCategories.includes(test.category));
     }
 
-    return availableTests;
+    return applicableTests;
+  }
+
+  private createSkippedResults(
+    skippedTests: ReturnType<typeof TestRegistry.getSkippedTests>
+  ): DiagnosticResult[] {
+    return skippedTests.map(test => ({
+      testName: test.name,
+      category: test.category,
+      status: 'skipped' as const,
+      message: `Test skipped: Server does not advertise '${test.requiredCapability}' capability`,
+      severity: test.severity,
+      duration: 0,
+      requiredCapability: test.requiredCapability,
+      mcpSpecSection: test.mcpSpecSection,
+    }));
   }
 
   private async executeTests(
@@ -102,10 +132,13 @@ export class DoctorRunner {
         const duration = Date.now() - startTime;
         results.push({
           testName: test.name,
+          category: test.category,
           status: 'failed',
           message: `Test execution failed: ${error instanceof Error ? error.message : String(error)}`,
           severity: test.severity,
           duration,
+          requiredCapability: test.requiredCapability,
+          mcpSpecSection: test.mcpSpecSection,
         });
       }
     }

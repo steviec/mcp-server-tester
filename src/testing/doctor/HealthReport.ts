@@ -2,7 +2,8 @@
  * Health report generation and scoring system
  */
 
-import type { DiagnosticResult, HealthReport, TestCategory } from './types.js';
+import type { DiagnosticResult, HealthReport, TestCategorySummary } from './types.js';
+import type { McpCapability } from './CapabilityDetector.js';
 
 export class HealthReportGenerator {
   private static readonly DEFAULT_WEIGHTS: Record<string, number> = {
@@ -13,27 +14,38 @@ export class HealthReportGenerator {
     transport: 0.1,
   };
 
-  static generateReport(
-    results: DiagnosticResult[],
-    serverInfo: { name: string; version?: string; transport: string },
-    startTime: number,
-    endTime: number
-  ): HealthReport {
-    const categories = this.generateCategories(results);
+  static generateReport(options: {
+    results: DiagnosticResult[];
+    serverInfo: { name: string; version?: string; transport: string };
+    startTime: number;
+    endTime: number;
+    serverCapabilities?: Set<McpCapability>;
+  }): HealthReport {
+    const { results, serverInfo, startTime, endTime, serverCapabilities } = options;
+
+    // Derive server capabilities from test results if not provided
+    const derivedCapabilities = serverCapabilities || this.deriveServerCapabilities(results);
+
+    const categories = this.generateCategories(results, derivedCapabilities);
     const issues = this.extractIssues(results);
+    const skippedTests = results.filter(r => r.status === 'skipped');
     const overallScore = this.calculateOverallScore(categories, results);
 
     return {
       serverInfo,
+      serverCapabilities: derivedCapabilities,
+      skippedCapabilities: this.getSkippedCapabilities(results, derivedCapabilities),
       metadata: {
         timestamp: new Date().toISOString(),
         duration: endTime - startTime,
         testCount: results.length,
+        skippedTestCount: skippedTests.length,
       },
       summary: {
         testResults: {
           passed: results.filter(r => r.status === 'passed').length,
           failed: results.filter(r => r.status === 'failed').length,
+          skipped: skippedTests.length,
           total: results.length,
         },
         overallScore,
@@ -44,12 +56,15 @@ export class HealthReportGenerator {
     };
   }
 
-  private static generateCategories(results: DiagnosticResult[]): TestCategory[] {
-    const categoryMap = new Map<string, TestCategory>();
+  private static generateCategories(
+    results: DiagnosticResult[],
+    _serverCapabilities: Set<McpCapability>
+  ): TestCategorySummary[] {
+    const categoryMap = new Map<string, TestCategorySummary>();
 
     // Initialize categories
     for (const result of results) {
-      const categoryName = this.extractCategoryFromTestName(result.testName);
+      const categoryName = result.category || this.extractCategoryFromTestName(result.testName);
       if (!categoryMap.has(categoryName)) {
         categoryMap.set(categoryName, {
           name: categoryName,
@@ -58,13 +73,14 @@ export class HealthReportGenerator {
           warnings: 0,
           total: 0,
           duration: 0,
+          status: 'passed',
         });
       }
     }
 
     // Aggregate results by category
     for (const result of results) {
-      const categoryName = this.extractCategoryFromTestName(result.testName);
+      const categoryName = result.category || this.extractCategoryFromTestName(result.testName);
       const category = categoryMap.get(categoryName)!;
 
       category.total += 1;
@@ -78,16 +94,25 @@ export class HealthReportGenerator {
         } else {
           category.failed += 1;
         }
+      } else if (result.status === 'skipped') {
+        // Don't count skipped tests in passed/failed, but they are in total
+      }
+    }
+
+    // Set category status based on results
+    for (const category of categoryMap.values()) {
+      if (category.failed > 0) {
+        category.status = 'failed';
+      } else if (category.warnings > 0) {
+        category.status = 'warning';
+      } else if (category.total === 0 || category.passed === 0) {
+        category.status = 'skipped';
+      } else {
+        category.status = 'passed';
       }
     }
 
     return Array.from(categoryMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private static extractCategoryFromTestName(testName: string): string {
-    // Extract category from test name (e.g., "Protocol: Connection Test" -> "protocol")
-    const match = testName.match(/^([^:]+):/);
-    return match ? match[1].toLowerCase().trim() : 'general';
   }
 
   private static extractIssues(results: DiagnosticResult[]): DiagnosticResult[] {
@@ -100,8 +125,46 @@ export class HealthReportGenerator {
       });
   }
 
+  /**
+   * Extract category from test name as fallback
+   * Format: "Category: Test Name" -> "category"
+   */
+  private static extractCategoryFromTestName(testName: string): string {
+    const match = testName.match(/^([^:]+):/);
+    return match ? match[1].toLowerCase().trim() : 'general';
+  }
+
+  /**
+   * Derive server capabilities from test results
+   * If a capability test passed, the server supports it
+   */
+  private static deriveServerCapabilities(results: DiagnosticResult[]): Set<McpCapability> {
+    const supportedCapabilities = new Set<McpCapability>();
+
+    for (const result of results) {
+      if (result.requiredCapability && result.status === 'passed') {
+        supportedCapabilities.add(result.requiredCapability);
+      }
+    }
+
+    return supportedCapabilities;
+  }
+
+  private static getSkippedCapabilities(
+    results: DiagnosticResult[],
+    _serverCapabilities: Set<McpCapability>
+  ): McpCapability[] {
+    const skippedTests = results.filter(r => r.status === 'skipped' && r.requiredCapability);
+    const skippedCapabilities = new Set(
+      skippedTests
+        .map(t => t.requiredCapability)
+        .filter((cap): cap is McpCapability => cap !== undefined)
+    );
+    return Array.from(skippedCapabilities).sort();
+  }
+
   private static calculateOverallScore(
-    categories: TestCategory[],
+    categories: TestCategorySummary[],
     results: DiagnosticResult[]
   ): number {
     if (results.length === 0) {
@@ -123,7 +186,7 @@ export class HealthReportGenerator {
   }
 
   private static calculateCategoryScore(
-    category: TestCategory,
+    category: TestCategorySummary,
     results: DiagnosticResult[]
   ): number {
     if (category.total === 0) {
@@ -131,7 +194,7 @@ export class HealthReportGenerator {
     }
 
     const categoryResults = results.filter(
-      r => this.extractCategoryFromTestName(r.testName) === category.name.toLowerCase()
+      r => (r.category || this.extractCategoryFromTestName(r.testName)) === category.name
     );
 
     let score = 100;
@@ -166,17 +229,39 @@ export function formatReport(report: HealthReport): string {
     '',
   ];
 
-  // Category summaries
+  // Category summaries with capability awareness
   for (const category of report.categories) {
-    const status = category.failed > 0 ? '❌' : category.warnings > 0 ? '⚠️' : '✅';
-    const summary = `${category.passed}/${category.total} passed`;
+    let status: string;
+    let summary: string;
+
+    if (category.status === 'skipped') {
+      status = '⏭️';
+      summary = 'SKIPPED';
+    } else {
+      status = category.failed > 0 ? '❌' : category.warnings > 0 ? '⚠️' : '✅';
+      summary = `${category.passed}/${category.total} passed`;
+    }
+
     lines.push(`🔍 ${category.name.toUpperCase()} ${status} ${summary} (${category.duration}ms)`);
   }
+
+  // Show server capabilities
+  lines.push('');
+  const capabilityDisplay = Array.from(report.serverCapabilities)
+    .sort()
+    .map(cap => `${cap} ✅`)
+    .concat(report.skippedCapabilities.map(cap => `${cap} ⏭️`))
+    .join(' | ');
+  lines.push(`Server Capabilities: ${capabilityDisplay || 'None detected'}`);
 
   lines.push('', '━'.repeat(80), '');
 
   // Overall score
-  lines.push(`📊 OVERALL HEALTH SCORE: ${report.summary.overallScore}/100`);
+  const skippedNote =
+    report.summary.testResults.skipped > 0
+      ? ` (${report.summary.testResults.skipped} tests skipped)`
+      : '';
+  lines.push(`📊 OVERALL MCP COMPLIANCE: ${report.summary.overallScore}/100${skippedNote}`);
 
   // Issues
   if (report.issues.length > 0) {

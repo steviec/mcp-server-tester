@@ -97,6 +97,7 @@ describe('Doctor Framework', () => {
       const results: DiagnosticResult[] = [
         {
           testName: 'Protocol: Test',
+          category: 'protocol',
           status: 'passed',
           message: 'Test passed',
           severity: TEST_SEVERITY.INFO,
@@ -104,6 +105,7 @@ describe('Doctor Framework', () => {
         },
         {
           testName: 'Security: Test',
+          category: 'security',
           status: 'failed',
           message: 'Test failed',
           severity: TEST_SEVERITY.CRITICAL,
@@ -117,7 +119,12 @@ describe('Doctor Framework', () => {
         transport: 'stdio',
       };
 
-      const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+      const report = HealthReportGenerator.generateReport({
+        results,
+        serverInfo,
+        startTime: 0,
+        endTime: 1000,
+      });
 
       expect(report.serverInfo).toEqual(serverInfo);
       expect(report.metadata.duration).toBe(1000);
@@ -134,6 +141,7 @@ describe('Doctor Framework', () => {
       const passedResults: DiagnosticResult[] = [
         {
           testName: 'Protocol: Test',
+          category: 'protocol',
           status: 'passed',
           message: 'Test passed',
           severity: TEST_SEVERITY.INFO,
@@ -146,7 +154,12 @@ describe('Doctor Framework', () => {
         transport: 'stdio',
       };
 
-      const report = HealthReportGenerator.generateReport(passedResults, serverInfo, 0, 1000);
+      const report = HealthReportGenerator.generateReport({
+        results: passedResults,
+        serverInfo,
+        startTime: 0,
+        endTime: 1000,
+      });
       expect(report.summary.overallScore).toBeGreaterThan(90);
     });
 
@@ -163,7 +176,12 @@ describe('Doctor Framework', () => {
         ];
 
         const serverInfo = { name: 'test', transport: 'stdio' };
-        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+        const report = HealthReportGenerator.generateReport({
+          results,
+          serverInfo,
+          startTime: 0,
+          endTime: 1000,
+        });
 
         // Critical failure should significantly impact score
         expect(report.summary.overallScore).toBeLessThan(80);
@@ -192,18 +210,18 @@ describe('Doctor Framework', () => {
 
         const serverInfo = { name: 'test', transport: 'stdio' };
 
-        const protocolReport = HealthReportGenerator.generateReport(
-          protocolResults,
+        const protocolReport = HealthReportGenerator.generateReport({
+          results: protocolResults,
           serverInfo,
-          0,
-          1000
-        );
-        const featuresReport = HealthReportGenerator.generateReport(
-          featuresResults,
+          startTime: 0,
+          endTime: 1000,
+        });
+        const featuresReport = HealthReportGenerator.generateReport({
+          results: featuresResults,
           serverInfo,
-          0,
-          1000
-        );
+          startTime: 0,
+          endTime: 1000,
+        });
 
         // Both should have same category score (70 = 100 - 30), but different weights
         // Protocol weight: 0.3, Features weight: 0.15
@@ -229,7 +247,12 @@ describe('Doctor Framework', () => {
           },
         ];
 
-        const mixedReport = HealthReportGenerator.generateReport(mixedResults, serverInfo, 0, 1000);
+        const mixedReport = HealthReportGenerator.generateReport({
+          results: mixedResults,
+          serverInfo,
+          startTime: 0,
+          endTime: 1000,
+        });
         // Should be between the two category scores due to weighting
         expect(mixedReport.summary.overallScore).toBeGreaterThan(70);
         expect(mixedReport.summary.overallScore).toBeLessThan(100);
@@ -237,7 +260,12 @@ describe('Doctor Framework', () => {
 
       it('should handle empty results gracefully', () => {
         const serverInfo = { name: 'test', transport: 'stdio' };
-        const report = HealthReportGenerator.generateReport([], serverInfo, 0, 1000);
+        const report = HealthReportGenerator.generateReport({
+          results: [],
+          serverInfo,
+          startTime: 0,
+          endTime: 1000,
+        });
 
         expect(report.summary.overallScore).toBe(0);
         expect(report.summary.testResults.total).toBe(0);
@@ -271,7 +299,12 @@ describe('Doctor Framework', () => {
         ];
 
         const serverInfo = { name: 'test', transport: 'stdio' };
-        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+        const report = HealthReportGenerator.generateReport({
+          results,
+          serverInfo,
+          startTime: 0,
+          endTime: 1000,
+        });
 
         // Critical should have most impact, warning medium, info least
         // All same category, so base score 100 - 30 (critical) - 10 (warning) - 5 (info) = 55
@@ -306,7 +339,12 @@ describe('Doctor Framework', () => {
         ];
 
         const serverInfo = { name: 'test', transport: 'stdio' };
-        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+        const report = HealthReportGenerator.generateReport({
+          results,
+          serverInfo,
+          startTime: 0,
+          endTime: 1000,
+        });
 
         // Issues should be sorted: critical, warning, info
         expect(report.issues[0].severity).toBe(TEST_SEVERITY.CRITICAL);
@@ -340,7 +378,12 @@ describe('Doctor Framework', () => {
         ];
 
         const serverInfo = { name: 'test', transport: 'stdio' };
-        const report = HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+        const report = HealthReportGenerator.generateReport({
+          results,
+          serverInfo,
+          startTime: 0,
+          endTime: 1000,
+        });
 
         expect(report.categories).toHaveLength(3);
 
@@ -363,7 +406,12 @@ describe('Doctor Framework', () => {
 
         // Should not throw error
         expect(() => {
-          HealthReportGenerator.generateReport(results, serverInfo, 0, 1000);
+          HealthReportGenerator.generateReport({
+            results,
+            serverInfo,
+            startTime: 0,
+            endTime: 1000,
+          });
         }).not.toThrow();
       });
     });

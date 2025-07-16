@@ -6,6 +6,7 @@ export { DiagnosticTest } from './DiagnosticTest.js';
 export { TestRegistry, registerDoctorTest } from './TestRegistry.js';
 export { DoctorRunner } from './DoctorRunner.js';
 export { HealthReportGenerator, formatReport } from './HealthReport.js';
+export { CapabilityDetector, type McpCapability } from './CapabilityDetector.js';
 export type {
   DiagnosticResult,
   HealthReport,
@@ -13,6 +14,7 @@ export type {
   DoctorOptions,
   TestSeverity,
   TestCategory,
+  TestCategorySummary,
   HealthScore,
 } from './types.js';
 

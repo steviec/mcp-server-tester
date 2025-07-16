@@ -99,7 +99,7 @@ export class ConsoleFormatter implements TestFormatter {
   }
 
   private handleTestComplete(data: TestCompleteEvent['data']): void {
-    const { name, passed, errors, prompt, messages } = data;
+    const { name, passed, errors, prompt, messages, scorer_results } = data;
 
     if (passed) {
       console.log(`✅ ${name}: PASSED`);
@@ -120,8 +120,62 @@ export class ConsoleFormatter implements TestFormatter {
     // Show conversation in debug mode
     if (this.options.debug && messages && messages.length > 0) {
       console.log();
+      console.log('─'.repeat(60));
+      console.log('\x1b[36mDEBUG: Conversation\x1b[0m');
+      console.log();
       const formattedLines = formatConversation(messages, prompt);
-      formattedLines.forEach(line => console.log(line));
+      // Remove the top and bottom horizontal lines from formatConversation since we're adding our own
+      const conversationContent = formattedLines.slice(1, -1);
+      conversationContent.forEach(line => console.log(line));
+      console.log('─'.repeat(60));
+      console.log();
+    }
+
+    // Show scorer results in debug mode
+    if (this.options.debug && scorer_results && scorer_results.length > 0) {
+      console.log('\x1b[36mDEBUG: Scorer Results\x1b[0m');
+      console.log();
+
+      scorer_results.forEach(result => {
+        const status = result.passed ? 'PASSED' : 'FAILED';
+
+        if (result.type === 'regex') {
+          console.log(`\x1b[90mREGEX Scorer: ${status}\x1b[0m`);
+          console.log(
+            `\x1b[90mPattern: ${result.details?.replace("Pattern '", '').replace("' found", '').replace("' not found", '')}\x1b[0m`
+          );
+        } else if (result.type === 'llm-judge') {
+          const scoreText =
+            result.score !== undefined
+              ? ` (${result.score}/${result.details?.match(/threshold: ([\d.]+)/)?.[1] || '0.7'})`
+              : '';
+          console.log(`\x1b[90mLLM Judge: ${status}${scoreText}\x1b[0m`);
+
+          // Extract criteria and rationale from details
+          const criteriaMatch = result.details?.match(/Criteria: (.+?)\. Rationale:/);
+          const rationaleMatch = result.details?.match(/Rationale: (.+)$/);
+
+          if (criteriaMatch) {
+            console.log(`\x1b[90mCriteria: ${criteriaMatch[1]}\x1b[0m`);
+          }
+
+          if (rationaleMatch) {
+            const rationale = rationaleMatch[1];
+            const truncated =
+              rationale.length > 150 ? `${rationale.substring(0, 150)}...` : rationale;
+            console.log(`\x1b[90mRationale: ${truncated}\x1b[0m`);
+          }
+        } else {
+          console.log(`\x1b[90m${String(result.type).toUpperCase()} Scorer: ${status}\x1b[0m`);
+          if (result.details) {
+            console.log(`\x1b[90mDetails: ${result.details}\x1b[0m`);
+          }
+        }
+
+        console.log();
+      });
+
+      console.log('─'.repeat(60));
       console.log();
     }
   }

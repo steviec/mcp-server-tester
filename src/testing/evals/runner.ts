@@ -4,9 +4,15 @@
 
 import { McpClient, createTransportOptions } from '../../core/mcp-client.js';
 import { AnthropicProvider } from './providers/anthropic-provider.js';
-import type { EvalsConfig, EvalTest, EvalResult, ServerConfig } from '../../core/types.js';
+import type {
+  EvalsConfig,
+  EvalTest,
+  EvalResult,
+  ServerConfig,
+  ScorerResult,
+} from '../../core/types.js';
 import type { DisplayManager } from '../display/DisplayManager.js';
-import type { CoreMessage, ToolCall } from 'ai';
+import type { CoreMessage, ToolCall, ToolResult } from 'ai';
 
 export interface EvalSummary {
   total: number;
@@ -92,7 +98,8 @@ export class EvalTestRunner {
               result.errors,
               model,
               test.prompt,
-              result.messages
+              result.messages,
+              result.scorer_results
             );
           }
         }
@@ -159,12 +166,39 @@ export class EvalTestRunner {
         }
       }
 
+      // Validate tool call success for required tools
+      if (test.expected_tool_calls?.required && conversationResult.success) {
+        const toolSuccessErrors = this.validateToolCallSuccess(
+          conversationResult.toolResults,
+          test.expected_tool_calls.required
+        );
+        errors.push(...toolSuccessErrors);
+        if (toolSuccessErrors.length > 0) {
+          passed = false;
+        }
+      }
+
       // Run response scorers if configured
+      let scorerResults: ScorerResult[] = [];
       if (test.response_scorers && conversationResult.success) {
-        const scorerErrors = await this.runResponseScorers(
+        scorerResults = await this.runResponseScorers(
           conversationResult.messages,
           test.response_scorers
         );
+
+        // Generate error messages from failed scorers for backward compatibility
+        const scorerErrors = scorerResults
+          .filter(result => !result.passed)
+          .map(result => {
+            if (result.type === 'regex') {
+              return `Regex scorer failed: ${result.details}`;
+            } else if (result.type === 'llm-judge') {
+              return `LLM judge failed: ${result.details}`;
+            } else {
+              return `Scorer '${result.type}' failed: ${result.details}`;
+            }
+          });
+
         errors.push(...scorerErrors);
         if (scorerErrors.length > 0) {
           passed = false;
@@ -176,7 +210,7 @@ export class EvalTestRunner {
         model,
         passed,
         errors,
-        scorer_results: [], // TODO: Implement detailed scorer results
+        scorer_results: scorerResults,
         messages: conversationResult.messages,
       };
     } catch (error) {
@@ -233,39 +267,130 @@ export class EvalTestRunner {
     return errors;
   }
 
+  private validateToolCallSuccess(
+    toolResults: ToolResult<string, Record<string, unknown>, unknown>[],
+    requiredTools: string[]
+  ): string[] {
+    const errors: string[] = [];
+
+    for (const requiredTool of requiredTools) {
+      // Find results for this required tool
+      const resultsForTool = toolResults.filter(tr => tr.toolName === requiredTool);
+
+      if (resultsForTool.length === 0) {
+        errors.push(`Required tool '${requiredTool}' was called but no results found`);
+        continue;
+      }
+
+      // Check each result for errors
+      for (const result of resultsForTool) {
+        if (this.hasToolError(result.result)) {
+          errors.push(
+            `Required tool '${requiredTool}' failed: ${this.getErrorMessage(result.result)}`
+          );
+        }
+      }
+    }
+
+    return errors;
+  }
+
+  private hasToolError(result: unknown): boolean {
+    // Check for common error indicators in tool results
+    if (typeof result === 'object' && result !== null) {
+      const resultObj = result as Record<string, unknown>;
+
+      // Check for explicit error flag
+      if (resultObj.isError === true) {
+        return true;
+      }
+
+      // Check for error content patterns
+      if (Array.isArray(resultObj.content)) {
+        for (const contentItem of resultObj.content) {
+          if (typeof contentItem === 'object' && contentItem !== null) {
+            const content = contentItem as Record<string, unknown>;
+            if (content.type === 'text' && typeof content.text === 'string') {
+              const text = content.text.toLowerCase();
+              if (text.includes('error') || text.includes('failed') || text.includes('not found')) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  private getErrorMessage(result: unknown): string {
+    if (typeof result === 'object' && result !== null) {
+      const resultObj = result as Record<string, unknown>;
+
+      // Try to extract error message from content
+      if (Array.isArray(resultObj.content)) {
+        for (const contentItem of resultObj.content) {
+          if (typeof contentItem === 'object' && contentItem !== null) {
+            const content = contentItem as Record<string, unknown>;
+            if (content.type === 'text' && typeof content.text === 'string') {
+              return content.text;
+            }
+          }
+        }
+      }
+
+      // Fallback to JSON representation
+      return JSON.stringify(result);
+    }
+
+    return String(result);
+  }
+
   private async runResponseScorers(
     messages: CoreMessage[],
     scorers: NonNullable<EvalTest['response_scorers']>
-  ): Promise<string[]> {
-    const errors: string[] = [];
+  ): Promise<ScorerResult[]> {
+    const results: ScorerResult[] = [];
 
     for (const scorer of scorers) {
       try {
         if (scorer.type === 'regex') {
           const success = await this.runRegexScorer(messages, scorer.pattern!);
-          if (!success) {
-            errors.push(`Regex scorer failed: pattern '${scorer.pattern}' not found`);
-          }
+          results.push({
+            type: 'regex',
+            passed: success,
+            details: success
+              ? `Pattern '${scorer.pattern}' found`
+              : `Pattern '${scorer.pattern}' not found`,
+          });
         } else if (scorer.type === 'llm-judge') {
           const result = await this.llmProvider.judgeResponse(
             messages,
             scorer.criteria!,
             scorer.threshold
           );
-          if (result.score < (scorer.threshold || 0.7)) {
-            errors.push(
-              `LLM judge failed: score ${result.score} < threshold ${scorer.threshold || 0.7}. Rationale: ${result.rationale}`
-            );
-          }
+
+          const threshold = scorer.threshold || 0.7;
+          const passed = result.score >= threshold;
+
+          results.push({
+            type: 'llm-judge',
+            passed,
+            score: result.score,
+            details: `Score: ${result.score} (threshold: ${threshold}). Criteria: ${scorer.criteria}. Rationale: ${result.rationale}`,
+          });
         }
       } catch (error) {
-        errors.push(
-          `Scorer '${scorer.type}' failed: ${error instanceof Error ? error.message : String(error)}`
-        );
+        results.push({
+          type: scorer.type,
+          passed: false,
+          details: `Scorer failed: ${error instanceof Error ? error.message : String(error)}`,
+        });
       }
     }
 
-    return errors;
+    return results;
   }
 
   private async runRegexScorer(messages: CoreMessage[], pattern: string): Promise<boolean> {

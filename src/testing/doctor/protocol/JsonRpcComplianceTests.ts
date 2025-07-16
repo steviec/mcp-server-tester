@@ -12,6 +12,7 @@ class JsonRpcMessageFormatTest extends DiagnosticTest {
   readonly description = 'Validate JSON-RPC 2.0 message structure compliance';
   readonly category = 'protocol';
   readonly severity = TEST_SEVERITY.CRITICAL;
+  readonly mcpSpecSection = 'MCP Spec §2.1';
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
     const issues: string[] = [];
@@ -208,6 +209,7 @@ class ErrorResponseFormatTest extends DiagnosticTest {
   readonly description = 'Test standard error response format and error codes';
   readonly category = 'protocol';
   readonly severity = TEST_SEVERITY.WARNING;
+  readonly mcpSpecSection = 'MCP Spec §2.3';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     const issues: string[] = [];
