@@ -8,9 +8,10 @@ import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../type
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class SessionIdGenerationTest extends DiagnosticTest {
-  readonly name = 'Protocol: Session ID Generation';
+  readonly name = 'Lifecycle: Session Management - Ping';
   readonly description = 'Test session ID generation and format validation';
-  readonly category = 'protocol';
+  readonly category = 'lifecycle';
+  readonly feature = 'ping' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -103,9 +104,10 @@ class SessionIdGenerationTest extends DiagnosticTest {
 }
 
 class SessionTerminationTest extends DiagnosticTest {
-  readonly name = 'Protocol: Session Termination';
+  readonly name = 'Lifecycle: Session Management - Termination';
   readonly description = 'Test proper session cleanup and termination';
-  readonly category = 'protocol';
+  readonly category = 'lifecycle';
+  readonly feature = 'ping' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -197,9 +199,10 @@ class SessionTerminationTest extends DiagnosticTest {
 }
 
 class InvalidSessionHandlingTest extends DiagnosticTest {
-  readonly name = 'Protocol: Invalid Session Handling';
+  readonly name = 'Lifecycle: Session Management - Invalid Session Handling';
   readonly description = 'Test handling of invalid session scenarios';
-  readonly category = 'protocol';
+  readonly category = 'lifecycle';
+  readonly feature = 'ping' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {

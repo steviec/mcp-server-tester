@@ -18,11 +18,15 @@ export type {
   HealthScore,
 } from './types.js';
 
-// Import protocol tests to register them
-import './protocol/index.js';
+// Import base protocol tests to register them
+import './base-protocol/index.js';
 
 // Import lifecycle tests to register them
 import './lifecycle/index.js';
 
-// Import features tests to register them
-import './features/index.js';
+// Import server features tests to register them
+import './server-features/index.js';
+
+// Register all protocol features
+import { registerAllFeatures } from './features/index.js';
+registerAllFeatures();

@@ -2,16 +2,25 @@
  * Health report generation and scoring system
  */
 
-import type { DiagnosticResult, HealthReport, TestCategorySummary } from './types.js';
+import {
+  ISSUE_TYPE,
+  type DiagnosticResult,
+  type HealthReport,
+  type TestCategorySummary,
+  type ProtocolCategory,
+  type ProtocolFeature,
+  type ProtocolCategorySummary,
+  type ProtocolFeatureSummary,
+} from './types.js';
 import type { McpCapability } from './CapabilityDetector.js';
+import { FeatureRegistry } from './FeatureRegistry.js';
 
 export class HealthReportGenerator {
   private static readonly DEFAULT_WEIGHTS: Record<string, number> = {
-    protocol: 0.3,
-    security: 0.25,
-    performance: 0.2,
-    features: 0.15,
-    transport: 0.1,
+    'base-protocol': 0.3,
+    lifecycle: 0.25,
+    'server-features': 0.35,
+    security: 0.1,
   };
 
   static generateReport(options: {
@@ -28,11 +37,15 @@ export class HealthReportGenerator {
 
     const categories = this.generateCategories(results, derivedCapabilities);
     const issues = this.extractIssues(results);
+    const categorizedIssues = this.categorizeIssues(results);
     const skippedTests = results.filter(r => r.status === 'skipped');
     const overallScore = this.calculateOverallScore(categories, results);
 
     return {
-      serverInfo,
+      serverInfo: {
+        ...serverInfo,
+        protocolVersion: this.extractProtocolVersion(results),
+      },
       serverCapabilities: derivedCapabilities,
       skippedCapabilities: this.getSkippedCapabilities(results, derivedCapabilities),
       metadata: {
@@ -53,6 +66,7 @@ export class HealthReportGenerator {
       categories,
       issues,
       results,
+      categorizedIssues,
     };
   }
 
@@ -123,6 +137,35 @@ export class HealthReportGenerator {
         const severityOrder = { critical: 0, warning: 1, info: 2 };
         return severityOrder[a.severity] - severityOrder[b.severity];
       });
+  }
+
+  private static categorizeIssues(results: DiagnosticResult[]) {
+    const failedResults = results.filter(result => result.status === 'failed');
+
+    return {
+      criticalFailures: failedResults.filter(
+        r =>
+          r.issueType === ISSUE_TYPE.CRITICAL_FAILURE || (r.severity === 'critical' && !r.issueType)
+      ),
+      specWarnings: failedResults.filter(
+        r => r.issueType === ISSUE_TYPE.SPEC_WARNING || (r.severity === 'warning' && !r.issueType)
+      ),
+      optimizations: failedResults.filter(
+        r => r.issueType === ISSUE_TYPE.OPTIMIZATION || (r.severity === 'info' && !r.issueType)
+      ),
+    };
+  }
+
+  private static extractProtocolVersion(results: DiagnosticResult[]): string | undefined {
+    // Look for protocol version in test details or messages
+    for (const result of results) {
+      if (result.testName.includes('Protocol Version') && result.details) {
+        if (typeof result.details === 'object' && 'version' in result.details) {
+          return result.details.version as string;
+        }
+      }
+    }
+    return '2024-11-05'; // Default to latest MCP version
   }
 
   /**
@@ -217,35 +260,149 @@ export class HealthReportGenerator {
 
     return Math.max(0, score);
   }
+
+  /**
+   * Generate hierarchical category summaries with protocol features
+   */
+  static generateHierarchicalSummaries(
+    results: DiagnosticResult[],
+    serverCapabilities: Set<McpCapability>
+  ): Map<ProtocolCategory, ProtocolCategorySummary> {
+    const categorySummaries = new Map<ProtocolCategory, ProtocolCategorySummary>();
+
+    // Get all registered features grouped by category
+    const featuresByCategory = FeatureRegistry.getFeaturesByCategories();
+
+    // Initialize category summaries
+    for (const [category, features] of featuresByCategory) {
+      const featureSummaries = new Map<ProtocolFeature, ProtocolFeatureSummary>();
+
+      // Initialize feature summaries
+      for (const featureInfo of features) {
+        const featureResults = results.filter(r => r.feature === featureInfo.feature);
+
+        const summary: ProtocolFeatureSummary = {
+          feature: featureInfo.feature,
+          displayName: featureInfo.displayName,
+          passed: featureResults.filter(r => r.status === 'passed').length,
+          failed: featureResults.filter(r => r.status === 'failed').length,
+          skipped: featureResults.filter(r => r.status === 'skipped').length,
+          total: featureResults.length,
+          duration: featureResults.reduce((sum, r) => sum + r.duration, 0),
+          status: 'passed',
+        };
+
+        // Determine feature status
+        if (
+          featureInfo.requiredCapability &&
+          !serverCapabilities.has(featureInfo.requiredCapability)
+        ) {
+          summary.status = 'skipped';
+        } else if (summary.failed > 0) {
+          summary.status = 'failed';
+        } else if (summary.total === 0) {
+          summary.status = 'skipped';
+        }
+
+        featureSummaries.set(featureInfo.feature, summary);
+      }
+
+      // Create category summary
+      const categorySummary: ProtocolCategorySummary = {
+        category,
+        displayName: this.getCategoryDisplayName(category),
+        features: featureSummaries,
+        totalPassed: 0,
+        totalFailed: 0,
+        totalSkipped: 0,
+        totalTests: 0,
+        status: 'passed',
+      };
+
+      // Aggregate feature stats
+      for (const feature of featureSummaries.values()) {
+        categorySummary.totalPassed += feature.passed;
+        categorySummary.totalFailed += feature.failed;
+        categorySummary.totalSkipped += feature.skipped;
+        categorySummary.totalTests += feature.total;
+      }
+
+      // Determine category status
+      if (categorySummary.totalFailed > 0) {
+        categorySummary.status = 'failed';
+      } else if (categorySummary.totalTests === categorySummary.totalSkipped) {
+        categorySummary.status = 'skipped';
+      }
+
+      categorySummaries.set(category, categorySummary);
+    }
+
+    return categorySummaries;
+  }
+
+  private static getCategoryDisplayName(category: ProtocolCategory): string {
+    const names: Record<ProtocolCategory, string> = {
+      'base-protocol': 'BASE PROTOCOL',
+      lifecycle: 'LIFECYCLE',
+      'server-features': 'SERVER FEATURES',
+      utilities: 'UTILITIES',
+    };
+    return names[category] || category.toUpperCase();
+  }
 }
 
 export function formatReport(report: HealthReport): string {
   const lines = [
-    `🏥 MCP SERVER DOCTOR v1.0.0`,
-    `Diagnosing server: ${report.serverInfo.name}${report.serverInfo.version ? ` v${report.serverInfo.version}` : ''}`,
+    `🏥 MCP SERVER DOCTOR v2.0.0`,
+    `Diagnosing server: ${report.serverInfo.name}${report.serverInfo.version ? ` v${report.serverInfo.version}` : ''} (MCP Protocol ${report.serverInfo.protocolVersion || '2024-11-05'})`,
     `Started: ${new Date(report.metadata.timestamp).toLocaleString()}`,
     '',
     '━'.repeat(80),
     '',
+    '📋 MCP SPECIFICATION COMPLIANCE SUMMARY',
+    '',
   ];
 
-  // Category summaries with capability awareness
+  // Map categories to MCP spec sections
+  const specSections: Record<string, string> = {
+    'base-protocol': '[Base Protocol]',
+    lifecycle: '[Lifecycle]',
+    'server-features': '[Server Features]',
+    security: '[Security & Authorization]',
+  };
+
+  // Category summaries with capability awareness and spec references
   for (const category of report.categories) {
     let status: string;
     let summary: string;
+    const specRef = specSections[category.name] || '[MCP Spec]';
 
     if (category.status === 'skipped') {
       status = '⏭️';
-      summary = 'SKIPPED';
+      summary = 'SKIPPED     (0ms)    [Not advertised by server]';
     } else {
       status = category.failed > 0 ? '❌' : category.warnings > 0 ? '⚠️' : '✅';
-      summary = `${category.passed}/${category.total} passed`;
+      summary = `${category.passed}/${category.total} passed   (${category.duration}ms)   ${specRef}`;
     }
 
-    lines.push(`🔍 ${category.name.toUpperCase()} ${status} ${summary} (${category.duration}ms)`);
+    const displayName = category.name
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    lines.push(`🔍 ${displayName.padEnd(20)} ${status} ${summary}`);
   }
 
-  // Show server capabilities
+  lines.push('', '━'.repeat(80), '');
+
+  // Overall score with better context
+  const totalTestsRun = report.summary.testResults.total - report.summary.testResults.skipped;
+  const skippedNote =
+    report.summary.testResults.skipped > 0
+      ? ` (${report.skippedCapabilities.length} categories skipped)`
+      : '';
+  lines.push(`📊 OVERALL MCP COMPLIANCE: ${report.summary.overallScore}/100${skippedNote}`);
+
+  // Show server capabilities with visual indicators
   lines.push('');
   const capabilityDisplay = Array.from(report.serverCapabilities)
     .sort()
@@ -254,44 +411,102 @@ export function formatReport(report: HealthReport): string {
     .join(' | ');
   lines.push(`Server Capabilities: ${capabilityDisplay || 'None detected'}`);
 
-  lines.push('', '━'.repeat(80), '');
+  lines.push('', '━'.repeat(80));
 
-  // Overall score
-  const skippedNote =
-    report.summary.testResults.skipped > 0
-      ? ` (${report.summary.testResults.skipped} tests skipped)`
-      : '';
-  lines.push(`📊 OVERALL MCP COMPLIANCE: ${report.summary.overallScore}/100${skippedNote}`);
+  // Enhanced issue reporting with categories
+  const { criticalFailures, specWarnings, optimizations } = report.categorizedIssues;
 
-  // Issues
-  if (report.issues.length > 0) {
-    lines.push('');
-    const critical = report.issues.filter(i => i.severity === 'critical');
-    const warnings = report.issues.filter(i => i.severity === 'warning');
+  if (criticalFailures.length > 0) {
+    lines.push('', `🚨 CRITICAL FAILURES (${criticalFailures.length})`, '');
 
-    if (critical.length > 0) {
-      lines.push(`🚨 CRITICAL ISSUES (${critical.length})`);
-      critical.forEach(issue => lines.push(`• ${issue.message}`));
-      lines.push('');
-    }
+    criticalFailures.forEach(issue => {
+      const specRef = issue.mcpSpecSection ? ` [${issue.mcpSpecSection}]` : '';
+      lines.push(`❌ ${issue.testName}${specRef}`);
 
-    if (warnings.length > 0) {
-      lines.push(`⚠️ WARNINGS (${warnings.length})`);
-      warnings.forEach(issue => lines.push(`• ${issue.message}`));
-    }
-
-    // Add recommendations if any
-    const withRecommendations = report.issues.filter(
-      i => i.recommendations && i.recommendations.length > 0
-    );
-    if (withRecommendations.length > 0) {
-      lines.push('', '💡 RECOMMENDATIONS');
-      for (const issue of withRecommendations) {
-        issue.recommendations!.forEach(rec => lines.push(`• ${rec}`));
+      if (issue.expected && issue.actual) {
+        lines.push(`   Expected: ${issue.expected}`);
+        lines.push(`   Actual:   ${issue.actual}`);
+      } else {
+        lines.push(`   ${issue.message}`);
       }
+
+      if (issue.fixInstructions && issue.fixInstructions.length > 0) {
+        issue.fixInstructions.forEach(fix => lines.push(`   → Fix: ${fix}`));
+      }
+
+      if (issue.specLinks && issue.specLinks.length > 0) {
+        issue.specLinks.forEach(link => lines.push(`   → Reference: ${link}`));
+      }
+
+      lines.push('');
+    });
+  }
+
+  if (specWarnings.length > 0) {
+    lines.push(`⚠️  SPECIFICATION WARNINGS (${specWarnings.length})`, '');
+
+    specWarnings.forEach(issue => {
+      const specRef = issue.mcpSpecSection ? ` [${issue.mcpSpecSection}]` : '';
+      lines.push(`⚠️  ${issue.testName}${specRef}`);
+
+      if (issue.expected && issue.actual) {
+        lines.push(`   Expected: ${issue.expected}`);
+        lines.push(`   Actual:   ${issue.actual}`);
+      } else {
+        lines.push(`   ${issue.message}`);
+      }
+
+      if (issue.fixInstructions && issue.fixInstructions.length > 0) {
+        issue.fixInstructions.forEach(fix => lines.push(`   → Fix: ${fix}`));
+      }
+
+      lines.push('');
+    });
+  }
+
+  if (optimizations.length > 0) {
+    lines.push(`ℹ️  OPTIMIZATION RECOMMENDATIONS (${optimizations.length})`, '');
+
+    optimizations.forEach(issue => {
+      lines.push(`ℹ️  ${issue.testName}`);
+      lines.push(`   Suggestion: ${issue.message}`);
+
+      if (issue.fixInstructions && issue.fixInstructions.length > 0) {
+        issue.fixInstructions.forEach(fix => lines.push(`   → ${fix}`));
+      }
+
+      lines.push('');
+    });
+  }
+
+  // Add spec references if no issues found
+  if (criticalFailures.length === 0 && specWarnings.length === 0 && optimizations.length === 0) {
+    lines.push('', '🎉 ALL TESTS PASSED!', '');
+    lines.push('Your MCP server appears to be fully compliant with the MCP specification.');
+  }
+
+  lines.push('━'.repeat(80), '');
+
+  // Detailed breakdown section
+  lines.push('📈 DETAILED COMPLIANCE BREAKDOWN');
+  for (const category of report.categories) {
+    if (category.status !== 'skipped') {
+      lines.push(`   ${category.name}: ${category.passed}/${category.total} tests passed`);
     }
   }
 
-  lines.push('', `Total execution time: ${report.metadata.duration}ms`);
+  lines.push('');
+  lines.push('🔗 SPECIFICATION REFERENCES');
+  lines.push('• MCP Specification: https://spec.modelcontextprotocol.io/');
+  lines.push('• JSON-RPC 2.0: https://www.jsonrpc.org/specification');
+  lines.push(
+    '• Error Codes: https://spec.modelcontextprotocol.io/specification/basic/error-handling/'
+  );
+
+  lines.push('');
+  lines.push(
+    `📊 Total execution time: ${report.metadata.duration}ms | Tests run: ${totalTestsRun} | Skipped: ${report.summary.testResults.skipped}`
+  );
+
   return lines.join('\n');
 }

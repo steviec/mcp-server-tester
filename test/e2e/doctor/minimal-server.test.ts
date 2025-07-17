@@ -14,7 +14,7 @@ describe('Doctor Tests - Test Server Minimal Analysis', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'protocol',
+      categories: 'base-protocol',
     });
 
     const report = await doctorRunner.runDiagnostics();
@@ -55,19 +55,21 @@ describe('Doctor Tests - Test Server Minimal Analysis', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'features',
+      categories: 'server-features',
     });
 
     const report = await doctorRunner.runDiagnostics();
 
     // Test server implements tools capability
-    const toolsTests = report.results.filter(result => result.testName.startsWith('Tools:'));
+    const toolsTests = report.results.filter(result =>
+      result.testName.includes('Server Features: Tools')
+    );
 
     expect(toolsTests.length).toBeGreaterThan(0);
 
     // Tools capability should work correctly
     const toolsCapabilityTest = report.results.find(
-      result => result.testName === 'Tools: Capability Declaration'
+      result => result.testName === 'Server Features: Tools - Capability Declaration'
     );
     expect(toolsCapabilityTest?.status).toBe('passed');
   }, 30000);

@@ -126,7 +126,10 @@ describe('Doctor Framework', () => {
         endTime: 1000,
       });
 
-      expect(report.serverInfo).toEqual(serverInfo);
+      expect(report.serverInfo).toEqual({
+        ...serverInfo,
+        protocolVersion: '2024-11-05',
+      });
       expect(report.metadata.duration).toBe(1000);
       expect(report.metadata.testCount).toBe(2);
       expect(report.summary.testResults.passed).toBe(1);

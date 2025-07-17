@@ -6,7 +6,8 @@
 
 import { Command } from 'commander';
 import { TestRunner } from './testing/runner.js';
-import { DoctorRunner, formatReport } from './testing/doctor/index.js';
+import { DoctorRunner } from './testing/doctor/index.js';
+import { formatHierarchicalReport } from './testing/doctor/formatHierarchicalReport.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -74,7 +75,7 @@ async function runDoctor(options: DoctorOptions): Promise<void> {
     if (options.output === 'json') {
       console.log(JSON.stringify(report, null, 2));
     } else {
-      console.log(formatReport(report));
+      console.log(formatHierarchicalReport(report));
     }
 
     // Exit with error code if any tests failed

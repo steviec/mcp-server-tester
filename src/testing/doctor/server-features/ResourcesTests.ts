@@ -8,12 +8,13 @@ import type { McpClient } from '../../../core/mcp-client.js';
 import type { Resource, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class ResourcesCapabilityTest extends DiagnosticTest {
-  readonly name = 'Resources: Capability Declaration';
+  readonly name = 'Server Features: Resources - Capability Declaration';
   readonly description = 'Verify server declares resources capability correctly';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'resources' as const;
   readonly severity = TEST_SEVERITY.WARNING;
   readonly requiredCapability = 'resources';
-  readonly mcpSpecSection = 'MCP Spec §4.2';
+  readonly mcpSpecSection = 'Server Features - Resources';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -47,9 +48,10 @@ export class ResourcesCapabilityTest extends DiagnosticTest {
 }
 
 export class ResourceListingTest extends DiagnosticTest {
-  readonly name = 'Resources: Resource Listing';
+  readonly name = 'Server Features: Resources - Listing (resources/list)';
   readonly description = 'Verify resource listing functionality';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'resources' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -94,9 +96,10 @@ export class ResourceListingTest extends DiagnosticTest {
 }
 
 export class ResourceReadingTest extends DiagnosticTest {
-  readonly name = 'Resources: Resource Reading';
+  readonly name = 'Server Features: Resources - Reading (resources/read)';
   readonly description = 'Test resource reading functionality';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'resources' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -176,9 +179,10 @@ export class ResourceReadingTest extends DiagnosticTest {
 }
 
 export class MimeTypeHandlingTest extends DiagnosticTest {
-  readonly name = 'Resources: MIME Type Handling';
+  readonly name = 'Server Features: Resources - MIME Type Handling';
   readonly description = 'Verify proper MIME type handling in resources';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'resources' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -251,9 +255,10 @@ export class MimeTypeHandlingTest extends DiagnosticTest {
 }
 
 export class UriValidationTest extends DiagnosticTest {
-  readonly name = 'Resources: URI Validation';
+  readonly name = 'Server Features: Resources - URI Validation';
   readonly description = 'Validate resource URI format and structure';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'resources' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -329,9 +334,10 @@ export class UriValidationTest extends DiagnosticTest {
 }
 
 export class ResourceNotFoundTest extends DiagnosticTest {
-  readonly name = 'Resources: Not Found Handling';
+  readonly name = 'Server Features: Resources - Not Found Handling';
   readonly description = 'Test handling of non-existent resource requests';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'resources' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {

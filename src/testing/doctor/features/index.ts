@@ -1,88 +1,38 @@
 /**
- * Server Features Tests for MCP Doctor
- *
- * Comprehensive diagnostic tests for MCP server features including:
- * - Tools (capability, listing, execution, schema validation, error handling, annotations)
- * - Resources (capability, listing, reading, MIME types, URI validation, error handling)
- * - Prompts (capability, listing, retrieval, argument validation, template rendering)
+ * Register all protocol features
  */
 
-import { registerDoctorTest } from '../TestRegistry.js';
+import { registerProtocolFeature } from '../FeatureRegistry.js';
 
-// Import all Tools tests
-import {
-  ToolsCapabilityTest,
-  ToolListingTest,
-  ToolSchemaValidationTest,
-  ToolExecutionTest,
-  ToolErrorHandlingTest,
-  ToolAnnotationsTest,
-} from './ToolsTests.js';
+// Base Protocol features
+import { TransportFeature } from './base-protocol/TransportFeature.js';
+import { JsonRpcFeature } from './base-protocol/JsonRpcFeature.js';
 
-// Import all Resources tests
-import {
-  ResourcesCapabilityTest,
-  ResourceListingTest,
-  ResourceReadingTest,
-  MimeTypeHandlingTest,
-  UriValidationTest,
-  ResourceNotFoundTest,
-} from './ResourcesTests.js';
+// Lifecycle features
+import { InitializationFeature } from './lifecycle/InitializationFeature.js';
+import { CapabilitiesFeature } from './lifecycle/CapabilitiesFeature.js';
+import { VersionFeature } from './lifecycle/VersionFeature.js';
 
-// Import all Prompts tests
-import {
-  PromptsCapabilityTest,
-  PromptListingTest,
-  PromptRetrievalTest,
-  ArgumentValidationTest,
-  TemplateRenderingTest,
-} from './PromptsTests.js';
+// Server features
+import { ToolsFeature } from './server-features/ToolsFeature.js';
+import { ResourcesFeature } from './server-features/ResourcesFeature.js';
+import { PromptsFeature } from './server-features/PromptsFeature.js';
 
-// Register all Tools tests
-registerDoctorTest(new ToolsCapabilityTest());
-registerDoctorTest(new ToolListingTest());
-registerDoctorTest(new ToolSchemaValidationTest());
-registerDoctorTest(new ToolExecutionTest());
-registerDoctorTest(new ToolErrorHandlingTest());
-registerDoctorTest(new ToolAnnotationsTest());
+// Register all features
+export function registerAllFeatures(): void {
+  // Base Protocol
+  registerProtocolFeature(new TransportFeature());
+  registerProtocolFeature(new JsonRpcFeature());
 
-// Register all Resources tests
-registerDoctorTest(new ResourcesCapabilityTest());
-registerDoctorTest(new ResourceListingTest());
-registerDoctorTest(new ResourceReadingTest());
-registerDoctorTest(new MimeTypeHandlingTest());
-registerDoctorTest(new UriValidationTest());
-registerDoctorTest(new ResourceNotFoundTest());
+  // Lifecycle
+  registerProtocolFeature(new InitializationFeature());
+  registerProtocolFeature(new CapabilitiesFeature());
+  registerProtocolFeature(new VersionFeature());
 
-// Register all Prompts tests
-registerDoctorTest(new PromptsCapabilityTest());
-registerDoctorTest(new PromptListingTest());
-registerDoctorTest(new PromptRetrievalTest());
-registerDoctorTest(new ArgumentValidationTest());
-registerDoctorTest(new TemplateRenderingTest());
+  // Server Features
+  registerProtocolFeature(new ToolsFeature());
+  registerProtocolFeature(new ResourcesFeature());
+  registerProtocolFeature(new PromptsFeature());
 
-// Export all test classes for individual use if needed
-export {
-  // Tools tests
-  ToolsCapabilityTest,
-  ToolListingTest,
-  ToolSchemaValidationTest,
-  ToolExecutionTest,
-  ToolErrorHandlingTest,
-  ToolAnnotationsTest,
-
-  // Resources tests
-  ResourcesCapabilityTest,
-  ResourceListingTest,
-  ResourceReadingTest,
-  MimeTypeHandlingTest,
-  UriValidationTest,
-  ResourceNotFoundTest,
-
-  // Prompts tests
-  PromptsCapabilityTest,
-  PromptListingTest,
-  PromptRetrievalTest,
-  ArgumentValidationTest,
-  TemplateRenderingTest,
-};
+  // TODO: Add utilities features (ping, progress, cancellation, completion, logging, pagination)
+}

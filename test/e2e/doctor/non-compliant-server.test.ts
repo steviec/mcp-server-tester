@@ -46,13 +46,15 @@ describe('Doctor Tests - Test Server Edge Cases', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'features',
+      categories: 'server-features',
     });
 
     const report = await doctorRunner.runDiagnostics();
 
     // Should detect tools capability and run tests
-    const toolsTests = report.results.filter(result => result.testName.startsWith('Tools:'));
+    const toolsTests = report.results.filter(result =>
+      result.testName.includes('Server Features: Tools')
+    );
 
     // Test server has valid tools, so most should pass
     expect(toolsTests.length).toBeGreaterThan(0);
@@ -82,14 +84,14 @@ describe('Doctor Tests - Test Server Edge Cases', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'resources',
+      categories: 'server-features',
     });
 
     const report = await doctorRunner.runDiagnostics();
 
     // Test server doesn't implement resources capability
     const resourceCapabilityTest = report.results.find(
-      result => result.testName === 'Resources: Capability Declaration'
+      result => result.testName === 'Server Features: Resources - Capability Declaration'
     );
 
     // Should either not run (skipped) or fail since test server lacks resources

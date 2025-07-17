@@ -18,9 +18,10 @@ interface ImplementationDetails {
 }
 
 export class ServerMetadataTests extends DiagnosticTest {
-  readonly name = 'Lifecycle: Server Metadata';
+  readonly name = 'Lifecycle: Server Info & Metadata';
   readonly description = 'Tests MCP server metadata validation and compliance';
   readonly category = 'lifecycle';
+  readonly feature = 'initialization' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
