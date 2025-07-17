@@ -8,9 +8,10 @@ import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../type
 import { McpClient, type McpClient as McpClientType } from '../../../core/mcp-client.js';
 
 class StdioConnectivityTest extends DiagnosticTest {
-  readonly name = 'Protocol: STDIO Transport Connectivity';
+  readonly name = 'Base Protocol: Transport Layer (STDIO)';
   readonly description = 'Test STDIO transport establishment and basic communication';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'transport' as const;
   readonly severity = TEST_SEVERITY.CRITICAL;
 
   async execute(client: McpClientType, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -72,9 +73,10 @@ class StdioConnectivityTest extends DiagnosticTest {
 }
 
 class ConnectionLifecycleTest extends DiagnosticTest {
-  readonly name = 'Protocol: Connection Lifecycle Management';
+  readonly name = 'Base Protocol: Transport Connection Lifecycle';
   readonly description = 'Test connection establishment and clean termination';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'transport' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(_client: McpClientType, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -135,9 +137,10 @@ class ConnectionLifecycleTest extends DiagnosticTest {
 }
 
 class TransportErrorHandlingTest extends DiagnosticTest {
-  readonly name = 'Protocol: Transport Error Handling';
+  readonly name = 'Base Protocol: Transport Error Handling';
   readonly description = 'Test handling of transport-level errors and invalid configurations';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'transport' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(client: McpClientType, _config: DoctorConfig): Promise<DiagnosticResult> {

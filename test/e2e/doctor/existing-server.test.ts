@@ -57,26 +57,26 @@ describe('Doctor Tests - Existing Test Server', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'features',
+      categories: 'server-features',
     });
 
     const report = await doctorRunner.runDiagnostics();
 
     // Should detect tools capability (existing server has echo and add tools)
     const toolsCapabilityTest = report.results.find(
-      result => result.testName === 'Tools: Capability Declaration'
+      result => result.testName === 'Server Features: Tools - Capability Declaration'
     );
     expect(toolsCapabilityTest?.status).toBe('passed');
 
     // Tool listing should work
     const toolListingTest = report.results.find(
-      result => result.testName === 'Tools: Tool Listing'
+      result => result.testName === 'Server Features: Tools - Discovery (tools/list)'
     );
     expect(toolListingTest?.status).toBe('passed');
 
     // Tool execution should work
     const toolExecutionTest = report.results.find(
-      result => result.testName === 'Tools: Tool Execution'
+      result => result.testName === 'Server Features: Tools - Execution (tools/call)'
     );
     expect(toolExecutionTest?.status).toBe('passed');
   }, 30000);
@@ -86,13 +86,15 @@ describe('Doctor Tests - Existing Test Server', () => {
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
-      categories: 'protocol',
+      categories: 'base-protocol',
     });
 
     const report = await doctorRunner.runDiagnostics();
 
     // Protocol tests should mostly pass for existing server
-    const protocolTests = report.results.filter(result => result.testName.startsWith('Protocol:'));
+    const protocolTests = report.results.filter(result =>
+      result.testName.startsWith('Base Protocol:')
+    );
 
     expect(protocolTests.length).toBeGreaterThan(0);
 

@@ -7,11 +7,12 @@ import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../type
 import type { McpClient } from '../../../core/mcp-client.js';
 
 export class InitializationTests extends DiagnosticTest {
-  readonly name = 'Lifecycle: Initialization Flow';
+  readonly name = 'Lifecycle: Initialization (initialize request/response)';
   readonly description = 'Tests MCP server initialization sequence and responses';
   readonly category = 'lifecycle';
+  readonly feature = 'initialization' as const;
   readonly severity = TEST_SEVERITY.CRITICAL;
-  readonly mcpSpecSection = 'MCP Spec §3.1';
+  readonly mcpSpecSection = 'Lifecycle - Initialization';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {

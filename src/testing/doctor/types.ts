@@ -24,13 +24,44 @@ export const ISSUE_TYPE = {
 export type IssueType = (typeof ISSUE_TYPE)[keyof typeof ISSUE_TYPE];
 
 /**
- * Test organization categories (our internal grouping, not MCP spec)
+ * Protocol features - specific aspects of MCP that we test
  */
-export type TestCategory = 'lifecycle' | 'protocol' | 'security' | 'performance' | 'features';
+export type ProtocolFeature =
+  // Base Protocol features
+  | 'transport'
+  | 'json-rpc'
+  | 'error-handling'
+  // Lifecycle features
+  | 'initialization'
+  | 'capabilities'
+  | 'version'
+  // Server capability features
+  | 'tools'
+  | 'resources'
+  | 'prompts'
+  // Utility features
+  | 'ping'
+  | 'progress'
+  | 'cancellation'
+  | 'completion'
+  | 'logging'
+  | 'pagination';
+
+/**
+ * Protocol categories - groups of related protocol features
+ */
+export type ProtocolCategory = 'base-protocol' | 'lifecycle' | 'server-features' | 'utilities';
+
+/**
+ * Test organization categories aligned with MCP specification structure
+ * @deprecated Use ProtocolCategory instead
+ */
+export type TestCategory = 'base-protocol' | 'lifecycle' | 'server-features' | 'security';
 
 export interface DiagnosticResult {
   testName: string;
   category: TestCategory;
+  feature?: ProtocolFeature; // NEW: which protocol feature this test belongs to
   status: 'passed' | 'failed' | 'skipped';
   message: string;
   details?: unknown;
@@ -118,4 +149,43 @@ export interface DoctorOptions {
   categories?: string;
   output?: string;
   timeout?: string;
+}
+
+/**
+ * Information about a protocol feature and its tests
+ */
+export interface ProtocolFeatureInfo {
+  feature: ProtocolFeature;
+  category: ProtocolCategory;
+  displayName: string;
+  requiredCapability?: McpCapability;
+  tests: Array<{ new (): any }>; // Test class constructors
+}
+
+/**
+ * Summary of test results for a protocol feature
+ */
+export interface ProtocolFeatureSummary {
+  feature: ProtocolFeature;
+  displayName: string;
+  passed: number;
+  failed: number;
+  skipped: number;
+  total: number;
+  duration: number;
+  status: 'passed' | 'failed' | 'warning' | 'skipped';
+}
+
+/**
+ * Summary of test results for a protocol category
+ */
+export interface ProtocolCategorySummary {
+  category: ProtocolCategory;
+  displayName: string;
+  features: Map<ProtocolFeature, ProtocolFeatureSummary>;
+  totalPassed: number;
+  totalFailed: number;
+  totalSkipped: number;
+  totalTests: number;
+  status: 'passed' | 'failed' | 'warning' | 'skipped';
 }

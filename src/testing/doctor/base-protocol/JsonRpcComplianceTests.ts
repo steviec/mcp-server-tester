@@ -8,11 +8,12 @@ import { TEST_SEVERITY, ISSUE_TYPE, type DiagnosticResult, type DoctorConfig } f
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class JsonRpcMessageFormatTest extends DiagnosticTest {
-  readonly name = 'Protocol: JSON-RPC Message Format Validation';
+  readonly name = 'Base Protocol: JSON-RPC 2.0 Message Format';
   readonly description = 'Validate JSON-RPC 2.0 message structure compliance';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'json-rpc' as const;
   readonly severity = TEST_SEVERITY.CRITICAL;
-  readonly mcpSpecSection = 'MCP Spec §2.1 - JSON-RPC 2.0';
+  readonly mcpSpecSection = 'Base Protocol - JSON-RPC 2.0';
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
     const issues: string[] = [];
@@ -123,9 +124,10 @@ class JsonRpcMessageFormatTest extends DiagnosticTest {
 }
 
 class RequestIdHandlingTest extends DiagnosticTest {
-  readonly name = 'Protocol: Request ID Handling';
+  readonly name = 'Base Protocol: JSON-RPC Request ID Handling';
   readonly description = 'Test request ID uniqueness and proper response matching';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'json-rpc' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -215,11 +217,12 @@ class RequestIdHandlingTest extends DiagnosticTest {
 }
 
 class ErrorResponseFormatTest extends DiagnosticTest {
-  readonly name = 'Protocol: Error Response Format';
+  readonly name = 'Base Protocol: Error Response Format';
   readonly description = 'Test standard error response format and error codes';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'json-rpc' as const;
   readonly severity = TEST_SEVERITY.WARNING;
-  readonly mcpSpecSection = 'MCP Spec §2.3';
+  readonly mcpSpecSection = 'Base Protocol - Error Handling';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     const issues: string[] = [];
@@ -318,9 +321,10 @@ class ErrorResponseFormatTest extends DiagnosticTest {
 }
 
 class JsonRpcErrorCodeTest extends DiagnosticTest {
-  readonly name = 'Protocol: JSON-RPC Error Code Compliance';
+  readonly name = 'Base Protocol: JSON-RPC Error Codes';
   readonly description = 'Test standard JSON-RPC error codes and protocol-level error handling';
-  readonly category = 'protocol';
+  readonly category = 'base-protocol';
+  readonly feature = 'json-rpc' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {

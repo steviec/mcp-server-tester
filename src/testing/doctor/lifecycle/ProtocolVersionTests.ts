@@ -8,9 +8,10 @@ import { TEST_SEVERITY, type DiagnosticResult, type DoctorConfig } from '../type
 import type { McpClient } from '../../../core/mcp-client.js';
 
 class ProtocolVersionNegotiationTest extends DiagnosticTest {
-  readonly name = 'Protocol: Version Negotiation';
+  readonly name = 'Lifecycle: Protocol Version Negotiation';
   readonly description = 'Test negotiation with current MCP protocol version';
-  readonly category = 'protocol';
+  readonly category = 'lifecycle';
+  readonly feature = 'version' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {

@@ -7,16 +7,20 @@ import {
   type DiagnosticResult,
   type HealthReport,
   type TestCategorySummary,
+  type ProtocolCategory,
+  type ProtocolFeature,
+  type ProtocolCategorySummary,
+  type ProtocolFeatureSummary,
 } from './types.js';
 import type { McpCapability } from './CapabilityDetector.js';
+import { FeatureRegistry } from './FeatureRegistry.js';
 
 export class HealthReportGenerator {
   private static readonly DEFAULT_WEIGHTS: Record<string, number> = {
-    protocol: 0.3,
-    security: 0.25,
-    performance: 0.2,
-    features: 0.15,
-    transport: 0.1,
+    'base-protocol': 0.3,
+    lifecycle: 0.25,
+    'server-features': 0.35,
+    security: 0.1,
   };
 
   static generateReport(options: {
@@ -256,6 +260,95 @@ export class HealthReportGenerator {
 
     return Math.max(0, score);
   }
+
+  /**
+   * Generate hierarchical category summaries with protocol features
+   */
+  static generateHierarchicalSummaries(
+    results: DiagnosticResult[],
+    serverCapabilities: Set<McpCapability>
+  ): Map<ProtocolCategory, ProtocolCategorySummary> {
+    const categorySummaries = new Map<ProtocolCategory, ProtocolCategorySummary>();
+
+    // Get all registered features grouped by category
+    const featuresByCategory = FeatureRegistry.getFeaturesByCategories();
+
+    // Initialize category summaries
+    for (const [category, features] of featuresByCategory) {
+      const featureSummaries = new Map<ProtocolFeature, ProtocolFeatureSummary>();
+
+      // Initialize feature summaries
+      for (const featureInfo of features) {
+        const featureResults = results.filter(r => r.feature === featureInfo.feature);
+
+        const summary: ProtocolFeatureSummary = {
+          feature: featureInfo.feature,
+          displayName: featureInfo.displayName,
+          passed: featureResults.filter(r => r.status === 'passed').length,
+          failed: featureResults.filter(r => r.status === 'failed').length,
+          skipped: featureResults.filter(r => r.status === 'skipped').length,
+          total: featureResults.length,
+          duration: featureResults.reduce((sum, r) => sum + r.duration, 0),
+          status: 'passed',
+        };
+
+        // Determine feature status
+        if (
+          featureInfo.requiredCapability &&
+          !serverCapabilities.has(featureInfo.requiredCapability)
+        ) {
+          summary.status = 'skipped';
+        } else if (summary.failed > 0) {
+          summary.status = 'failed';
+        } else if (summary.total === 0) {
+          summary.status = 'skipped';
+        }
+
+        featureSummaries.set(featureInfo.feature, summary);
+      }
+
+      // Create category summary
+      const categorySummary: ProtocolCategorySummary = {
+        category,
+        displayName: this.getCategoryDisplayName(category),
+        features: featureSummaries,
+        totalPassed: 0,
+        totalFailed: 0,
+        totalSkipped: 0,
+        totalTests: 0,
+        status: 'passed',
+      };
+
+      // Aggregate feature stats
+      for (const feature of featureSummaries.values()) {
+        categorySummary.totalPassed += feature.passed;
+        categorySummary.totalFailed += feature.failed;
+        categorySummary.totalSkipped += feature.skipped;
+        categorySummary.totalTests += feature.total;
+      }
+
+      // Determine category status
+      if (categorySummary.totalFailed > 0) {
+        categorySummary.status = 'failed';
+      } else if (categorySummary.totalTests === categorySummary.totalSkipped) {
+        categorySummary.status = 'skipped';
+      }
+
+      categorySummaries.set(category, categorySummary);
+    }
+
+    return categorySummaries;
+  }
+
+  private static getCategoryDisplayName(category: ProtocolCategory): string {
+    const names: Record<ProtocolCategory, string> = {
+      'base-protocol': 'BASE PROTOCOL',
+      lifecycle: 'LIFECYCLE',
+      'server-features': 'SERVER FEATURES',
+      utilities: 'UTILITIES',
+    };
+    return names[category] || category.toUpperCase();
+  }
 }
 
 export function formatReport(report: HealthReport): string {
@@ -272,18 +365,17 @@ export function formatReport(report: HealthReport): string {
 
   // Map categories to MCP spec sections
   const specSections: Record<string, string> = {
-    lifecycle: '[MCP Spec §3.1 - Initialization]',
-    protocol: '[MCP Spec §2.1 - JSON-RPC 2.0]',
-    features: '[MCP Spec §4.0 - Capabilities]',
-    security: '[MCP Spec §5.0 - Security]',
-    performance: '[MCP Spec §6.0 - Performance]',
+    'base-protocol': '[Base Protocol]',
+    lifecycle: '[Lifecycle]',
+    'server-features': '[Server Features]',
+    security: '[Security & Authorization]',
   };
 
   // Category summaries with capability awareness and spec references
   for (const category of report.categories) {
     let status: string;
     let summary: string;
-    const specRef = specSections[category.name.toLowerCase()] || '[MCP Spec - General]';
+    const specRef = specSections[category.name] || '[MCP Spec]';
 
     if (category.status === 'skipped') {
       status = '⏭️';
@@ -293,7 +385,11 @@ export function formatReport(report: HealthReport): string {
       summary = `${category.passed}/${category.total} passed   (${category.duration}ms)   ${specRef}`;
     }
 
-    lines.push(`🔍 ${category.name.toUpperCase().padEnd(15)} ${status} ${summary}`);
+    const displayName = category.name
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    lines.push(`🔍 ${displayName.padEnd(20)} ${status} ${summary}`);
   }
 
   lines.push('', '━'.repeat(80), '');

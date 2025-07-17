@@ -9,6 +9,7 @@ import type {
   TestSeverity,
   TestCategory,
   IssueType,
+  ProtocolFeature,
 } from './types.js';
 import type { McpCapability } from './CapabilityDetector.js';
 
@@ -17,6 +18,9 @@ export abstract class DiagnosticTest {
   abstract readonly description: string;
   abstract readonly category: TestCategory;
   abstract readonly severity: TestSeverity;
+
+  // Optional: Protocol feature this test belongs to
+  readonly feature?: ProtocolFeature;
 
   // Optional: MCP capability required for this test to run
   readonly requiredCapability?: McpCapability;
@@ -35,6 +39,7 @@ export abstract class DiagnosticTest {
     return {
       testName: this.name,
       category: this.category,
+      feature: this.feature,
       status: success ? 'passed' : 'failed',
       message,
       details,
@@ -60,6 +65,7 @@ export abstract class DiagnosticTest {
     return {
       testName: this.name,
       category: this.category,
+      feature: this.feature,
       status: options.success ? 'passed' : 'failed',
       message: options.message,
       details: options.details,
@@ -80,6 +86,7 @@ export abstract class DiagnosticTest {
     return {
       testName: this.name,
       category: this.category,
+      feature: this.feature,
       status: 'skipped',
       message: `Test skipped: ${reason}`,
       severity: this.severity,

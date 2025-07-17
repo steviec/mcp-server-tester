@@ -8,12 +8,13 @@ import type { McpClient } from '../../../core/mcp-client.js';
 import type { Prompt, GetPromptResult } from '@modelcontextprotocol/sdk/types.js';
 
 export class PromptsCapabilityTest extends DiagnosticTest {
-  readonly name = 'Prompts: Capability Declaration';
+  readonly name = 'Server Features: Prompts - Capability Declaration';
   readonly description = 'Verify server declares prompts capability correctly';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'prompts' as const;
   readonly severity = TEST_SEVERITY.INFO;
   readonly requiredCapability = 'prompts';
-  readonly mcpSpecSection = 'MCP Spec §4.3';
+  readonly mcpSpecSection = 'Server Features - Prompts';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -47,9 +48,10 @@ export class PromptsCapabilityTest extends DiagnosticTest {
 }
 
 export class PromptListingTest extends DiagnosticTest {
-  readonly name = 'Prompts: Prompt Listing';
+  readonly name = 'Server Features: Prompts - Listing (prompts/list)';
   readonly description = 'Verify prompt listing functionality';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'prompts' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -94,9 +96,10 @@ export class PromptListingTest extends DiagnosticTest {
 }
 
 export class PromptRetrievalTest extends DiagnosticTest {
-  readonly name = 'Prompts: Prompt Retrieval';
+  readonly name = 'Server Features: Prompts - Retrieval (prompts/get)';
   readonly description = 'Test prompt retrieval functionality';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'prompts' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -233,9 +236,10 @@ export class PromptRetrievalTest extends DiagnosticTest {
 }
 
 export class ArgumentValidationTest extends DiagnosticTest {
-  readonly name = 'Prompts: Argument Validation';
+  readonly name = 'Server Features: Prompts - Argument Validation';
   readonly description = 'Test prompt argument validation';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'prompts' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -294,9 +298,10 @@ export class ArgumentValidationTest extends DiagnosticTest {
 }
 
 export class TemplateRenderingTest extends DiagnosticTest {
-  readonly name = 'Prompts: Template Rendering';
+  readonly name = 'Server Features: Prompts - Template Rendering';
   readonly description = 'Test prompt template rendering with variables';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'prompts' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {

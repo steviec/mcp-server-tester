@@ -48,7 +48,7 @@ describe('Doctor Tests - Compliant Server (Using Existing Test Server)', () => {
 
     // Tools capability should be detected
     const toolsCapabilityTest = report.results.find(
-      result => result.testName.startsWith('Tools:') && result.testName.includes('Capability')
+      result => result.testName === 'Server Features: Tools - Capability Declaration'
     );
     expect(toolsCapabilityTest?.status).toBe('passed');
   }, 30000);
@@ -65,7 +65,7 @@ describe('Doctor Tests - Compliant Server (Using Existing Test Server)', () => {
 
     // Tool schema validation should pass
     const schemaTest = report.results.find(
-      result => result.testName === 'Tools: Schema Validation'
+      result => result.testName === 'Server Features: Tools - Schema Validation'
     );
     expect(schemaTest?.status).toBe('passed');
   }, 30000);
@@ -87,7 +87,9 @@ describe('Doctor Tests - Compliant Server (Using Existing Test Server)', () => {
     expect(passRate).toBeGreaterThan(60);
 
     // Should have tools capability working
-    const toolsTests = report.results.filter(result => result.testName.startsWith('Tools:'));
+    const toolsTests = report.results.filter(result =>
+      result.testName.includes('Server Features: Tools')
+    );
     expect(toolsTests.length).toBeGreaterThan(0);
 
     const passedToolsTests = toolsTests.filter(result => result.status === 'passed');

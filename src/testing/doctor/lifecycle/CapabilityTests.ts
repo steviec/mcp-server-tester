@@ -15,9 +15,10 @@ interface ExpectedCapabilities {
 }
 
 export class CapabilityTests extends DiagnosticTest {
-  readonly name = 'Lifecycle: Capability Declaration';
+  readonly name = 'Lifecycle: Capability Negotiation';
   readonly description = 'Tests MCP server capability announcements and validation';
   readonly category = 'lifecycle';
+  readonly feature = 'capabilities' as const;
   readonly severity = TEST_SEVERITY.WARNING;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {

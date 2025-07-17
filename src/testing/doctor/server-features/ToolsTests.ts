@@ -8,12 +8,13 @@ import type { McpClient } from '../../../core/mcp-client.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 export class ToolsCapabilityTest extends DiagnosticTest {
-  readonly name = 'Tools: Capability Declaration';
+  readonly name = 'Server Features: Tools - Capability Declaration';
   readonly description = 'Verify server declares tools capability correctly';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'tools' as const;
   readonly severity = TEST_SEVERITY.CRITICAL;
   readonly requiredCapability = 'tools';
-  readonly mcpSpecSection = 'MCP Spec §4.1 - Tool Interface';
+  readonly mcpSpecSection = 'Server Features - Tools';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -54,12 +55,13 @@ export class ToolsCapabilityTest extends DiagnosticTest {
 }
 
 export class ToolListingTest extends DiagnosticTest {
-  readonly name = 'Tools: Tool Listing';
+  readonly name = 'Server Features: Tools - Discovery (tools/list)';
   readonly description = 'Verify tool listing functionality';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'tools' as const;
   readonly severity = TEST_SEVERITY.WARNING;
   readonly requiredCapability = 'tools';
-  readonly mcpSpecSection = 'MCP Spec §4.1.1';
+  readonly mcpSpecSection = 'Server Features - Tools';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -101,12 +103,13 @@ export class ToolListingTest extends DiagnosticTest {
 }
 
 export class ToolSchemaValidationTest extends DiagnosticTest {
-  readonly name = 'Tools: Schema Validation';
+  readonly name = 'Server Features: Tools - Schema Validation';
   readonly description = 'Verify tool schemas are valid';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'tools' as const;
   readonly severity = TEST_SEVERITY.WARNING;
   readonly requiredCapability = 'tools';
-  readonly mcpSpecSection = 'MCP Spec §4.1.2';
+  readonly mcpSpecSection = 'Server Features - Tools';
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
     try {
@@ -174,9 +177,10 @@ export class ToolSchemaValidationTest extends DiagnosticTest {
 }
 
 export class ToolExecutionTest extends DiagnosticTest {
-  readonly name = 'Tools: Tool Execution';
+  readonly name = 'Server Features: Tools - Execution (tools/call)';
   readonly description = 'Test tool execution capability';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'tools' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, config: DoctorConfig): Promise<DiagnosticResult> {
@@ -324,9 +328,10 @@ export class ToolExecutionTest extends DiagnosticTest {
 }
 
 export class ToolErrorHandlingTest extends DiagnosticTest {
-  readonly name = 'Tools: Error Handling';
+  readonly name = 'Server Features: Tools - Error Handling';
   readonly description = 'Test tool error handling for invalid parameters';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'tools' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
@@ -373,9 +378,10 @@ export class ToolErrorHandlingTest extends DiagnosticTest {
 }
 
 export class ToolAnnotationsTest extends DiagnosticTest {
-  readonly name = 'Tools: Annotations Support';
+  readonly name = 'Server Features: Tools - Annotations Support';
   readonly description = 'Check for recommended tool annotations';
-  readonly category = 'features';
+  readonly category = 'server-features';
+  readonly feature = 'tools' as const;
   readonly severity = TEST_SEVERITY.INFO;
 
   async execute(client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
