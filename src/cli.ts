@@ -10,6 +10,8 @@ import { DoctorRunner, formatReport } from './testing/doctor/index.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import testConfigSchema from './schemas/test-config.json' with { type: 'json' };
+import serverConfigSchema from './schemas/server-config.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -92,6 +94,7 @@ async function main(): Promise<void> {
     .description('Standalone CLI tool for testing MCP servers')
     .version(packageJson.version, '--version')
     .helpOption('--help', 'Show help for command')
+    .option('--help-schema', 'Show schemas for server config and test config files')
     .addHelpText(
       'after',
       `
@@ -99,14 +102,34 @@ Examples:
   $ mcp-server-tester test test.yaml --server-config server.json
   $ mcp-server-tester doctor --server-config server.json
   $ mcp-server-tester test eval.yaml --server-config server.json --server-name filesystem`
-    );
+    )
+    .action(options => {
+      if (options.helpSchema) {
+        console.log('Server Configuration Schema:');
+        console.log(`
+${JSON.stringify(serverConfigSchema, null, 2)}
+`);
+        console.log('Test Configuration Schema:');
+        console.log(`
+${JSON.stringify(testConfigSchema, null, 2)}
+`);
+        process.exit(0);
+      } else {
+        program.help();
+      }
+    });
 
   // Test command
   program
     .command('test')
-    .description('Run tests against MCP servers (tools and/or evals)')
+    .description(
+      'Run tests against MCP servers (tools and/or evals). Use --help-schema to see test config schema.'
+    )
     .argument('<test-file>', 'Test configuration file (YAML)')
-    .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
+    .requiredOption(
+      '--server-config <file>',
+      'MCP server configuration file (JSON). Use --help-schema to see server config schema.'
+    )
     .option(
       '--server-name <name>',
       'Specific server name to use from config (if multiple servers defined)'

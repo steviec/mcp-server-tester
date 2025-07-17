@@ -1,320 +1,192 @@
 # MCP Server Tester
 
-A tool to confirm that your MCP server is spec-compliant and can be used consistently by LLMs.
+**Build MCP servers that actually work with LLMs** 🤖
 
-## Overview
+Too many MCP servers work great when you're testing them locally, but then fail to be useful when LLMs try to use them. This tool helps you build servers that are:
 
-MCP Tester provides two testing approaches:
+- ✅ **Spec-compliant** - Follow the MCP protocol correctly
+- ✅ **LLM-friendly** - Work seamlessly with AI assistants
+- ✅ **Production-ready** - Handle edge cases and errors properly
 
-- **Tools Testing** - Direct API calls to test your MCP server's tool implementations
-- **Evals** - Test that LLMs can correctly discover and use your MCP tools
+## The Two-Step Verification Process
 
-## Quick Example
+### 1. 🏥 `doctor` - Automatic Health Check
 
-Test a filesystem MCP server (`fs-test.yaml`):
-
-```yaml
-tools:
-  expected_tool_list: ['read_file', 'write_file', 'list_directory']
-  tests:
-    # Single tool test (simplified format)
-    - name: 'Read file test'
-      tool: 'read_file'
-      params: { path: '/tmp/test.txt' }
-      expect:
-        success: true
-        result: { contains: 'hello world' }
-
-    # Multi-step workflow test
-    - name: 'Write and read file workflow'
-      calls:
-        - tool: 'write_file'
-          params: { path: '/tmp/test.txt', content: 'hello world' }
-          expect: { success: true }
-
-        - tool: 'read_file'
-          params: { path: '/tmp/test.txt' }
-          expect:
-            success: true
-            result: { contains: 'hello world' }
-
-evals:
-  models: ['claude-3-haiku-20240307']
-  tests:
-    - name: 'LLM can create and read files'
-      prompt: 'Create a file called hello.txt with the content "test" and then read it back'
-      expected_tool_calls:
-        required: ['write_file', 'read_file']
-      response_scorers:
-        - type: 'regex'
-          pattern: 'test'
-```
-
-Run the test:
+Runs diagnostics on your MCP server without needing any configuration or knowledge of your server's functionality. Catches spec violations that cause LLMs to fail or behave unpredictably.
 
 ```bash
-npx mcp-server-tester fs-test.yaml --server-config server-config.json
+npx mcp-server-tester doctor --server-config your-server.json
 ```
 
-Output:
+**Example output:**
 
 ```
-Running tests from: fs-test.yaml
-Detecting test types...
-Running tools tests...
-Running eval tests...
+🏥 MCP SERVER DOCTOR v1.0.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 FEATURES ❌ 4/17 passed
+🔍 LIFECYCLE ✅ 3/3 passed
+🔍 PROTOCOL ⚠️ 8/11 passed
 
-Test Summary:
-  Total: 2
-  Passed: 2
-  Failed: 0
-  Duration: 1247ms
+📊 OVERALL MCP COMPLIANCE: 67/100
+
+⚠️ WARNINGS
+• Error response format issues detected
+• JSON-RPC error code issues detected
+• Protocol version issues detected
+
+💡 RECOMMENDATIONS
+• Implement proper error response formatting
+• Ensure -32601 for method not found
+• Update server to latest MCP specification
 ```
 
-## Installation
+### 2. 🧪 `test` - Functional Testing
+
+Verifies your server's specific functionality works correctly, including testing with real LLMs. Ensures your tools do what they claim and that LLMs can discover and use them effectively.
 
 ```bash
-# Run directly
-npx mcp-server-tester --help
-
-# Install globally
-npm install -g mcp-server-tester
+npx mcp-server-tester test your-tests.yaml --server-config your-server.json
 ```
 
-## Setup
+**Two types of tests:**
 
-### 1. Server Configuration
-
-Create `server-config.json` with your MCP server details:
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "node",
-      "args": ["./filesystem-server.js"],
-      "env": {
-        "ALLOWED_DIRS": "/tmp,/home/user/documents"
-      }
-    }
-  }
-}
-```
-
-### 2. Tools Testing
-
-Test your MCP server's tool implementations directly:
+#### Tools Tests - Direct API verification
 
 ```yaml
 tools:
   expected_tool_list: ['read_file', 'write_file']
   tests:
-    # Simple single tool tests
     - name: 'Write file successfully'
       tool: 'write_file'
-      params: { path: '/tmp/test.txt', content: 'data' }
+      params: { path: '/tmp/test.txt', content: 'hello' }
       expect: { success: true }
-
-    - name: 'Read existing file'
-      tool: 'read_file'
-      params: { path: '/tmp/test.txt' }
-      expect:
-        success: true
-        result: { contains: 'data' }
-
-    - name: 'Handle missing file'
-      tool: 'read_file'
-      params: { path: '/nonexistent/file.txt' }
-      expect:
-        success: false
-        error: { contains: 'not found' }
 ```
 
-### 3. LLM Evals
-
-Test that language models can use your tools correctly:
+#### Eval Tests - LLM integration testing
 
 ```yaml
 evals:
-  models: ['claude-3-haiku-20240307']
+  models: ['claude-3-5-haiku-latest']
   tests:
-    - name: 'LLM discovers available tools'
-      prompt: 'What file operations can you perform?'
-      expected_tool_calls: { allowed: [] } # Should not call tools
-      response_scorers:
-        - type: 'regex'
-          pattern: '(read|write|file)'
-
-    - name: 'LLM performs file operations'
-      prompt: 'List the files in /tmp directory'
-      expected_tool_calls: { required: ['list_directory'] }
-      response_scorers:
-        - type: 'llm-judge'
-          criteria: 'Did the assistant successfully list directory contents?'
-          threshold: 0.8
-```
-
-Run evals (requires API key):
-
-```bash
-export ANTHROPIC_API_KEY="your-key"
-npx mcp-server-tester eval-test.yaml --server-config server-config.json
-```
-
-## Test Configuration
-
-### Tools Tests
-
-```yaml
-tools:
-  expected_tool_list: ['tool1', 'tool2'] # Verify these tools exist via tools/list
-  tests:
-    # Single tool test format (recommended for simple tests)
-    - name: 'Simple tool test'
-      tool: 'tool_name'
-      params: { key: 'value' }
-      expect:
-        success: true
-        result:
-          contains: 'expected_text'
-          equals: 'exact_match'
-        error: # For testing error conditions
-          contains: 'error_message'
-
-    # Multi-step test format (for complex workflows)
-    - name: 'Complex workflow test'
-      calls:
-        - tool: 'tool1'
-          params: { ... }
-          expect: { ... }
-        - tool: 'tool2'
-          params: { ... }
-          expect: { ... }
-```
-
-### Eval Tests
-
-```yaml
-evals:
-  models: ['claude-3-haiku-20240307']
-  timeout: 30000
-  max_steps: 3
-  tests:
-    - name: 'Test description'
-      prompt: 'Task for the LLM'
+    - name: 'LLM can create and read files'
+      prompt: 'Create a file called test.txt with "hello" and read it back'
       expected_tool_calls:
-        required: ['tool1'] # Must call these
-        allowed: ['tool1', 'tool2'] # Can only call these
-      response_scorers:
-        - type: 'regex'
-          pattern: 'pattern_to_match'
-        - type: 'llm-judge'
-          criteria: 'Evaluation criteria'
-          threshold: 0.8
+        required: ['write_file', 'read_file']
 ```
 
-## CLI Usage
+## Quick Start
 
-```bash
-mcp-server-tester <test-file> --server-config <config-file> [options]
+1. **Install**
 
-Options:
-  --server-config <file>    MCP server configuration (required)
-  --server-name <name>      Server name if multiple in config
-  --models <models>         Override models for evals
-  --timeout <ms>            Test timeout
-  --output <format>         Output: console, json, junit
+   ```bash
+   npm install -g mcp-server-tester
+   ```
 
-# Alternative: Launch server directly
-mcp-server-tester test.yaml --server-command "node" --server-args "server.js"
-```
+2. **Create server config** (`server-config.json`):
 
-## Common Patterns
+   ```json
+   {
+     "mcpServers": {
+       "myserver": {
+         "command": "node",
+         "args": ["./my-mcp-server.js"]
+       }
+     }
+   }
+   ```
 
-### Multi-step Workflows
+3. **Run health check first**:
 
-```yaml
-tools:
-  tests:
-    - name: 'Database CRUD operations'
-      calls:
-        - tool: 'create_record'
-          params: { table: 'users', data: { name: 'Alice' } }
-          expect: { success: true }
+   ```bash
+   mcp-server-tester doctor --server-config server-config.json
+   ```
 
-        - tool: 'read_record'
-          params: { table: 'users', id: 1 }
-          expect:
-            success: true
-            result: { contains: 'Alice' }
+4. **Let your agent create the functional tests** (`test.yaml`):
 
-        - tool: 'delete_record'
-          params: { table: 'users', id: 1 }
-          expect: { success: true }
-```
+   Try a prompt like this:
 
-### Error Handling
+   ```console
+   > can you create a basic set of tests for my mcp server's 'write_file' tool
+   using the `npx mcp-server-tester` tool. Save it to test.yaml and then run
+   the "test" command against it to confirm it's working.
+   ```
 
-```yaml
-tools:
-  tests:
-    # Single tool error test
-    - name: 'Invalid parameters are rejected'
-      tool: 'read_file'
-      params: { path: '../../../etc/passwd' }
-      expect:
-        success: false
-        error: { contains: 'access denied' }
-```
+   Your agent should be able to build up a test suite like this:
 
-### LLM Task Completion
+   ```yaml
+   tools:
+     expected_tool_list: ['write_file']
+     tests:
+       - name: 'Write file successfully'
+         tool: 'write_file'
+         params: { path: '/tmp/test.txt', content: 'Hello world' }
+         expect: { success: true }
 
-```yaml
-evals:
-  tests:
-    - name: 'LLM completes complex task'
-      prompt: 'Find all .log files in /var/log and count how many contain "ERROR"'
-      expected_tool_calls:
-        required: ['list_directory', 'read_file']
-      response_scorers:
-        - type: 'regex'
-          pattern: '\\d+.*files.*ERROR'
-```
+       - name: 'Handle invalid path'
+         tool: 'write_file'
+         params: { path: '/root/forbidden.txt', content: 'test' }
+         expect:
+           success: false
+           error: { contains: 'permission denied' }
 
-### Tool Discovery
+   evals:
+     models: ['claude-3-5-haiku-latest']
+     tests:
+       - name: 'LLM can write files'
+         prompt: 'Create a file at /tmp/greeting.txt with the content "Hello from Claude"'
+         expected_tool_calls:
+           required: ['write_file']
+         response_scorers:
+           - type: 'llm-judge'
+             criteria: 'Did the assistant successfully create the file?'
+             threshold: 0.8
+   ```
 
-```yaml
-evals:
-  tests:
-    - name: 'LLM understands capabilities without calling tools'
-      prompt: 'What database operations can you perform? Just list them.'
-      expected_tool_calls: { allowed: [] }
-      response_scorers:
-        - type: 'regex'
-          pattern: '(create|read|update|delete|query)'
-```
+5. **Run functional tests**:
+   ```bash
+   export ANTHROPIC_API_KEY="your-key"  # Required for eval tests
+   mcp-server-tester test tests.yaml --server-config server-config.json
+   ```
 
-## Examples
+## Why Both Doctor and Test?
 
-See `examples/` directory:
+Think of it like shipping software:
 
-- `test.yaml` - Combined tools and evals
-- `tools-test.yaml` - Tools testing only
-- `evaluations-test.yaml` - LLM evaluations (evals) only
-- `server-config.json` - Server configuration
-- `test-server.js` - Sample MCP server
+- **Doctor** = Linter/compiler checks (catches structural problems)
+- **Test** = Unit/integration tests (verifies business logic)
 
-## Environment Variables
+You need both! A server might pass all functional tests but still fail with LLMs due to spec violations that `doctor` would catch.
 
-- `ANTHROPIC_API_KEY` - Required for evals
-- `DEBUG=mcp-tester` - Debug logging
+## Common Issues Doctor Catches
+
+1. **Incorrect error codes** - LLMs expect specific JSON-RPC error codes
+2. **Missing error messages** - LLMs need descriptive errors to retry/recover
+3. **Protocol violations** - Subtle spec issues that confuse LLM tool parsers
+4. **Missing annotations** - Hints that help LLMs use tools correctly
+
+## Best Practices for LLM-Friendly Servers
+
+1. **Run `doctor` first** - Fix spec compliance before testing functionality
+2. **Test with real prompts** - Use eval tests with prompts users would actually write
+3. **Handle errors gracefully** - LLMs rely on clear error messages
+4. **Use tool annotations** - Add hints like `readOnlyHint` and `openWorldHint`
+5. **Test edge cases** - LLMs will find creative ways to use your tools
+
+## Full Documentation
+
+- [Writing Tests](./docs/writing-tests.md)
+- [Server Configuration](./docs/server-config.md)
+- [Doctor Diagnostics](./docs/doctor-diagnostics.md)
+- [Eval Testing Guide](./docs/eval-testing.md)
+- [Examples](./examples/)
 
 ## Contributing
 
-1. Fork and create feature branch
-2. Add tests for new functionality
-3. Run `npm test` and `npm run lint`
-4. Submit pull request
+We welcome contributions! Please ensure all PRs:
+
+1. Pass `doctor` diagnostics
+2. Include tests for new features
+3. Update documentation
 
 ## License
 
