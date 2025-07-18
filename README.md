@@ -10,7 +10,7 @@ Too many MCP servers work great when you're testing them locally, but then fail 
 
 ## The Two-Step Verification Process
 
-### 1. 🏥 `doctor` - Automatic Health Check
+### 1. 🏥 `doctor` - Spec compliance check
 
 Runs diagnostics on your MCP server without needing any configuration or knowledge of your server's functionality. Catches spec violations that cause LLMs to fail or behave unpredictably.
 
@@ -147,38 +147,6 @@ evals:
    export ANTHROPIC_API_KEY="your-key"  # Required for eval tests
    mcp-server-tester test tests.yaml --server-config server-config.json
    ```
-
-## Why Both Doctor and Test?
-
-Think of it like shipping software:
-
-- **Doctor** = Linter/compiler checks (catches structural problems)
-- **Test** = Unit/integration tests (verifies business logic)
-
-You need both! A server might pass all functional tests but still fail with LLMs due to spec violations that `doctor` would catch.
-
-## Common Issues Doctor Catches
-
-1. **Incorrect error codes** - LLMs expect specific JSON-RPC error codes
-2. **Missing error messages** - LLMs need descriptive errors to retry/recover
-3. **Protocol violations** - Subtle spec issues that confuse LLM tool parsers
-4. **Missing annotations** - Hints that help LLMs use tools correctly
-
-## Best Practices for LLM-Friendly Servers
-
-1. **Run `doctor` first** - Fix spec compliance before testing functionality
-2. **Test with real prompts** - Use eval tests with prompts users would actually write
-3. **Handle errors gracefully** - LLMs rely on clear error messages
-4. **Use tool annotations** - Add hints like `readOnlyHint` and `openWorldHint`
-5. **Test edge cases** - LLMs will find creative ways to use your tools
-
-## Full Documentation
-
-- [Writing Tests](./docs/writing-tests.md)
-- [Server Configuration](./docs/server-config.md)
-- [Doctor Diagnostics](./docs/doctor-diagnostics.md)
-- [Eval Testing Guide](./docs/eval-testing.md)
-- [Examples](./examples/)
 
 ## Contributing
 

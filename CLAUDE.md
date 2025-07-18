@@ -1,5 +1,6 @@
 # Load claude permanent context
 
+@README.md
 @.claude/context/overview.md
 @.claude/context/architecture.md
-@.cladue/context/commands.md
+@.claude/context/commands.md
