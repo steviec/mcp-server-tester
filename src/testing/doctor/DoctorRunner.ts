@@ -173,6 +173,9 @@ export class DoctorRunner {
       output: {
         format: (this._options.output as 'console' | 'json') || 'console',
       },
+      experimental: {
+        useSdkErrorDetection: true, // Enable SDK-based error detection by default
+      },
     };
   }
 

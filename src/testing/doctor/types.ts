@@ -19,6 +19,7 @@ export const ISSUE_TYPE = {
   CRITICAL_FAILURE: 'critical_failure',
   SPEC_WARNING: 'spec_warning',
   OPTIMIZATION: 'optimization',
+  PERFORMANCE_ISSUE: 'performance_issue',
 } as const;
 
 export type IssueType = (typeof ISSUE_TYPE)[keyof typeof ISSUE_TYPE];
@@ -35,6 +36,7 @@ export type ProtocolFeature =
   | 'initialization'
   | 'capabilities'
   | 'version'
+  | 'connection'
   // Server capability features
   | 'tools'
   | 'resources'
@@ -140,6 +142,10 @@ export interface DoctorConfig {
   output: {
     format: 'console' | 'json';
     file?: string;
+  };
+  experimental: {
+    // Enable SDK-based error detection instead of manual validation
+    useSdkErrorDetection: boolean;
   };
 }
 
