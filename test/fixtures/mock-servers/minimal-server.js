@@ -3,7 +3,7 @@
 /* eslint-disable no-undef */
 
 /**
- * Minimal MCP server for doctor testing
+ * Minimal MCP server for compliance testing
  * Implements bare minimum MCP functionality
  */
 

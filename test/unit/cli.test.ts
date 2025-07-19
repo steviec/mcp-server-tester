@@ -26,14 +26,14 @@ describe('MCP Tester CLI', () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Standalone CLI tool for testing MCP servers');
-      expect(result.stdout).toContain('test [options] <test-file>');
-      expect(result.stdout).toContain('doctor [options]');
+      expect(result.stdout).toContain('verify [options] <test-file>');
+      expect(result.stdout).toContain('compliance [options]');
     });
   });
 
   describe('Unified Command', () => {
     test('should fail when server-config is missing', async () => {
-      const result = await cli.run(['test', validIntegrationTest]);
+      const result = await cli.run(['verify', validIntegrationTest]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('required option');
@@ -93,7 +93,7 @@ describe('MCP Tester CLI', () => {
 
   describe('Unified Command - LLM Evaluations (evals)', () => {
     test('should fail when server-config is missing', async () => {
-      const result = await cli.run(['test', validEvalTest]);
+      const result = await cli.run(['verify', validEvalTest]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('required option');
@@ -138,7 +138,7 @@ describe('MCP Tester CLI', () => {
   describe('Error Handling', () => {
     test('should show error for nonexistent file', async () => {
       const result = await cli.run([
-        'test',
+        'verify',
         'unknown-file.yaml',
         '--server-config',
         testServerConfig,

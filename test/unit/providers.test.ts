@@ -4,7 +4,7 @@
  */
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
-import { AnthropicProvider } from '../../src/testing/evals/providers/anthropic-provider.js';
+import { AnthropicProvider } from '../../src/verify/evals/providers/anthropic-provider.js';
 import {
   McpClient,
   createServerConfigFromCli,

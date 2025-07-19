@@ -1,5 +1,5 @@
 /**
- * E2E tests for doctor CLI integration
+ * E2E tests for compliance CLI integration
  */
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
@@ -11,7 +11,7 @@ import {
 } from '../server-launcher.js';
 import path from 'path';
 
-describe('Doctor CLI Integration', () => {
+describe('Compliance CLI Integration', () => {
   let testServer: TestServerLauncher;
   const configPath = getTestServerConfigPath();
 
@@ -28,9 +28,9 @@ describe('Doctor CLI Integration', () => {
     }
   }, 10000);
 
-  test('should run doctor command successfully', async () => {
+  test('should run compliance command successfully', async () => {
     const result = await runCliCommand([
-      'doctor',
+      'compliance',
       '--server-config',
       configPath,
       '--server-name',
@@ -39,7 +39,7 @@ describe('Doctor CLI Integration', () => {
       '30000',
     ]);
 
-    // Doctor may return exit code 1 if tests fail, but should still produce output
+    // Compliance may return exit code 1 if tests fail, but should still produce output
     expect([0, 1]).toContain(result.exitCode);
     expect(result.stdout).toContain('test-server');
     expect(result.stdout).toContain('OVERALL MCP COMPLIANCE');
@@ -48,7 +48,7 @@ describe('Doctor CLI Integration', () => {
 
   test.skip('should support category filtering', async () => {
     const result = await runCliCommand([
-      'doctor',
+      'compliance',
       '--server-config',
       configPath,
       '--server-name',
@@ -65,7 +65,7 @@ describe('Doctor CLI Integration', () => {
 
   test('should handle timeout correctly', async () => {
     const result = await runCliCommand([
-      'doctor',
+      'compliance',
       '--server-config',
       configPath,
       '--server-name',
@@ -82,7 +82,7 @@ describe('Doctor CLI Integration', () => {
 
   test('should handle invalid server config', async () => {
     const result = await runCliCommand([
-      'doctor',
+      'compliance',
       '--server-config',
       '/nonexistent/config.json',
       '--server-name',
@@ -96,7 +96,7 @@ describe('Doctor CLI Integration', () => {
 
   test('should handle invalid server name', async () => {
     const result = await runCliCommand([
-      'doctor',
+      'compliance',
       '--server-config',
       configPath,
       '--server-name',
@@ -110,7 +110,7 @@ describe('Doctor CLI Integration', () => {
 
   test('should output JSON format when requested', async () => {
     const result = await runCliCommand([
-      'doctor',
+      'compliance',
       '--server-config',
       configPath,
       '--server-name',
@@ -147,11 +147,11 @@ describe('Doctor CLI Integration', () => {
     expect(report.metadata).toBeDefined();
   }, 30000);
 
-  test('should show help for doctor command', async () => {
-    const result = await runCliCommand(['doctor', '--help']);
+  test('should show help for compliance command', async () => {
+    const result = await runCliCommand(['compliance', '--help']);
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain('doctor');
+    expect(result.stdout).toContain('compliance');
     expect(result.stdout).toContain('--server-config');
     expect(result.stdout).toContain('--categories');
     expect(result.stdout).toContain('--timeout');

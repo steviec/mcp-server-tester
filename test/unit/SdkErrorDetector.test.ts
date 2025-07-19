@@ -3,13 +3,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SdkErrorDetector, type SdkErrorTest } from '../../src/testing/doctor/SdkErrorDetector.js';
+import { SdkErrorDetector, type SdkErrorTest } from '../../src/compliance/SdkErrorDetector.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { TEST_SEVERITY, type DoctorConfig } from '../../src/testing/doctor/types.js';
+import { TEST_SEVERITY, type ComplianceConfig } from '../../src/compliance/types.js';
 
 describe('SdkErrorDetector', () => {
   let mockClient: any;
-  let mockConfig: DoctorConfig;
+  let mockConfig: ComplianceConfig;
 
   beforeEach(() => {
     mockClient = {

@@ -133,16 +133,16 @@ export function createTestServerLauncher(): TestServerLauncher {
 }
 
 /**
- * Get the path to the doctor mock servers config
+ * Get the path to the compliance mock servers config
  */
-export function getDoctorMockServersConfigPath(): string {
+export function getComplianceMockServersConfigPath(): string {
   return path.resolve(process.cwd(), 'test/fixtures/mock-servers/server-configs.json');
 }
 
 /**
- * Create test server launchers for doctor testing
+ * Create test server launchers for compliance testing
  */
-export function createDoctorTestServers(): {
+export function createComplianceTestServers(): {
   compliant: TestServerLauncher;
   nonCompliant: TestServerLauncher;
   minimal: TestServerLauncher;

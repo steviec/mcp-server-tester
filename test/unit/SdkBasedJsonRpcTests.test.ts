@@ -7,13 +7,13 @@ import {
   SdkJsonRpcComplianceTest,
   SdkErrorResponseTest,
   SdkConnectionReliabilityTest,
-} from '../../src/testing/doctor/base-protocol/SdkBasedJsonRpcTests.js';
+} from '../../src/compliance/base-protocol/SdkBasedJsonRpcTests.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { TEST_SEVERITY, type DoctorConfig } from '../../src/testing/doctor/types.js';
+import { TEST_SEVERITY, type ComplianceConfig } from '../../src/compliance/types.js';
 
 describe('SDK-based JSON-RPC Tests', () => {
   let mockClient: any;
-  let mockConfig: DoctorConfig;
+  let mockConfig: ComplianceConfig;
 
   beforeEach(() => {
     mockClient = {

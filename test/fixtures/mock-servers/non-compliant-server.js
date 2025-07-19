@@ -3,8 +3,8 @@
 /* eslint-disable no-undef, no-unused-vars */
 
 /**
- * Non-compliant MCP server for doctor testing
- * Intentionally violates MCP spec to test doctor's detection capabilities
+ * Non-compliant MCP server for compliance testing
+ * Intentionally violates MCP spec to test compliance's detection capabilities
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
