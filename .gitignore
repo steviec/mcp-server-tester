@@ -2,3 +2,6 @@ node_modules/
 coverage/
 dist/
 .env.test
+
+# while we're swapping in different claude setups...
+.claude/

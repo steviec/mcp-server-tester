@@ -5,9 +5,9 @@
  */
 
 import { Command } from 'commander';
-import { TestRunner } from './testing/runner.js';
-import { DoctorRunner } from './testing/doctor/index.js';
-import { formatHierarchicalReport } from './testing/doctor/formatHierarchicalReport.js';
+import { TestRunner } from './verify/runner.js';
+import { ComplianceRunner } from './compliance/index.js';
+import { formatHierarchicalReport } from './compliance/formatHierarchicalReport.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -26,7 +26,7 @@ interface CliOptions {
   junitXml?: string;
 }
 
-interface DoctorOptions {
+interface ComplianceOptions {
   serverConfig: string;
   serverName?: string;
   categories?: string;
@@ -65,12 +65,12 @@ async function runTests(testFile: string, options: CliOptions): Promise<void> {
   }
 }
 
-async function runDoctor(options: DoctorOptions): Promise<void> {
+async function runCompliance(options: ComplianceOptions): Promise<void> {
   try {
-    console.log(`Running doctor diagnostics...`);
+    console.log(`Running compliance checks...`);
 
-    const doctorRunner = new DoctorRunner(options);
-    const report = await doctorRunner.runDiagnostics();
+    const complianceRunner = new ComplianceRunner(options);
+    const report = await complianceRunner.runDiagnostics();
 
     if (options.output === 'json') {
       console.log(JSON.stringify(report, null, 2));
@@ -100,9 +100,9 @@ async function main(): Promise<void> {
       'after',
       `
 Examples:
-  $ mcp-server-tester test test.yaml --server-config server.json
-  $ mcp-server-tester doctor --server-config server.json
-  $ mcp-server-tester test eval.yaml --server-config server.json --server-name filesystem`
+  $ mcp-server-tester verify test.yaml --server-config server.json
+  $ mcp-server-tester compliance --server-config server.json
+  $ mcp-server-tester verify eval.yaml --server-config server.json --server-name filesystem`
     )
     .action(options => {
       if (options.helpSchema) {
@@ -120,11 +120,11 @@ ${JSON.stringify(testConfigSchema, null, 2)}
       }
     });
 
-  // Test command
+  // Verify command (renamed from test)
   program
-    .command('test')
+    .command('verify')
     .description(
-      'Run tests against MCP servers (tools and/or evals). Use --help-schema to see test config schema.'
+      'Verify MCP server functionality (tools and/or evals). Use --help-schema to see test config schema.'
     )
     .argument('<test-file>', 'Test configuration file (YAML)')
     .requiredOption(
@@ -142,10 +142,10 @@ ${JSON.stringify(testConfigSchema, null, 2)}
       await runTests(testFile, options);
     });
 
-  // Doctor command
+  // Compliance command (renamed from compliance)
   program
-    .command('doctor')
-    .description('Run diagnostic tests for MCP server health')
+    .command('compliance')
+    .description('Run MCP protocol compliance checks')
     .requiredOption('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
       '--server-name <name>',
@@ -153,9 +153,9 @@ ${JSON.stringify(testConfigSchema, null, 2)}
     )
     .option('--categories <list>', 'Test categories to run (comma-separated)')
     .option('--output <format>', 'Output format: console, json', 'console')
-    .option('--timeout <ms>', 'Overall timeout for doctor tests', '300000')
-    .action(async (options: DoctorOptions) => {
-      await runDoctor(options);
+    .option('--timeout <ms>', 'Overall timeout for compliance tests', '300000')
+    .action(async (options: ComplianceOptions) => {
+      await runCompliance(options);
     });
 
   // Parse command line arguments

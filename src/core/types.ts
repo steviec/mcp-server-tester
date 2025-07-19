@@ -178,11 +178,11 @@ export interface EvalsConfig {
   tests: EvalTest[];
 }
 
-// Doctor types - re-export from doctor module
+// Compliance types - re-export from compliance module
 export type {
   DiagnosticResult,
   HealthReport,
-  DoctorConfig,
-  DoctorOptions,
+  ComplianceConfig,
+  ComplianceOptions,
   TestSeverity,
-} from '../testing/doctor/types.js';
+} from '../compliance/types.js';

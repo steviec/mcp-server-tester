@@ -3,7 +3,7 @@
  */
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
-import { EvalTestRunner } from '../../../src/testing/evals/runner.js';
+import { EvalTestRunner } from '../../../src/verify/evals/runner.js';
 import { ConfigLoader } from '../../../src/config/loader.js';
 import {
   TestServerLauncher,

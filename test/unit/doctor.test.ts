@@ -1,16 +1,16 @@
 /**
- * Unit tests for Doctor functionality
+ * Unit tests for Compliance functionality
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TestRegistry, registerDoctorTest } from '../../src/testing/doctor/TestRegistry.js';
-import { DiagnosticTest } from '../../src/testing/doctor/DiagnosticTest.js';
+import { TestRegistry, registerComplianceTest } from '../../src/compliance/TestRegistry.js';
+import { DiagnosticTest } from '../../src/compliance/DiagnosticTest.js';
 import {
   TEST_SEVERITY,
-  type DoctorConfig,
+  type ComplianceConfig,
   type DiagnosticResult,
-} from '../../src/testing/doctor/types.js';
-import { HealthReportGenerator } from '../../src/testing/doctor/HealthReport.js';
+} from '../../src/compliance/types.js';
+import { HealthReportGenerator } from '../../src/compliance/HealthReport.js';
 import type { McpClient } from '../../src/core/mcp-client.js';
 
 class MockDiagnosticTest extends DiagnosticTest {
@@ -19,12 +19,12 @@ class MockDiagnosticTest extends DiagnosticTest {
   readonly category = 'mock';
   readonly severity = TEST_SEVERITY.INFO;
 
-  async execute(_client: McpClient, _config: DoctorConfig): Promise<DiagnosticResult> {
+  async execute(_client: McpClient, _config: ComplianceConfig): Promise<DiagnosticResult> {
     return this.createResult(true, 'Mock test passed');
   }
 }
 
-describe('Doctor Framework', () => {
+describe('Compliance Framework', () => {
   beforeEach(() => {
     TestRegistry.clear();
   });
@@ -32,7 +32,7 @@ describe('Doctor Framework', () => {
   describe('TestRegistry', () => {
     it('should register and retrieve tests', () => {
       const mockTest = new MockDiagnosticTest();
-      registerDoctorTest(mockTest);
+      registerComplianceTest(mockTest);
 
       const allTests = TestRegistry.getAllTests();
       expect(allTests).toHaveLength(1);
@@ -41,7 +41,7 @@ describe('Doctor Framework', () => {
 
     it('should filter tests by category', () => {
       const mockTest = new MockDiagnosticTest();
-      registerDoctorTest(mockTest);
+      registerComplianceTest(mockTest);
 
       const mockTests = TestRegistry.getTestsByCategory('mock');
       expect(mockTests).toHaveLength(1);
@@ -53,7 +53,7 @@ describe('Doctor Framework', () => {
 
     it('should get available categories', () => {
       const mockTest = new MockDiagnosticTest();
-      registerDoctorTest(mockTest);
+      registerComplianceTest(mockTest);
 
       const categories = TestRegistry.getAvailableCategories();
       expect(categories).toContain('mock');

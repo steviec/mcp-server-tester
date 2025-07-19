@@ -1,23 +1,23 @@
 /**
- * E2E tests for doctor functionality against minimal MCP server
+ * E2E tests for compliance functionality against minimal MCP server
  */
 
 import { describe, test, expect } from 'vitest';
-import { DoctorRunner } from '../../../src/testing/doctor/index.js';
+import { ComplianceRunner } from '../../../src/compliance/index.js';
 import { getTestServerConfigPath } from '../server-launcher.js';
 
-describe('Doctor Tests - Test Server Minimal Analysis', () => {
+describe('Compliance Tests - Test Server Minimal Analysis', () => {
   const configPath = getTestServerConfigPath();
 
   test('should analyze test server with focus on basic implementation', async () => {
-    const doctorRunner = new DoctorRunner({
+    const complianceRunner = new ComplianceRunner({
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
       categories: 'base-protocol',
     });
 
-    const report = await doctorRunner.runDiagnostics();
+    const report = await complianceRunner.runDiagnostics();
 
     // Validate basic report structure
     expect(report).toBeDefined();
@@ -30,14 +30,14 @@ describe('Doctor Tests - Test Server Minimal Analysis', () => {
   }, 45000);
 
   test('should detect lifecycle behavior correctly', async () => {
-    const doctorRunner = new DoctorRunner({
+    const complianceRunner = new ComplianceRunner({
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
       categories: 'lifecycle',
     });
 
-    const report = await doctorRunner.runDiagnostics();
+    const report = await complianceRunner.runDiagnostics();
 
     // Test server should handle basic lifecycle correctly
     const lifecycleTests = report.results.filter(result =>
@@ -51,14 +51,14 @@ describe('Doctor Tests - Test Server Minimal Analysis', () => {
   }, 30000);
 
   test('should validate specific test server features', async () => {
-    const doctorRunner = new DoctorRunner({
+    const complianceRunner = new ComplianceRunner({
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
       categories: 'server-features',
     });
 
-    const report = await doctorRunner.runDiagnostics();
+    const report = await complianceRunner.runDiagnostics();
 
     // Test server implements tools capability
     const toolsTests = report.results.filter(result =>
@@ -75,13 +75,13 @@ describe('Doctor Tests - Test Server Minimal Analysis', () => {
   }, 30000);
 
   test('should demonstrate comprehensive testing approach', async () => {
-    const doctorRunner = new DoctorRunner({
+    const complianceRunner = new ComplianceRunner({
       serverConfig: configPath,
       serverName: 'test-server',
       timeout: '30000',
     });
 
-    const report = await doctorRunner.runDiagnostics();
+    const report = await complianceRunner.runDiagnostics();
 
     // Should generate comprehensive analysis across all categories
     expect(report).toBeDefined();

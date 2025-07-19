@@ -78,9 +78,9 @@ export class CliRunner {
   }
 
   /**
-   * Helper to run unified test command
+   * Helper to run verify command (renamed from test)
    */
-  async test(
+  async verify(
     testFile: string,
     serverConfig: string,
     options: {
@@ -88,7 +88,7 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    const args = ['test', testFile, '--server-config', serverConfig];
+    const args = ['verify', testFile, '--server-config', serverConfig];
 
     if (options.serverName) {
       args.push('--server-name', options.serverName);
@@ -104,6 +104,20 @@ export class CliRunner {
   /**
    * Legacy helper for backward compatibility
    */
+  async test(
+    testFile: string,
+    serverConfig: string,
+    options: {
+      serverName?: string;
+      timeout?: number;
+    } = {}
+  ): Promise<CliResult> {
+    return this.verify(testFile, serverConfig, options);
+  }
+
+  /**
+   * Legacy helper for backward compatibility
+   */
   async integration(
     testFile: string,
     serverConfig: string,
@@ -112,7 +126,7 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    return this.test(testFile, serverConfig, options);
+    return this.verify(testFile, serverConfig, options);
   }
 
   /**
@@ -126,7 +140,40 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    return this.test(testFile, serverConfig, options);
+    return this.verify(testFile, serverConfig, options);
+  }
+
+  /**
+   * Helper to run compliance command
+   */
+  async compliance(
+    serverConfig: string,
+    options: {
+      serverName?: string;
+      timeout?: number;
+      categories?: string;
+      output?: string;
+    } = {}
+  ): Promise<CliResult> {
+    const args = ['compliance', '--server-config', serverConfig];
+
+    if (options.serverName) {
+      args.push('--server-name', options.serverName);
+    }
+
+    if (options.timeout) {
+      args.push('--timeout', options.timeout.toString());
+    }
+
+    if (options.categories) {
+      args.push('--categories', options.categories);
+    }
+
+    if (options.output) {
+      args.push('--output', options.output);
+    }
+
+    return this.run(args);
   }
 
   /**

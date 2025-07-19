@@ -3,8 +3,8 @@
 /* eslint-disable no-undef, no-case-declarations */
 
 /**
- * Compliant MCP server for doctor testing
- * Implements MCP spec correctly for validating doctor behavior
+ * Compliant MCP server for compliance testing
+ * Implements MCP spec correctly for validating compliance behavior
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';

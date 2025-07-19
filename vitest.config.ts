@@ -16,7 +16,7 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       exclude: [
         'src/**/*.d.ts',
-        'src/testing/evals/providers/**', // Skip LLM providers
+        'src/verify/evals/providers/**', // Skip LLM providers
       ],
     },
 
