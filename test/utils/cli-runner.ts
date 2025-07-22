@@ -78,9 +78,9 @@ export class CliRunner {
   }
 
   /**
-   * Helper to run verify command (renamed from test)
+   * Helper to run tools command
    */
-  async verify(
+  async tools(
     testFile: string,
     serverConfig: string,
     options: {
@@ -88,7 +88,7 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    const args = ['verify', testFile, '--server-config', serverConfig];
+    const args = ['tools', testFile, '--server-config', serverConfig];
 
     if (options.serverName) {
       args.push('--server-name', options.serverName);
@@ -112,7 +112,7 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    return this.verify(testFile, serverConfig, options);
+    return this.tools(testFile, serverConfig, options);
   }
 
   /**
@@ -126,11 +126,11 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    return this.verify(testFile, serverConfig, options);
+    return this.tools(testFile, serverConfig, options);
   }
 
   /**
-   * Legacy helper for backward compatibility
+   * Helper to run evals command
    */
   async evals(
     testFile: string,
@@ -140,7 +140,17 @@ export class CliRunner {
       timeout?: number;
     } = {}
   ): Promise<CliResult> {
-    return this.verify(testFile, serverConfig, options);
+    const args = ['evals', testFile, '--server-config', serverConfig];
+
+    if (options.serverName) {
+      args.push('--server-name', options.serverName);
+    }
+
+    if (options.timeout) {
+      args.push('--timeout', options.timeout.toString());
+    }
+
+    return this.run(args);
   }
 
   /**

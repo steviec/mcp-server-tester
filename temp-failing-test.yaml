@@ -1,0 +1,28 @@
+# Temporary test file to show failure output
+expected_tool_list: ['echo', 'add', 'nonexistent']
+
+tests:
+  - name: 'Test that should pass'
+    tool: 'echo'
+    params:
+      message: 'Hello'
+    expect:
+      success: true
+      result:
+        contains: 'Echo: Hello'
+
+  - name: 'Test that should fail - wrong expected result'
+    tool: 'add'
+    params:
+      a: 2
+      b: 3
+    expect:
+      success: true
+      result:
+        contains: '2 + 3 = 999' # Wrong expected result
+
+  - name: 'Test that should fail - expects success but tool fails'
+    tool: 'echo'
+    params: {} # Missing required param
+    expect:
+      success: true # This should fail since params are missing

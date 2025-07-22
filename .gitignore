@@ -5,3 +5,4 @@ dist/
 
 # while we're swapping in different claude setups...
 .claude/
+.claude

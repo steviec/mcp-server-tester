@@ -2,14 +2,14 @@
   "mcpServers": {
     "test-server": {
       "command": "node",
-      "args": ["examples/test-server.js"],
+      "args": ["test/fixtures/mock-servers/test-mcp-server.js"],
       "env": {
         "NODE_ENV": "test"
       }
     },
     "other-server": {
       "command": "node",
-      "args": ["examples/test-server.js"],
+      "args": ["test/fixtures/mock-servers/test-mcp-server.js"],
       "env": {
         "NODE_ENV": "test"
       }

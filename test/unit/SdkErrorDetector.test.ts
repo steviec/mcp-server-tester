@@ -3,9 +3,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SdkErrorDetector, type SdkErrorTest } from '../../src/compliance/SdkErrorDetector.js';
+import {
+  SdkErrorDetector,
+  type SdkErrorTest,
+} from '../../src/commands/compliance/SdkErrorDetector.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { TEST_SEVERITY, type ComplianceConfig } from '../../src/compliance/types.js';
+import { TEST_SEVERITY, type ComplianceConfig } from '../../src/commands/compliance/types.js';
 
 describe('SdkErrorDetector', () => {
   let mockClient: any;

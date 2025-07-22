@@ -3,15 +3,18 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TestRegistry, registerComplianceTest } from '../../src/compliance/TestRegistry.js';
-import { DiagnosticTest } from '../../src/compliance/DiagnosticTest.js';
+import {
+  TestRegistry,
+  registerComplianceTest,
+} from '../../src/commands/compliance/TestRegistry.js';
+import { DiagnosticTest } from '../../src/commands/compliance/DiagnosticTest.js';
 import {
   TEST_SEVERITY,
   type ComplianceConfig,
   type DiagnosticResult,
-} from '../../src/compliance/types.js';
-import { HealthReportGenerator } from '../../src/compliance/HealthReport.js';
-import type { McpClient } from '../../src/core/mcp-client.js';
+} from '../../src/commands/compliance/types.js';
+import { HealthReportGenerator } from '../../src/commands/compliance/HealthReport.js';
+import type { McpClient } from '../../src/shared/core/mcp-client.js';
 
 class MockDiagnosticTest extends DiagnosticTest {
   readonly name = 'Mock: Test';

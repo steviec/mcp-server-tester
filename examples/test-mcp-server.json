@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "test-server": {
+      "command": "node",
+      "args": ["examples/test-mcp-server.js"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

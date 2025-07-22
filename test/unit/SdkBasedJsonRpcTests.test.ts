@@ -7,9 +7,9 @@ import {
   SdkJsonRpcComplianceTest,
   SdkErrorResponseTest,
   SdkConnectionReliabilityTest,
-} from '../../src/compliance/base-protocol/SdkBasedJsonRpcTests.js';
+} from '../../src/commands/compliance/base-protocol/SdkBasedJsonRpcTests.js';
 import { McpError, ErrorCode } from '@modelcontextprotocol/sdk/types.js';
-import { TEST_SEVERITY, type ComplianceConfig } from '../../src/compliance/types.js';
+import { TEST_SEVERITY, type ComplianceConfig } from '../../src/commands/compliance/types.js';
 
 describe('SDK-based JSON-RPC Tests', () => {
   let mockClient: any;

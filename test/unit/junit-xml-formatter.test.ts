@@ -3,9 +3,9 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import { JunitXmlFormatter } from '../../src/verify/display/formatters/JunitXmlFormatter.js';
-import { validateJunitXmlContent } from '../../src/verify/display/formatters/junit-validation.js';
-import type { TestEvent, DisplayOptions } from '../../src/verify/display/types.js';
+import { JunitXmlFormatter } from '../../src/shared/display/formatters/JunitXmlFormatter.js';
+import { validateJunitXmlContent } from '../../src/shared/display/formatters/junit-validation.js';
+import type { TestEvent, DisplayOptions } from '../../src/shared/display/types.js';
 import { readFileSync, unlinkSync, existsSync } from 'fs';
 import path from 'path';
 import { tmpdir } from 'os';

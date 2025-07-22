@@ -3,7 +3,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import { EvalTestRunner } from '../../src/verify/evals/runner.js';
+import { EvalTestRunner } from '../../src/commands/evals/runner.js';
 
 describe('Tool Call Validation', () => {
   test('should allow required tools even when not explicitly in allowed list', () => {

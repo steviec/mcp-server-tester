@@ -1,0 +1,108 @@
+# Advanced Tools Testing Examples
+# Error handling, edge cases, and complex validation patterns
+
+# Tool Discovery - Strict validation
+expected_tool_list: ['echo', 'add']
+
+tests:
+  # Pattern 1: Error Handling - Nonexistent Tool
+  - name: 'Nonexistent tool returns proper error'
+    tool: 'nonexistent_tool'
+    params:
+      test: 'value'
+    expect:
+      success: false
+      error:
+        contains: 'Unknown tool'
+
+  # Pattern 2: Error Handling - Missing Required Parameters
+  - name: 'Echo with missing message parameter'
+    tool: 'echo'
+    params: {} # No message parameter
+    expect:
+      success: false
+      error:
+        contains: 'Missing required parameter'
+
+  # Pattern 3: Error Handling - Missing Required Parameters
+  - name: 'Add with missing parameters'
+    tool: 'add'
+    params:
+      a: 5 # Missing 'b' parameter
+    expect:
+      success: false
+      error:
+        contains: 'Missing required parameter'
+
+  # Pattern 4: Edge Cases - Boundary Values
+  - name: 'Add with zero values'
+    tool: 'add'
+    params:
+      a: 0
+      b: 0
+    expect:
+      success: true
+      result:
+        contains: '0 + 0 = 0'
+
+  # Pattern 5: Edge Cases - Negative Numbers
+  - name: 'Add with negative numbers'
+    tool: 'add'
+    params:
+      a: -5
+      b: 3
+    expect:
+      success: true
+      result:
+        contains: '-5 + 3 = -2'
+
+  # Pattern 6: Complex Multi-Step with Error Recovery
+  - name: 'Workflow with error handling'
+    calls:
+      # First call should succeed
+      - tool: 'echo'
+        params:
+          message: 'Starting complex workflow'
+        expect:
+          success: true
+
+      # Second call should fail (testing error handling)
+      - tool: 'add'
+        params:
+          a: 10 # Missing 'b' parameter
+        expect:
+          success: false
+          error:
+            contains: 'parameter'
+
+      # Third call should succeed (recovery)
+      - tool: 'add'
+        params:
+          a: 10
+          b: 20
+        expect:
+          success: true
+          result:
+            contains: '30'
+
+  # Pattern 7: Result Validation - Contains Match
+  - name: 'Precise result validation'
+    tool: 'add'
+    params:
+      a: 1
+      b: 1
+    expect:
+      success: true
+      result:
+        contains: '1 + 1 = 2'
+
+  # Pattern 8: Large Values Testing
+  - name: 'Add with large numbers'
+    tool: 'add'
+    params:
+      a: 999999
+      b: 1
+    expect:
+      success: true
+      result:
+        contains: '999999 + 1 = 1000000'

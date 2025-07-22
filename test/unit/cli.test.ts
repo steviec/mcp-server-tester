@@ -26,14 +26,15 @@ describe('MCP Tester CLI', () => {
 
       expect(result.exitCode).toBe(0);
       expect(result.stdout).toContain('Standalone CLI tool for testing MCP servers');
-      expect(result.stdout).toContain('verify [options] <test-file>');
+      expect(result.stdout).toContain('tools [options] [test-file]');
+      expect(result.stdout).toContain('evals [options] [test-file]');
       expect(result.stdout).toContain('compliance [options]');
     });
   });
 
   describe('Unified Command', () => {
     test('should fail when server-config is missing', async () => {
-      const result = await cli.run(['verify', validIntegrationTest]);
+      const result = await cli.run(['tools', validIntegrationTest]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('required option');
@@ -63,7 +64,7 @@ describe('MCP Tester CLI', () => {
       // Allow for either success or controlled failure (test server may not be running)
       // The important thing is that the CLI processed arguments correctly
       expect(result.exitCode).toBeGreaterThanOrEqual(0);
-      expect(result.stdout).toContain('Running tests from:');
+      expect(result.stdout).toContain('Running tools tests from:');
 
       // If it failed, it should be due to server connection, not argument parsing
       if (result.exitCode !== 0) {
@@ -87,13 +88,13 @@ describe('MCP Tester CLI', () => {
 
       // Should not fail due to server selection
       expect(result.stderr).not.toContain('Multiple servers found');
-      expect(result.stdout).toContain('Running tests from:');
+      expect(result.stdout).toContain('Running tools tests from:');
     });
   });
 
   describe('Unified Command - LLM Evaluations (evals)', () => {
     test('should fail when server-config is missing', async () => {
-      const result = await cli.run(['verify', validEvalTest]);
+      const result = await cli.run(['evals', validEvalTest]);
 
       expect(result.exitCode).toBe(1);
       expect(result.stderr).toContain('required option');
@@ -101,21 +102,22 @@ describe('MCP Tester CLI', () => {
     });
 
     test('should fail when test file does not exist', async () => {
-      const result = await cli.test('nonexistent.yaml', testServerConfig);
+      const result = await cli.evals('nonexistent.yaml', testServerConfig);
 
       expect(result.exitCode).toBe(1);
-      expect(result.stderr).toContain('not found');
+      // Evals command checks for API key first, so we expect API key error
+      expect(result.stderr).toContain('ANTHROPIC_API_KEY');
     });
 
     test('should process arguments correctly (may fail on execution)', async () => {
-      const result = await cli.test(validEvalTest, testServerConfig, {
+      const result = await cli.evals(validEvalTest, testServerConfig, {
         serverName: 'test-server',
         timeout: 8000,
       });
 
       // Allow for execution failure (no API key, server not running, etc.)
       // The important thing is argument parsing worked
-      expect(result.stdout).toContain('Running tests from:');
+      expect(result.stdout).toContain('Running LLM evaluation tests from:');
 
       if (result.exitCode !== 0) {
         // Should fail on execution, not argument parsing
@@ -125,11 +127,11 @@ describe('MCP Tester CLI', () => {
     }, 15000);
 
     test('should handle basic eval arguments', async () => {
-      const result = await cli.test(validEvalTest, testServerConfig, {
+      const result = await cli.evals(validEvalTest, testServerConfig, {
         serverName: 'test-server',
       });
 
-      expect(result.stdout).toContain('Running tests from:');
+      expect(result.stdout).toContain('Running LLM evaluation tests from:');
       // Should not fail due to argument parsing
       expect(result.stderr).not.toContain('required option');
     });
@@ -138,7 +140,7 @@ describe('MCP Tester CLI', () => {
   describe('Error Handling', () => {
     test('should show error for nonexistent file', async () => {
       const result = await cli.run([
-        'verify',
+        'tools',
         'unknown-file.yaml',
         '--server-config',
         testServerConfig,

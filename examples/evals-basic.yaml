@@ -1,0 +1,60 @@
+# Basic LLM Evaluation Examples
+# Learn how to test that LLMs can discover and use your tools effectively
+
+# LLM Configuration
+models: ['claude-3-5-haiku-latest']
+timeout: 30000 # 30 seconds per test
+max_steps: 3 # Maximum LLM reasoning steps
+
+tests:
+  # Pattern 1: Tool Discovery Test
+  # Verify LLM can list available tools without calling them
+  - name: 'LLM discovers available tools'
+    prompt: 'Please list all available tools and capabilities you have access to. Do not call any tools, just describe what tools are available.'
+    expected_tool_calls:
+      allowed: [] # No tool calls should be made
+    response_scorers:
+      - type: 'regex'
+        pattern: '(echo|add|tool|function)' # Should mention the tools
+      - type: 'llm-judge'
+        criteria: 'Did the assistant correctly list the available tools (echo and add) without calling any tools?'
+        threshold: 0.8
+
+  # Pattern 2: Basic Tool Usage
+  # Test LLM can call a simple tool correctly
+  - name: 'LLM uses echo tool correctly'
+    prompt: 'Please echo the message "Hello from LLM test"'
+    expected_tool_calls:
+      required: ['echo'] # Must call echo tool
+    response_scorers:
+      - type: 'regex'
+        pattern: 'Hello from LLM test' # Should contain the echoed message
+      - type: 'llm-judge'
+        criteria: 'Did the assistant successfully call the echo tool with the correct message?'
+        threshold: 0.8
+
+  # Pattern 3: Simple Calculation
+  # Test LLM can perform basic math operations
+  - name: 'LLM performs addition'
+    prompt: 'Add the numbers 12 and 8 together using the available tools'
+    expected_tool_calls:
+      required: ['add'] # Must use the add tool
+    response_scorers:
+      - type: 'regex'
+        pattern: '(20|twelve|eight)' # Should mention the result or inputs
+      - type: 'llm-judge'
+        criteria: 'Did the assistant correctly use the add tool to calculate 12 + 8 = 20?'
+        threshold: 0.8
+
+  # Pattern 4: Sequential Tool Usage
+  # Test LLM can use multiple tools in sequence
+  - name: 'LLM uses multiple tools in sequence'
+    prompt: 'First echo "Starting calculation", then add 5 + 3, then echo "Calculation complete"'
+    expected_tool_calls:
+      required: ['echo', 'add'] # Must use both tools
+    response_scorers:
+      - type: 'regex'
+        pattern: '(Starting calculation|Calculation complete|5.*3.*8)'
+      - type: 'llm-judge'
+        criteria: 'Did the assistant follow the sequence correctly: echo start message, perform addition, echo completion message?'
+        threshold: 0.7

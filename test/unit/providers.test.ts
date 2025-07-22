@@ -4,12 +4,12 @@
  */
 
 import { describe, beforeAll, afterAll, test, expect } from 'vitest';
-import { AnthropicProvider } from '../../src/verify/evals/providers/anthropic-provider.js';
+import { AnthropicProvider } from '../../src/commands/evals/providers/anthropic-provider.js';
 import {
   McpClient,
   createServerConfigFromCli,
   createTransportOptions,
-} from '../../src/core/mcp-client.js';
+} from '../../src/shared/core/mcp-client.js';
 import { createTestServerLauncher, type TestServerLauncher } from '../e2e/server-launcher.js';
 
 const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
@@ -32,7 +32,10 @@ describe('LLM Provider Unit Tests', () => {
 
     // Create MCP client and connect to server
     mcpClient = new McpClient();
-    const serverConfig = createServerConfigFromCli('node', 'examples/test-server.js');
+    const serverConfig = createServerConfigFromCli(
+      'node',
+      'test/fixtures/mock-servers/test-mcp-server.js'
+    );
     const transportOptions = createTransportOptions(serverConfig);
     await mcpClient.connect(transportOptions);
 

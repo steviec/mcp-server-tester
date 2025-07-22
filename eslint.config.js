@@ -44,6 +44,21 @@ export default [
     },
   },
   {
+    files: ['**/*.js', '**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        ...globals.es2022,
+      },
+    },
+    rules: {
+      'no-console': 'off',
+      'no-case-declarations': 'error',
+    },
+  },
+  {
     files: ['**/*.test.ts', '**/*.spec.ts', 'test/**/*.ts'],
     languageOptions: {
       globals: {

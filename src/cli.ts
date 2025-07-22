@@ -5,13 +5,19 @@
  */
 
 import { Command } from 'commander';
-import { TestRunner } from './verify/runner.js';
-import { ComplianceRunner } from './compliance/index.js';
-import { formatHierarchicalReport } from './compliance/formatHierarchicalReport.js';
+import { CapabilitiesTestRunner } from './commands/tools/runner.js';
+import { EvalTestRunner } from './commands/evals/runner.js';
+import { ComplianceRunner } from './commands/compliance/index.js';
+import { formatHierarchicalReport } from './commands/compliance/formatHierarchicalReport.js';
+import { ConfigLoader } from './shared/config/loader.js';
+import { DisplayManager } from './shared/display/DisplayManager.js';
+import type { DisplayOptions } from './shared/display/types.js';
+import type { TestResult, TestSummary } from './shared/core/types.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import testConfigSchema from './schemas/test-config.json' with { type: 'json' };
+import toolsConfigSchema from './schemas/tools-config.json' with { type: 'json' };
+import evalsConfigSchema from './schemas/evals-config.json' with { type: 'json' };
 import serverConfigSchema from './schemas/server-config.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,12 +55,125 @@ function handleError(error: unknown): never {
   process.exit(1);
 }
 
-async function runTests(testFile: string, options: CliOptions): Promise<void> {
+function getVersion(): string {
   try {
-    console.log(`Running tests from: ${testFile}`);
+    return packageJson.version;
+  } catch {
+    return '1.0.7'; // fallback version
+  }
+}
 
-    const runner = new TestRunner(testFile, options);
-    const summary = await runner.run();
+async function runToolsTests(testFile: string, options: CliOptions): Promise<void> {
+  try {
+    console.log(`Running tools tests from: ${testFile}`);
+
+    // Load and validate tools config
+    const toolsConfig = ConfigLoader.loadToolsConfig(testFile);
+
+    // Load server config
+    const serverConfig = ConfigLoader.loadServerConfig(options.serverConfig, options.serverName);
+
+    // Setup display manager
+    const displayOptions: DisplayOptions = {
+      formatter: 'console',
+      debug: options.debug,
+      junitXml: options.junitXml,
+      version: getVersion(),
+    };
+    const displayManager = new DisplayManager(displayOptions);
+
+    // Initialize display
+    displayManager.suiteStart(0);
+
+    // Run tools tests
+    const toolsRunner = new CapabilitiesTestRunner(
+      toolsConfig,
+      {
+        serverConfig,
+        timeout: options.timeout,
+        debug: options.debug,
+      },
+      displayManager
+    );
+
+    const result = await toolsRunner.run();
+
+    // Emit suite complete event
+    displayManager.suiteComplete(result.total, result.passed, result.failed, result.duration);
+    displayManager.flush();
+
+    // Exit with error code if any tests failed
+    if (result.failed > 0) {
+      process.exit(1);
+    }
+  } catch (error) {
+    handleError(error);
+  }
+}
+
+async function runEvalsTests(testFile: string, options: CliOptions): Promise<void> {
+  try {
+    console.log(`Running LLM evaluation tests from: ${testFile}`);
+
+    // Check for API key
+    if (!process.env.ANTHROPIC_API_KEY) {
+      throw new Error(
+        'ANTHROPIC_API_KEY environment variable is required for eval tests. ' +
+          'Set your Anthropic API key: export ANTHROPIC_API_KEY="your-key-here"'
+      );
+    }
+
+    // Load and validate evals config
+    const evalsConfig = ConfigLoader.loadEvalsConfig(testFile);
+
+    // Load server config
+    const serverConfig = ConfigLoader.loadServerConfig(options.serverConfig, options.serverName);
+
+    // Setup display manager
+    const displayOptions: DisplayOptions = {
+      formatter: 'console',
+      debug: options.debug,
+      junitXml: options.junitXml,
+      version: getVersion(),
+    };
+    const displayManager = new DisplayManager(displayOptions);
+
+    // Initialize display
+    displayManager.suiteStart(0);
+
+    // Run evals tests
+    const evalsRunner = new EvalTestRunner(
+      evalsConfig,
+      {
+        serverConfig,
+        timeout: options.timeout,
+        debug: options.debug,
+      },
+      displayManager
+    );
+
+    const evalResult = await evalsRunner.run();
+
+    // Convert eval results to test results format for consistent display
+    const convertedResults: TestResult[] = evalResult.results.map(evalRes => ({
+      name: `${evalRes.name} (${evalRes.model})`,
+      passed: evalRes.passed,
+      errors: evalRes.errors,
+      calls: [], // Evals don't have tool calls in the same format
+      duration: 0, // Individual test duration not tracked in evals
+    }));
+
+    const summary: TestSummary = {
+      total: convertedResults.length,
+      passed: convertedResults.filter(r => r.passed).length,
+      failed: convertedResults.filter(r => !r.passed).length,
+      duration: evalResult.duration,
+      results: convertedResults,
+    };
+
+    // Emit suite complete event
+    displayManager.suiteComplete(summary.total, summary.passed, summary.failed, summary.duration);
+    displayManager.flush();
 
     // Exit with error code if any tests failed
     if (summary.failed > 0) {
@@ -95,42 +214,24 @@ async function main(): Promise<void> {
     .description('Standalone CLI tool for testing MCP servers')
     .version(packageJson.version, '--version')
     .helpOption('--help', 'Show help for command')
-    .option('--help-schema', 'Show schemas for server config and test config files')
     .addHelpText(
       'after',
       `
 Examples:
-  $ mcp-server-tester verify test.yaml --server-config server.json
+  $ mcp-server-tester tools test.yaml --server-config server.json
+  $ mcp-server-tester evals eval.yaml --server-config server.json
   $ mcp-server-tester compliance --server-config server.json
-  $ mcp-server-tester verify eval.yaml --server-config server.json --server-name filesystem`
-    )
-    .action(options => {
-      if (options.helpSchema) {
-        console.log('Server Configuration Schema:');
-        console.log(`
-${JSON.stringify(serverConfigSchema, null, 2)}
-`);
-        console.log('Test Configuration Schema:');
-        console.log(`
-${JSON.stringify(testConfigSchema, null, 2)}
-`);
-        process.exit(0);
-      } else {
-        program.help();
-      }
-    });
+  $ mcp-server-tester tools test.yaml --server-config server.json --server-name filesystem`
+    );
 
-  // Verify command (renamed from test)
+  // Tools command
   program
-    .command('verify')
+    .command('tools')
     .description(
-      'Verify MCP server functionality (tools and/or evals). Use --help-schema to see test config schema.'
+      'Run MCP server tools tests (direct API testing). Use --help-schema to see schemas.'
     )
-    .argument('<test-file>', 'Test configuration file (YAML)')
-    .requiredOption(
-      '--server-config <file>',
-      'MCP server configuration file (JSON). Use --help-schema to see server config schema.'
-    )
+    .argument('[test-file]', 'Test configuration file (YAML) with "tools" section')
+    .option('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
       '--server-name <name>',
       'Specific server name to use from config (if multiple servers defined)'
@@ -138,9 +239,78 @@ ${JSON.stringify(testConfigSchema, null, 2)}
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--debug', 'Enable debug output with additional details')
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
-    .action(async (testFile: string, options: CliOptions) => {
-      await runTests(testFile, options);
-    });
+    .option('--help-schema', 'Show JSON schemas for tools test config and server config')
+    .action(
+      async (testFile: string | undefined, options: CliOptions & { helpSchema?: boolean }) => {
+        if (options.helpSchema) {
+          console.log('Tools Test Configuration Schema:');
+          console.log(`
+${JSON.stringify(toolsConfigSchema, null, 2)}
+`);
+          console.log('Server Configuration Schema:');
+          console.log(`
+${JSON.stringify(serverConfigSchema, null, 2)}
+`);
+          process.exit(0);
+        }
+
+        // Validate required arguments if not showing schema
+        if (!testFile) {
+          console.error("error: missing required argument 'test-file'");
+          process.exit(1);
+        }
+        if (!options.serverConfig) {
+          console.error("error: required option '--server-config <file>' not specified");
+          process.exit(1);
+        }
+
+        await runToolsTests(testFile, options);
+      }
+    );
+
+  // Evals command
+  program
+    .command('evals')
+    .description(
+      'Run LLM evaluation tests (end-to-end testing with real LLMs). Requires ANTHROPIC_API_KEY.'
+    )
+    .argument('[test-file]', 'Test configuration file (YAML) with "evals" section')
+    .option('--server-config <file>', 'MCP server configuration file (JSON)')
+    .option(
+      '--server-name <name>',
+      'Specific server name to use from config (if multiple servers defined)'
+    )
+    .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
+    .option('--debug', 'Enable debug output with additional details')
+    .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
+    .option('--help-schema', 'Show JSON schemas for evals test config and server config')
+    .action(
+      async (testFile: string | undefined, options: CliOptions & { helpSchema?: boolean }) => {
+        if (options.helpSchema) {
+          console.log('Evals Test Configuration Schema:');
+          console.log(`
+${JSON.stringify(evalsConfigSchema, null, 2)}
+`);
+          console.log('Server Configuration Schema:');
+          console.log(`
+${JSON.stringify(serverConfigSchema, null, 2)}
+`);
+          process.exit(0);
+        }
+
+        // Validate required arguments if not showing schema
+        if (!testFile) {
+          console.error("error: missing required argument 'test-file'");
+          process.exit(1);
+        }
+        if (!options.serverConfig) {
+          console.error("error: required option '--server-config <file>' not specified");
+          process.exit(1);
+        }
+
+        await runEvalsTests(testFile, options);
+      }
+    );
 
   // Compliance command (renamed from compliance)
   program

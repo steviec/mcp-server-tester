@@ -109,14 +109,14 @@ export class TestServerLauncher {
  * Get the path to the test server
  */
 export function getTestServerPath(): string {
-  return path.resolve(process.cwd(), 'examples/test-server.js');
+  return path.resolve(process.cwd(), 'test/fixtures/mock-servers/test-mcp-server.js');
 }
 
 /**
  * Get the path to the test server config
  */
 export function getTestServerConfigPath(): string {
-  return path.resolve(process.cwd(), 'examples/server-config.json');
+  return path.resolve(process.cwd(), 'test/fixtures/test-server-config.json');
 }
 
 /**

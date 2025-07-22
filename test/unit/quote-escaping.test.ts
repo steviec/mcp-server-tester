@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AnthropicProvider } from '../../src/verify/evals/providers/anthropic-provider.js';
+import { AnthropicProvider } from '../../src/commands/evals/providers/anthropic-provider.js';
 import type { CoreMessage } from 'ai';
 
 describe('LLM Judge Quote Escaping', () => {
