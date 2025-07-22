@@ -6,19 +6,11 @@ import fs from 'fs';
 import path from 'path';
 import YAML from 'yaml';
 import Ajv, { type ErrorObject } from 'ajv';
-import type {
-  TestConfig,
-  McpServersConfig,
-  ServerConfig,
-  ToolsConfig,
-  EvalsConfig,
-} from '../core/types.js';
+import type { TestConfig, McpServersConfig, ServerConfig } from '../core/types.js';
 
 // Import JSON schemas
-import testConfigSchema from '../../schemas/test-config.json' with { type: 'json' };
-import toolsConfigSchema from '../../schemas/tools-config.json' with { type: 'json' };
-import evalsConfigSchema from '../../schemas/evals-config.json' with { type: 'json' };
-import serverConfigSchema from '../../schemas/server-config.json' with { type: 'json' };
+import testConfigSchema from '../../schemas/tests-schema.json' with { type: 'json' };
+import serverConfigSchema from '../../schemas/server-config-schema.json' with { type: 'json' };
 
 export class ConfigLoader {
   private static ajv = new Ajv.default({ allErrors: true, verbose: true });
@@ -28,7 +20,10 @@ export class ConfigLoader {
    */
   static loadTestConfig(filePath: string): TestConfig {
     const resolvedPath = this.resolvePath(filePath);
-    const content = this.readFile(resolvedPath);
+    let content = this.readFile(resolvedPath);
+
+    // Replace environment variables in the raw content before parsing
+    content = this.replaceEnvironmentVariables(content);
 
     let config: unknown;
     try {
@@ -49,68 +44,6 @@ export class ConfigLoader {
       resolvedPath,
       'Test configuration'
     ) as TestConfig;
-  }
-
-  /**
-   * Load tools configuration from YAML file
-   */
-  static loadToolsConfig(filePath: string): ToolsConfig {
-    const resolvedPath = this.resolvePath(filePath);
-    let content = this.readFile(resolvedPath);
-
-    // Replace environment variables in the raw content before parsing
-    content = this.replaceEnvironmentVariables(content);
-
-    let config: unknown;
-    try {
-      if (this.isYamlFile(resolvedPath)) {
-        config = YAML.parse(content);
-      } else {
-        config = JSON.parse(content);
-      }
-    } catch (error) {
-      throw new Error(
-        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-
-    return this.validateWithSchema(
-      config,
-      toolsConfigSchema,
-      resolvedPath,
-      'Tools configuration'
-    ) as ToolsConfig;
-  }
-
-  /**
-   * Load evals configuration from YAML file
-   */
-  static loadEvalsConfig(filePath: string): EvalsConfig {
-    const resolvedPath = this.resolvePath(filePath);
-    let content = this.readFile(resolvedPath);
-
-    // Replace environment variables in the raw content before parsing
-    content = this.replaceEnvironmentVariables(content);
-
-    let config: unknown;
-    try {
-      if (this.isYamlFile(resolvedPath)) {
-        config = YAML.parse(content);
-      } else {
-        config = JSON.parse(content);
-      }
-    } catch (error) {
-      throw new Error(
-        `Invalid configuration format in ${resolvedPath}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-
-    return this.validateWithSchema(
-      config,
-      evalsConfigSchema,
-      resolvedPath,
-      'Evals configuration'
-    ) as EvalsConfig;
   }
 
   /**
@@ -211,7 +144,7 @@ export class ConfigLoader {
 
   // matches ${VAR_NAME} and replaces them with the corresponding environment variable value
   private static replaceEnvironmentVariables(content: string): string {
-    return content.replace(this.ENV_VAR_PATTERN, (match, varName) => {
+    return content.replace(this.ENV_VAR_PATTERN, (_, varName) => {
       const envValue = process.env[varName];
       if (envValue === undefined) {
         throw new Error(

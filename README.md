@@ -69,7 +69,7 @@ Results: 3/5 tests passed
 
 _Note: Requires `ANTHROPIC_API_KEY` environment variable._
 
-### `compliance` - MCP Specification Compliance Testing
+### `compliance` - MCP Specification Compliance Testing (WIP)
 
 Test that your server is spec compliant:
 
@@ -81,13 +81,7 @@ See the [Compliance Command (WIP)](#compliance-command-wip) section below for de
 
 ## Quick Start
 
-1. **Install**
-
-   ```bash
-   npm install -g mcp-server-tester
-   ```
-
-2. **Create server config** (`filesystem-server-config.json`):
+1. **Create server config** (`filesystem-server-config.json`):
 
    ```json
    {
@@ -100,7 +94,9 @@ See the [Compliance Command (WIP)](#compliance-command-wip) section below for de
    }
    ```
 
-3. **Create your test file** (`filesystem-tests.yaml`):
+2. **Create tool and/or eval test files**:
+
+   **`filesystem-tool-tests.yaml`**:
 
    ```yaml
    tools:
@@ -110,7 +106,11 @@ See the [Compliance Command (WIP)](#compliance-command-wip) section below for de
          tool: 'write_file'
          params: { path: '/tmp/test.txt', content: 'Hello world' }
          expect: { success: true }
+   ```
 
+   **`filesystem-eval-tests.yaml`**:
+
+   ```yaml
    evals:
      models: ['claude-3-5-haiku-latest']
      tests:
@@ -126,15 +126,15 @@ See the [Compliance Command (WIP)](#compliance-command-wip) section below for de
 
    See the [Tools Testing](#tools-testing) and [Evals Testing](#evals-testing) sections for comprehensive syntax examples.
 
-4. **Run functional tests**:
+3. **Run tests**:
 
    ```bash
    # Run tools tests (fast, no API key needed)
-   mcp-server-tester tools filesystem-tests.yaml --server-config filesystem-server-config.json
+   mcp-server-tester tools filesystem-tool-tests.yaml --server-config filesystem-server-config.json
 
    # Run LLM evaluation tests (requires API key)
    export ANTHROPIC_API_KEY="your-key"
-   mcp-server-tester evals filesystem-tests.yaml --server-config filesystem-server-config.json
+   mcp-server-tester evals filesystem-eval-tests.yaml --server-config filesystem-server-config.json
    ```
 
 ## Tools Testing
@@ -242,12 +242,13 @@ The `evals` command tests that LLMs can discover and use your tools effectively.
 ```yaml
 evals:
   models: ['claude-3-5-haiku-latest']
-  maxSteps: 5 # Optional: limit conversation turns
+  max_steps: 5 # Optional: limit conversation turns
   tests:
     - name: 'Test description'
       prompt: 'Task for the LLM to complete'
       expected_tool_calls:
         required: ['tool1', 'tool2']
+        allowed: ['tool3']
       response_scorers:
         - type: 'llm-judge'
           criteria: 'Did the assistant complete the task?'
@@ -261,11 +262,10 @@ Control which tools the LLM should use:
 evals:
   tests:
     - name: 'LLM must use specific tools'
-      prompt: 'Create and read a file'
+      prompt: 'Write a paragraph of poetry to file "poetry.md"'
       expected_tool_calls:
-        required: ['write_file', 'read_file'] # Must use these tools
-        allowed: ['write_file', 'read_file'] # Can only use these tools
-        forbidden: ['delete_file'] # Must not use these tools
+        required: ['write_file'] # Must use these tools
+        allowed: ['read_file'] # Can use this tool, but all other tool uses will throw error
 ```
 
 ### Response Scoring
@@ -278,7 +278,6 @@ Evaluate the quality of LLM responses:
 response_scorers:
   - type: 'regex'
     pattern: 'success|completed|done' # Response must match pattern
-    threshold: 1.0 # Optional: defaults to 1.0
 ```
 
 **LLM Judge Scorer:**
@@ -290,17 +289,17 @@ response_scorers:
     threshold: 0.8 # Score must be >= 0.8
 ```
 
-**Contains Scorer:**
-
-```yaml
-response_scorers:
-  - type: 'contains'
-    text: 'File created successfully' # Response must contain exact text
-```
-
 ### Advanced Options
 
+**IDE Schema Validation**
+Add this line to the top of your test files to enable automatic schema validation and autocomplete in IDEs like VS Code:
+
+```
+# yaml-language-server: $schema=https://raw.githubusercontent.com/steviec/mcp-server-tester/refs/heads/main/src/schemas/tests-schema.json
+```
+
 **Environment Variable Replacement:**
+
 Use `${VAR_NAME}` syntax to inject environment variables into your test configurations:
 
 ```bash
@@ -325,6 +324,7 @@ tools:
 Environment variables work in test names, parameters, expectations, and all other config values. Missing variables will cause the config loading to fail with a helpful error message.
 
 **Debug Mode:**
+
 See full conversation output and scoring details:
 
 ```bash
@@ -339,7 +339,7 @@ evals:
   tests: [...]
 ```
 
-**Complex Evaluation:**
+**Complex Evals:**
 
 ```yaml
 evals:
@@ -359,6 +359,38 @@ evals:
         - type: 'contains'
           text: 'Meeting notes from today'
 ```
+
+**Unified Test Files:**
+
+You can combine both `tools` and `evals` sections in a single test file for convenience:
+
+```yaml
+# Combined test file with both tools and evals
+tools:
+  expected_tool_list: ['write_file', 'read_file']
+  tests:
+    - name: 'Write file successfully'
+      tool: 'write_file'
+      params: { path: '/tmp/test.txt', content: 'Hello world' }
+      expect: { success: true }
+
+evals:
+  models: ['claude-3-5-haiku-latest']
+  tests:
+    - name: 'LLM can write files'
+      prompt: 'Create a file at /tmp/greeting.txt with content "Hello from Claude"'
+      expected_tool_calls:
+        required: ['write_file']
+      response_scorers:
+        - type: 'llm-judge'
+          criteria: 'Did the assistant successfully create the file?'
+          threshold: 0.8
+```
+
+When running commands, each will only use its respective section:
+
+- `mcp-server-tester tools unified-test.yaml` uses only the `tools:` section
+- `mcp-server-tester evals unified-test.yaml` uses only the `evals:` section
 
 ## Compliance Command (WIP)
 

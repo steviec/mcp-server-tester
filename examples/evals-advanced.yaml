@@ -1,96 +1,99 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/steviec/mcp-server-tester/refs/heads/main/src/schemas/tests-schema.json
+
 # Advanced LLM Evaluation Examples
 # Complex reasoning, constraints, and sophisticated scoring
 
-# LLM Configuration
-models: ['claude-3-5-haiku-latest']
-timeout: 45000 # 45 seconds for complex tests
-max_steps: 5 # More steps for complex reasoning
+evals:
+  # LLM Configuration
+  models: ['claude-3-5-haiku-latest']
+  timeout: 45000 # 45 seconds for complex tests
+  max_steps: 5 # More steps for complex reasoning
 
-tests:
-  # Pattern 1: Tool Constraint Testing
-  # Test LLM respects tool usage constraints
-  - name: 'LLM respects tool restrictions'
-    prompt: 'Add the numbers 25 and 17. You may only use the add tool, no other tools.'
-    expected_tool_calls:
-      required: ['add']
-      allowed: ['add'] # Can only use add tool
-    response_scorers:
-      - type: 'regex'
-        pattern: '(42|twenty.five|seventeen)'
-      - type: 'llm-judge'
-        criteria: 'Did the assistant correctly use only the add tool and provide the result 42?'
-        threshold: 0.8
+  tests:
+    # Pattern 1: Tool Constraint Testing
+    # Test LLM respects tool usage constraints
+    - name: 'LLM respects tool restrictions'
+      prompt: 'Add the numbers 25 and 17. You may only use the add tool, no other tools.'
+      expected_tool_calls:
+        required: ['add']
+        allowed: ['add'] # Can only use add tool
+      response_scorers:
+        - type: 'regex'
+          pattern: '(42|twenty.five|seventeen)'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant correctly use only the add tool and provide the result 42?'
+          threshold: 0.8
 
-  # Pattern 2: Multi-Step Reasoning
-  # Test LLM can break down complex tasks
-  - name: 'LLM handles multi-step calculation'
-    prompt: 'Calculate (10 + 5) + (7 + 3) step by step, explaining each calculation'
-    expected_tool_calls:
-      required: ['add'] # Must use add tool (multiple times allowed)
-    response_scorers:
-      - type: 'regex'
-        pattern: '(15.*10.*20|step|first|second)' # Should show step-by-step reasoning
-      - type: 'llm-judge'
-        criteria: 'Did the assistant break down the calculation into clear steps and arrive at the correct answer (20)?'
-        threshold: 0.7
+    # Pattern 2: Multi-Step Reasoning
+    # Test LLM can break down complex tasks
+    - name: 'LLM handles multi-step calculation'
+      prompt: 'Calculate (10 + 5) + (7 + 3) step by step, explaining each calculation'
+      expected_tool_calls:
+        required: ['add'] # Must use add tool (multiple times allowed)
+      response_scorers:
+        - type: 'regex'
+          pattern: '(15.*10.*20|step|first|second)' # Should show step-by-step reasoning
+        - type: 'llm-judge'
+          criteria: 'Did the assistant break down the calculation into clear steps and arrive at the correct answer (20)?'
+          threshold: 0.7
 
-  # Pattern 3: Error Recovery Testing
-  # Test LLM can handle and recover from errors
-  - name: 'LLM handles tool errors gracefully'
-    prompt: 'Try to echo a message, then use a nonexistent tool, then recover by doing a simple addition'
-    expected_tool_calls:
-      required: ['echo', 'add'] # Should successfully use these despite the error
-    response_scorers:
-      - type: 'llm-judge'
-        criteria: 'Did the assistant attempt the nonexistent tool, acknowledge the error, and successfully complete the echo and addition tasks?'
-        threshold: 0.6
+    # Pattern 3: Error Recovery Testing
+    # Test LLM can handle and recover from errors
+    - name: 'LLM handles tool errors gracefully'
+      prompt: 'Try to echo a message, then use a nonexistent tool, then recover by doing a simple addition'
+      expected_tool_calls:
+        required: ['echo', 'add'] # Should successfully use these despite the error
+      response_scorers:
+        - type: 'llm-judge'
+          criteria: 'Did the assistant attempt the nonexistent tool, acknowledge the error, and successfully complete the echo and addition tasks?'
+          threshold: 0.6
 
-  # Pattern 4: Complex Workflow with Validation
-  # Test sophisticated tool usage patterns
-  - name: 'LLM executes complex workflow'
-    prompt: 'Create a simple report: echo "Report started", calculate 50 + 25, echo "Calculation: [result]", then echo "Report complete"'
-    expected_tool_calls:
-      required: ['echo', 'add']
-    response_scorers:
-      - type: 'regex'
-        pattern: '(Report started|75|Report complete)'
-      - type: 'llm-judge'
-        criteria: 'Did the assistant create a proper report structure with the correct calculation (75) embedded?'
-        threshold: 0.8
+    # Pattern 4: Complex Workflow with Validation
+    # Test sophisticated tool usage patterns
+    - name: 'LLM executes complex workflow'
+      prompt: 'Create a simple report: echo "Report started", calculate 50 + 25, echo "Calculation: [result]", then echo "Report complete"'
+      expected_tool_calls:
+        required: ['echo', 'add']
+      response_scorers:
+        - type: 'regex'
+          pattern: '(Report started|75|Report complete)'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant create a proper report structure with the correct calculation (75) embedded?'
+          threshold: 0.8
 
-  # Pattern 5: Ambiguity Resolution
-  # Test LLM can handle ambiguous requests
-  - name: 'LLM clarifies ambiguous requests'
-    prompt: 'Add some numbers together' # Intentionally vague
-    expected_tool_calls:
-      allowed: ['echo', 'add'] # May ask for clarification or make reasonable assumptions
-    response_scorers:
-      - type: 'llm-judge'
-        criteria: 'Did the assistant either ask for clarification about which numbers to add, or make a reasonable assumption and perform an addition?'
-        threshold: 0.6
+    # Pattern 5: Ambiguity Resolution
+    # Test LLM can handle ambiguous requests
+    - name: 'LLM clarifies ambiguous requests'
+      prompt: 'Add some numbers together' # Intentionally vague
+      expected_tool_calls:
+        allowed: ['echo', 'add'] # May ask for clarification or make reasonable assumptions
+      response_scorers:
+        - type: 'llm-judge'
+          criteria: 'Did the assistant either ask for clarification about which numbers to add, or make a reasonable assumption and perform an addition?'
+          threshold: 0.6
 
-  # Pattern 6: Performance Under Constraints
-  # Test LLM efficiency with step limits
-  - name: 'LLM works efficiently under constraints'
-    prompt: 'Echo "Starting", add 100 + 200, echo "Result: [answer]" - complete this in minimum steps'
-    expected_tool_calls:
-      required: ['echo', 'add']
-    response_scorers:
-      - type: 'regex'
-        pattern: '(Starting|300|Result)'
-      - type: 'llm-judge'
-        criteria: 'Did the assistant complete the task efficiently with the correct result (300) and proper structure?'
-        threshold: 0.8
+    # Pattern 6: Performance Under Constraints
+    # Test LLM efficiency with step limits
+    - name: 'LLM works efficiently under constraints'
+      prompt: 'Echo "Starting", add 100 + 200, echo "Result: [answer]" - complete this in minimum steps'
+      expected_tool_calls:
+        required: ['echo', 'add']
+      response_scorers:
+        - type: 'regex'
+          pattern: '(Starting|300|Result)'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant complete the task efficiently with the correct result (300) and proper structure?'
+          threshold: 0.8
 
-  # Pattern 7: Tool Selection Testing
-  # Test LLM chooses appropriate tools
-  - name: 'LLM selects correct tools for task'
-    prompt: 'I need to communicate "Hello" and also calculate 15 + 15. Choose the most appropriate tools.'
-    expected_tool_calls:
-      required: ['echo', 'add']
-    response_scorers:
-      - type: 'regex'
-        pattern: '(Hello|30|fifteen)'
-      - type: 'llm-judge'
-        criteria: 'Did the assistant correctly identify that echo is needed for communication and add is needed for calculation?'
-        threshold: 0.8
+    # Pattern 7: Tool Selection Testing
+    # Test LLM chooses appropriate tools
+    - name: 'LLM selects correct tools for task'
+      prompt: 'I need to communicate "Hello" and also calculate 15 + 15. Choose the most appropriate tools.'
+      expected_tool_calls:
+        required: ['echo', 'add']
+      response_scorers:
+        - type: 'regex'
+          pattern: '(Hello|30|fifteen)'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant correctly identify that echo is needed for communication and add is needed for calculation?'
+          threshold: 0.8

@@ -18,7 +18,8 @@ describe('Schema Validation', () => {
       const validConfig = path.join(fixturesDir, 'valid-integration.yaml');
 
       expect(() => {
-        const config = ConfigLoader.loadToolsConfig(validConfig);
+        const testConfig = ConfigLoader.loadTestConfig(validConfig);
+        const config = testConfig.tools!;
         expect(config).toHaveProperty('tests');
         expect(config.tests).toBeInstanceOf(Array);
         expect(config.tests.length).toBeGreaterThan(0);
@@ -33,7 +34,8 @@ describe('Schema Validation', () => {
       const validConfig = path.join(fixturesDir, 'valid-evaluation.yaml');
 
       expect(() => {
-        const config = ConfigLoader.loadEvalsConfig(validConfig);
+        const testConfig = ConfigLoader.loadTestConfig(validConfig);
+        const config = testConfig.evals!;
         expect(config).toHaveProperty('tests');
         expect(config.tests).toBeInstanceOf(Array);
         expect(config.tests.length).toBeGreaterThan(0);
@@ -43,7 +45,10 @@ describe('Schema Validation', () => {
     });
 
     test('should validate eval test structure', () => {
-      const config = ConfigLoader.loadEvalsConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
+      const testConfig = ConfigLoader.loadTestConfig(
+        path.join(fixturesDir, 'valid-evaluation.yaml')
+      );
+      const config = testConfig.evals!;
 
       // Check that expected_tool_calls doesn't have prohibited field
       if (config.tests) {
@@ -56,7 +61,10 @@ describe('Schema Validation', () => {
     });
 
     test('should validate response scorer types', () => {
-      const config = ConfigLoader.loadEvalsConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
+      const testConfig = ConfigLoader.loadTestConfig(
+        path.join(fixturesDir, 'valid-evaluation.yaml')
+      );
+      const config = testConfig.evals!;
 
       if (config.tests) {
         const testWithScorers = config.tests.find(t => t.response_scorers);
@@ -122,11 +130,7 @@ describe('Schema Validation', () => {
   describe('File Handling', () => {
     test('should handle non-existent files gracefully', () => {
       expect(() => {
-        ConfigLoader.loadToolsConfig('non-existent.yaml');
-      }).toThrow(/Configuration file not found/);
-
-      expect(() => {
-        ConfigLoader.loadEvalsConfig('non-existent.yaml');
+        ConfigLoader.loadTestConfig('non-existent.yaml');
       }).toThrow(/Configuration file not found/);
     });
 
@@ -140,14 +144,13 @@ describe('Schema Validation', () => {
     });
 
     test('should handle both YAML and JSON extensions', () => {
-      // Test that .yaml files work for tools
+      // Test that .yaml files work for test configs
       expect(() => {
-        ConfigLoader.loadToolsConfig(path.join(fixturesDir, 'valid-integration.yaml'));
+        ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-integration.yaml'));
       }).not.toThrow();
 
-      // Test that .yaml files work for evals
       expect(() => {
-        ConfigLoader.loadEvalsConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
+        ConfigLoader.loadTestConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
       }).not.toThrow();
 
       // Test that .json files work for server config
@@ -162,7 +165,10 @@ describe('Schema Validation', () => {
 
   describe('Schema Features', () => {
     test('should validate tools config required fields', () => {
-      const config = ConfigLoader.loadToolsConfig(path.join(fixturesDir, 'valid-integration.yaml'));
+      const testConfig = ConfigLoader.loadTestConfig(
+        path.join(fixturesDir, 'valid-integration.yaml')
+      );
+      const config = testConfig.tools!;
 
       // Every test should have required fields
       if (config.tests) {
@@ -183,7 +189,10 @@ describe('Schema Validation', () => {
     });
 
     test('should validate evals config structure', () => {
-      const config = ConfigLoader.loadEvalsConfig(path.join(fixturesDir, 'valid-evaluation.yaml'));
+      const testConfig = ConfigLoader.loadTestConfig(
+        path.join(fixturesDir, 'valid-evaluation.yaml')
+      );
+      const config = testConfig.evals!;
 
       if (config.tests) {
         for (const test of config.tests) {

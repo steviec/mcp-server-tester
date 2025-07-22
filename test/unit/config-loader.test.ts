@@ -42,20 +42,22 @@ describe('ConfigLoader Environment Variable Replacement', () => {
     process.env.TEST_RESULT = 'Echo: Hello World!';
 
     const yamlContent = `
-expected_tool_list: ['echo']
-tests:
-  - name: 'Environment variable test for \${TEST_MESSAGE}'
-    tool: 'echo'
-    params:
-      message: 'Hello \${TEST_MESSAGE}!'
-    expect:
-      success: true
-      result:
-        contains: '\${TEST_RESULT}'
+tools:
+  expected_tool_list: ['echo']
+  tests:
+    - name: 'Environment variable test for \${TEST_MESSAGE}'
+      tool: 'echo'
+      params:
+        message: 'Hello \${TEST_MESSAGE}!'
+      expect:
+        success: true
+        result:
+          contains: '\${TEST_RESULT}'
 `;
 
     const tempFile = createTempFile(yamlContent);
-    const config = ConfigLoader.loadToolsConfig(tempFile);
+    const testConfig = ConfigLoader.loadTestConfig(tempFile);
+    const config = testConfig.tools!;
 
     expect(config.expected_tool_list).toEqual(['echo']);
     expect(config.tests).toHaveLength(1);
@@ -71,21 +73,23 @@ tests:
     process.env.TEST_PATTERN = '(echo|add|tool)';
 
     const yamlContent = `
-models: ['\${TEST_MODEL}']
-timeout: 30000
-max_steps: 2
-tests:
-  - name: 'Environment variable test for \${TEST_MODEL}'
-    prompt: '\${TEST_PROMPT}'
-    expected_tool_calls:
-      allowed: []
-    response_scorers:
-      - type: 'regex'
-        pattern: '\${TEST_PATTERN}'
+evals:
+  models: ['\${TEST_MODEL}']
+  timeout: 30000
+  max_steps: 2
+  tests:
+    - name: 'Environment variable test for \${TEST_MODEL}'
+      prompt: '\${TEST_PROMPT}'
+      expected_tool_calls:
+        allowed: []
+      response_scorers:
+        - type: 'regex'
+          pattern: '\${TEST_PATTERN}'
 `;
 
     const tempFile = createTempFile(yamlContent);
-    const config = ConfigLoader.loadEvalsConfig(tempFile);
+    const testConfig = ConfigLoader.loadTestConfig(tempFile);
+    const config = testConfig.evals!;
 
     expect(config.models).toEqual(['claude-3-haiku-20240307']);
     expect(config.tests).toHaveLength(1);
@@ -99,17 +103,19 @@ tests:
     process.env.TEST_ENV = 'production';
 
     const yamlContent = `
-tests:
-  - name: 'User \${TEST_USER} in \${TEST_ENV}'
-    tool: 'echo'
-    params:
-      message: 'Hello \${TEST_USER}, you are in \${TEST_ENV} environment'
-    expect:
-      success: true
+tools:
+  tests:
+    - name: 'User \${TEST_USER} in \${TEST_ENV}'
+      tool: 'echo'
+      params:
+        message: 'Hello \${TEST_USER}, you are in \${TEST_ENV} environment'
+      expect:
+        success: true
 `;
 
     const tempFile = createTempFile(yamlContent);
-    const config = ConfigLoader.loadToolsConfig(tempFile);
+    const testConfig = ConfigLoader.loadTestConfig(tempFile);
+    const config = testConfig.tools!;
 
     expect(config.tests[0].name).toBe('User alice in production');
     expect(config.tests[0].params.message).toBe('Hello alice, you are in production environment');
@@ -119,17 +125,19 @@ tests:
     process.env.EMPTY_VAR = '';
 
     const yamlContent = `
-tests:
-  - name: 'Test with empty var: "\${EMPTY_VAR}"'
-    tool: 'echo'
-    params:
-      message: 'Value is: "\${EMPTY_VAR}"'
-    expect:
-      success: true
+tools:
+  tests:
+    - name: 'Test with empty var: "\${EMPTY_VAR}"'
+      tool: 'echo'
+      params:
+        message: 'Value is: "\${EMPTY_VAR}"'
+      expect:
+        success: true
 `;
 
     const tempFile = createTempFile(yamlContent);
-    const config = ConfigLoader.loadToolsConfig(tempFile);
+    const testConfig = ConfigLoader.loadTestConfig(tempFile);
+    const config = testConfig.tools!;
 
     expect(config.tests[0].name).toBe('Test with empty var: ""');
     expect(config.tests[0].params.message).toBe('Value is: ""');
@@ -140,18 +148,19 @@ tests:
     delete process.env.UNDEFINED_VAR;
 
     const yamlContent = `
-tests:
-  - name: 'Test with \${UNDEFINED_VAR}'
-    tool: 'echo'
-    params:
-      message: 'Value: \${UNDEFINED_VAR}'
-    expect:
-      success: true
+tools:
+  tests:
+    - name: 'Test with \${UNDEFINED_VAR}'
+      tool: 'echo'
+      params:
+        message: 'Value: \${UNDEFINED_VAR}'
+      expect:
+        success: true
 `;
 
     const tempFile = createTempFile(yamlContent);
 
-    expect(() => ConfigLoader.loadToolsConfig(tempFile)).toThrow(
+    expect(() => ConfigLoader.loadTestConfig(tempFile)).toThrow(
       "Environment variable 'UNDEFINED_VAR' is not defined but required for config substitution"
     );
   });

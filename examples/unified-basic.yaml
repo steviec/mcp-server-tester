@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/steviec/mcp-server-tester/refs/heads/main/src/schemas/tests-schema.json
+
+# Unified Test Configuration Example
+# This file demonstrates both tools and evals testing in a single file
+
+tools:
+  # Tool Discovery - Verify your server advertises the expected tools
+  expected_tool_list: ['echo', 'add']
+
+  tests:
+    # Direct tool testing
+    - name: 'Echo tool returns message correctly'
+      tool: 'echo'
+      params:
+        message: 'Hello from unified test'
+      expect:
+        success: true
+        result:
+          contains: 'Echo: Hello from unified test'
+
+    - name: 'Add tool calculates correctly'
+      tool: 'add'
+      params:
+        a: 10
+        b: 5
+      expect:
+        success: true
+        result:
+          contains: '10 + 5 = 15'
+
+evals:
+  # LLM Configuration
+  models: ['claude-3-5-haiku-latest']
+  timeout: 30000
+  max_steps: 3
+
+  tests:
+    # LLM evaluation testing
+    - name: 'LLM uses echo tool correctly'
+      prompt: 'Please echo the message "Hello from unified LLM test"'
+      expected_tool_calls:
+        required: ['echo']
+      response_scorers:
+        - type: 'regex'
+          pattern: 'Hello from unified LLM test'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant successfully call the echo tool with the correct message?'
+          threshold: 0.8
+
+    - name: 'LLM performs addition'
+      prompt: 'Add the numbers 7 and 8 together using the available tools'
+      expected_tool_calls:
+        required: ['add']
+      response_scorers:
+        - type: 'regex'
+          pattern: '(15|seven|eight)'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant correctly use the add tool to calculate 7 + 8 = 15?'
+          threshold: 0.8

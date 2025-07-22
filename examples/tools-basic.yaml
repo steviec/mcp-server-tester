@@ -1,57 +1,60 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/steviec/mcp-server-tester/refs/heads/main/src/schemas/tests-schema.json
+
 # Basic Tools Testing Examples
 # Learn the fundamental patterns for testing MCP server tools
 
-# Tool Discovery - Verify your server advertises the expected tools
-expected_tool_list: ['echo', 'add']
+tools:
+  # Tool Discovery - Verify your server advertises the expected tools
+  expected_tool_list: ['echo', 'add']
 
-tests:
-  # Pattern 1: Single Tool Test
-  # Test one tool call with simple validation
-  - name: 'Echo tool returns message correctly'
-    tool: 'echo'
-    params:
-      message: 'Hello from tools test'
-    expect:
-      success: true
-      result:
-        contains: 'Echo: Hello from tools test'
+  tests:
+    # Pattern 1: Single Tool Test
+    # Test one tool call with simple validation
+    - name: 'Echo tool returns message correctly'
+      tool: 'echo'
+      params:
+        message: 'Hello from tools test'
+      expect:
+        success: true
+        result:
+          contains: 'Echo: Hello from tools test'
 
-  # Pattern 2: Single Tool with Different Data
-  - name: 'Add tool calculates correctly'
-    tool: 'add'
-    params:
-      a: 10
-      b: 5
-    expect:
-      success: true
-      result:
-        contains: '10 + 5 = 15'
+    # Pattern 2: Single Tool with Different Data
+    - name: 'Add tool calculates correctly'
+      tool: 'add'
+      params:
+        a: 10
+        b: 5
+      expect:
+        success: true
+        result:
+          contains: '10 + 5 = 15'
 
-  # Pattern 3: Multi-Step Workflow
-  # Test a sequence of tool calls (useful for complex workflows)
-  - name: 'Echo and add workflow'
-    calls:
-      - tool: 'echo'
-        params:
-          message: 'Starting calculation'
-        expect:
-          success: true
-          result:
-            contains: 'Echo: Starting calculation'
+    # Pattern 3: Multi-Step Workflow
+    # Test a sequence of tool calls (useful for complex workflows)
+    - name: 'Echo and add workflow'
+      calls:
+        - tool: 'echo'
+          params:
+            message: 'Starting calculation'
+          expect:
+            success: true
+            result:
+              contains: 'Echo: Starting calculation'
 
-      - tool: 'add'
-        params:
-          a: 7
-          b: 3
-        expect:
-          success: true
-          result:
-            contains: '7 + 3 = 10'
+        - tool: 'add'
+          params:
+            a: 7
+            b: 3
+          expect:
+            success: true
+            result:
+              contains: '7 + 3 = 10'
 
-      - tool: 'echo'
-        params:
-          message: 'Calculation complete'
-        expect:
-          success: true
-          result:
-            contains: 'Echo: Calculation complete'
+        - tool: 'echo'
+          params:
+            message: 'Calculation complete'
+          expect:
+            success: true
+            result:
+              contains: 'Echo: Calculation complete'

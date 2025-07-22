@@ -16,9 +16,7 @@ import type { TestResult, TestSummary } from './shared/core/types.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import toolsConfigSchema from './schemas/tools-config.json' with { type: 'json' };
-import evalsConfigSchema from './schemas/evals-config.json' with { type: 'json' };
-import serverConfigSchema from './schemas/server-config.json' with { type: 'json' };
+import testConfigSchema from './schemas/tests-schema.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -67,8 +65,16 @@ async function runToolsTests(testFile: string, options: CliOptions): Promise<voi
   try {
     console.log(`Running tools tests from: ${testFile}`);
 
-    // Load and validate tools config
-    const toolsConfig = ConfigLoader.loadToolsConfig(testFile);
+    // Load and validate test config
+    const testConfig = ConfigLoader.loadTestConfig(testFile);
+
+    if (!testConfig.tools) {
+      throw new Error(
+        'No tools section found in test file. Please add a "tools:" section to your test configuration.'
+      );
+    }
+
+    const toolsConfig = testConfig.tools;
 
     // Load server config
     const serverConfig = ConfigLoader.loadServerConfig(options.serverConfig, options.serverName);
@@ -123,8 +129,16 @@ async function runEvalsTests(testFile: string, options: CliOptions): Promise<voi
       );
     }
 
-    // Load and validate evals config
-    const evalsConfig = ConfigLoader.loadEvalsConfig(testFile);
+    // Load and validate test config
+    const testConfig = ConfigLoader.loadTestConfig(testFile);
+
+    if (!testConfig.evals) {
+      throw new Error(
+        'No evals section found in test file. Please add an "evals:" section to your test configuration.'
+      );
+    }
+
+    const evalsConfig = testConfig.evals;
 
     // Load server config
     const serverConfig = ConfigLoader.loadServerConfig(options.serverConfig, options.serverName);
@@ -214,6 +228,7 @@ async function main(): Promise<void> {
     .description('Standalone CLI tool for testing MCP servers')
     .version(packageJson.version, '--version')
     .helpOption('--help', 'Show help for command')
+    .option('--help-schema', 'Show JSON schema for test files')
     .addHelpText(
       'after',
       `
@@ -221,16 +236,19 @@ Examples:
   $ mcp-server-tester tools test.yaml --server-config server.json
   $ mcp-server-tester evals eval.yaml --server-config server.json
   $ mcp-server-tester compliance --server-config server.json
-  $ mcp-server-tester tools test.yaml --server-config server.json --server-name filesystem`
+  $ mcp-server-tester --help-schema
+
+Get test file schema:
+  $ mcp-server-tester --help-schema`
     );
 
   // Tools command
   program
     .command('tools')
     .description(
-      'Run MCP server tools tests (direct API testing). Use --help-schema to see schemas.'
+      'Run MCP server tools tests (direct API testing). Use "mcp-server-tester --help-schema" to see test file schema.'
     )
-    .argument('[test-file]', 'Test configuration file (YAML) with "tools" section')
+    .argument('[test-file]', 'Test configuration file (YAML)')
     .option('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
       '--server-name <name>',
@@ -239,42 +257,27 @@ Examples:
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--debug', 'Enable debug output with additional details')
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
-    .option('--help-schema', 'Show JSON schemas for tools test config and server config')
-    .action(
-      async (testFile: string | undefined, options: CliOptions & { helpSchema?: boolean }) => {
-        if (options.helpSchema) {
-          console.log('Tools Test Configuration Schema:');
-          console.log(`
-${JSON.stringify(toolsConfigSchema, null, 2)}
-`);
-          console.log('Server Configuration Schema:');
-          console.log(`
-${JSON.stringify(serverConfigSchema, null, 2)}
-`);
-          process.exit(0);
-        }
-
-        // Validate required arguments if not showing schema
-        if (!testFile) {
-          console.error("error: missing required argument 'test-file'");
-          process.exit(1);
-        }
-        if (!options.serverConfig) {
-          console.error("error: required option '--server-config <file>' not specified");
-          process.exit(1);
-        }
-
-        await runToolsTests(testFile, options);
+    .action(async (testFile: string | undefined, options: CliOptions) => {
+      // Validate required arguments
+      if (!testFile) {
+        console.error("error: missing required argument 'test-file'");
+        process.exit(1);
       }
-    );
+      if (!options.serverConfig) {
+        console.error("error: required option '--server-config <file>' not specified");
+        process.exit(1);
+      }
+
+      await runToolsTests(testFile, options);
+    });
 
   // Evals command
   program
     .command('evals')
     .description(
-      'Run LLM evaluation tests (end-to-end testing with real LLMs). Requires ANTHROPIC_API_KEY.'
+      'Run LLM evaluation tests (end-to-end testing with real LLMs). Requires ANTHROPIC_API_KEY. Use "mcp-server-tester --help-schema" to see test file schema.'
     )
-    .argument('[test-file]', 'Test configuration file (YAML) with "evals" section')
+    .argument('[test-file]', 'Test configuration file (YAML)')
     .option('--server-config <file>', 'MCP server configuration file (JSON)')
     .option(
       '--server-name <name>',
@@ -283,34 +286,19 @@ ${JSON.stringify(serverConfigSchema, null, 2)}
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--debug', 'Enable debug output with additional details')
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
-    .option('--help-schema', 'Show JSON schemas for evals test config and server config')
-    .action(
-      async (testFile: string | undefined, options: CliOptions & { helpSchema?: boolean }) => {
-        if (options.helpSchema) {
-          console.log('Evals Test Configuration Schema:');
-          console.log(`
-${JSON.stringify(evalsConfigSchema, null, 2)}
-`);
-          console.log('Server Configuration Schema:');
-          console.log(`
-${JSON.stringify(serverConfigSchema, null, 2)}
-`);
-          process.exit(0);
-        }
-
-        // Validate required arguments if not showing schema
-        if (!testFile) {
-          console.error("error: missing required argument 'test-file'");
-          process.exit(1);
-        }
-        if (!options.serverConfig) {
-          console.error("error: required option '--server-config <file>' not specified");
-          process.exit(1);
-        }
-
-        await runEvalsTests(testFile, options);
+    .action(async (testFile: string | undefined, options: CliOptions) => {
+      // Validate required arguments
+      if (!testFile) {
+        console.error("error: missing required argument 'test-file'");
+        process.exit(1);
       }
-    );
+      if (!options.serverConfig) {
+        console.error("error: required option '--server-config <file>' not specified");
+        process.exit(1);
+      }
+
+      await runEvalsTests(testFile, options);
+    });
 
   // Compliance command (renamed from compliance)
   program
@@ -327,6 +315,17 @@ ${JSON.stringify(serverConfigSchema, null, 2)}
     .action(async (options: ComplianceOptions) => {
       await runCompliance(options);
     });
+
+  // Handle --help-schema option (regardless of command)
+  const args = process.argv;
+  if (args.includes('--help-schema')) {
+    console.log('Test Configuration Schema:');
+    console.log('This schema supports both "tools:" and "evals:" sections.');
+    console.log(`
+${JSON.stringify(testConfigSchema, null, 2)}
+`);
+    process.exit(0);
+  }
 
   // Parse command line arguments
   program.parse();
