@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* eslint-env node */
-/* eslint-disable no-undef, no-unused-vars */
+/* eslint-disable no-unused-vars */
 
 /**
  * Non-compliant MCP server for compliance testing

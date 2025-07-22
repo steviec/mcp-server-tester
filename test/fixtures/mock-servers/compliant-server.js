@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* eslint-env node */
-/* eslint-disable no-undef, no-case-declarations */
+/* eslint-disable no-case-declarations */
 
 /**
  * Compliant MCP server for compliance testing

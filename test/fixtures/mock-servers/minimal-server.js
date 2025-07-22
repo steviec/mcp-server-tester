@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 /* eslint-env node */
-/* eslint-disable no-undef */
 
 /**
  * Minimal MCP server for compliance testing
