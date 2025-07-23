@@ -1,0 +1,15 @@
+evals:
+  models: ['claude-3-haiku-20240307']
+  timeout: 30000
+  max_steps: 3
+  tests:
+    - name: 'Uses echo tool correctly via config mode'
+      prompt: 'Please echo the message "Hello from eval test"'
+      expected_tool_calls:
+        required: ['echo']
+      response_scorers:
+        - type: 'regex'
+          pattern: 'Hello from eval test'
+        - type: 'llm-judge'
+          criteria: 'Did the assistant successfully echo the requested message?'
+          threshold: 0.7
