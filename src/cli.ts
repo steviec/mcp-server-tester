@@ -22,6 +22,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
 
+const GITHUB_HELP_TEXT = `Learn more:\n  For detailed examples and documentation see the README at https://github.com/steviec/mcp-server-tester`;
+
 interface CliOptions {
   serverConfig: string;
   serverName?: string;
@@ -228,7 +230,6 @@ async function main(): Promise<void> {
     .description('Standalone CLI tool for testing MCP servers')
     .version(packageJson.version, '--version')
     .helpOption('--help', 'Show help for command')
-    .option('--help-schema', 'Show JSON schema for test files')
     .addHelpText(
       'after',
       `
@@ -236,17 +237,16 @@ Examples:
   $ mcp-server-tester tools test.yaml --server-config server.json
   $ mcp-server-tester evals eval.yaml --server-config server.json
   $ mcp-server-tester compliance --server-config server.json
-  $ mcp-server-tester --help-schema
+  $ mcp-server-tester schema
 
-Get test file schema:
-  $ mcp-server-tester --help-schema`
+${GITHUB_HELP_TEXT}`
     );
 
   // Tools command
   program
     .command('tools')
     .description(
-      'Run MCP server tools tests (direct API testing). Use "mcp-server-tester --help-schema" to see test file schema.'
+      'Run MCP server tools tests (direct API testing). Use "mcp-server-tester schema" to see test file schema.'
     )
     .argument('[test-file]', 'Test configuration file (YAML)')
     .option('--server-config <file>', 'MCP server configuration file (JSON)')
@@ -257,6 +257,7 @@ Get test file schema:
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--debug', 'Enable debug output with additional details')
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
+    .addHelpText('after', GITHUB_HELP_TEXT)
     .action(async (testFile: string | undefined, options: CliOptions) => {
       // Validate required arguments
       if (!testFile) {
@@ -275,7 +276,7 @@ Get test file schema:
   program
     .command('evals')
     .description(
-      'Run LLM evaluation tests (end-to-end testing with real LLMs). Requires ANTHROPIC_API_KEY. Use "mcp-server-tester --help-schema" to see test file schema.'
+      'Run LLM evaluation tests (end-to-end testing with real LLMs). Requires ANTHROPIC_API_KEY. Use "mcp-server-tester schema" to see test file schema.'
     )
     .argument('[test-file]', 'Test configuration file (YAML)')
     .option('--server-config <file>', 'MCP server configuration file (JSON)')
@@ -286,6 +287,7 @@ Get test file schema:
     .option('--timeout <ms>', 'Test timeout in milliseconds', '10000')
     .option('--debug', 'Enable debug output with additional details')
     .option('--junit-xml [filename]', 'Generate JUnit XML output (default: junit.xml)')
+    .addHelpText('after', GITHUB_HELP_TEXT)
     .action(async (testFile: string | undefined, options: CliOptions) => {
       // Validate required arguments
       if (!testFile) {
@@ -312,20 +314,22 @@ Get test file schema:
     .option('--categories <list>', 'Test categories to run (comma-separated)')
     .option('--output <format>', 'Output format: console, json', 'console')
     .option('--timeout <ms>', 'Overall timeout for compliance tests', '300000')
+    .addHelpText('after', GITHUB_HELP_TEXT)
     .action(async (options: ComplianceOptions) => {
       await runCompliance(options);
     });
 
-  // Handle --help-schema option (regardless of command)
-  const args = process.argv;
-  if (args.includes('--help-schema')) {
-    console.log('Test Configuration Schema:');
-    console.log('This schema supports both "tools:" and "evals:" sections.');
-    console.log(`
-${JSON.stringify(testConfigSchema, null, 2)}
-`);
-    process.exit(0);
-  }
+  // Schema command
+  program
+    .command('schema')
+    .description('Display JSON schema for test configuration files')
+    .action(() => {
+      console.log('# Test file JSON Schema for both tools and evals commands');
+      console.log('');
+      console.log('```json');
+      console.log(JSON.stringify(testConfigSchema, null, 2));
+      console.log('```');
+    });
 
   // Parse command line arguments
   program.parse();
