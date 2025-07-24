@@ -26,7 +26,7 @@ The `mcp-server-tester` is a implementation-agnostic CLI testing tool that provi
 Test your tools work correctly with direct API calls:
 
 ```bash
-npx mcp-server-tester tools filesystem-tool-tests.yaml --server-config filesystem-server-config.json
+npx mcp-server-tester tools tool-tests.yaml --server-config filesystem-server-config.json
 ```
 
 **Sample output:**
@@ -47,7 +47,7 @@ Results: 5/6 tests passed
 Test that LLMs can discover and use your tools effectively:
 
 ```bash
-npx mcp-server-tester evals filesystem-eval-tests.yaml --server-config filesystem-server-config.json
+npx mcp-server-tester evals eval-tests.yaml --server-config filesystem-server-config.json
 ```
 
 **Sample output:**
@@ -94,9 +94,9 @@ See the [Compliance Command (WIP)](#compliance-command-wip) section below for de
    }
    ```
 
-2a. **Create tool and/or eval test files manually**:
+2. **Create tool and eval test files manually**:
 
-**`filesystem-tool-tests.yaml`**:
+**`tool-tests.yaml`**:
 
 ```yaml
 tools:
@@ -108,7 +108,7 @@ tools:
       expect: { success: true }
 ```
 
-**`filesystem-eval-tests.yaml`**:
+**`eval-tests.yaml`**:
 
 ```yaml
 evals:
@@ -126,7 +126,7 @@ evals:
 
 See the [Tools Testing](#tools-testing) and [Evals Testing](#evals-testing) sections for comprehensive syntax examples.
 
-2b. **Create tool and eval tests using an LLM**:
+2. **Create tool and eval tests automatically using an agent**:
 
 Try out this prompt, replacing the server config information with your own:
 
@@ -160,15 +160,15 @@ Please follow these steps:
   - an explanation of how to run the tool tests and eval tests
 ```
 
-1. **Run tests**:
+3. **Run tests**:
 
    ```bash
    # Run tools tests (fast, no API key needed)
-   mcp-server-tester tools filesystem-tool-tests.yaml --server-config filesystem-server-config.json
+   mcp-server-tester tools tool-tests.yaml --server-config filesystem-server-config.json
 
    # Run LLM evaluation tests (requires API key)
    export ANTHROPIC_API_KEY="your-key"
-   mcp-server-tester evals filesystem-eval-tests.yaml --server-config filesystem-server-config.json
+   mcp-server-tester evals eval-tests.yaml --server-config filesystem-server-config.json
    ```
 
 ## Tools Testing
@@ -362,7 +362,7 @@ Environment variables work in test names, parameters, expectations, and all othe
 See full conversation output and scoring details:
 
 ```bash
-mcp-server-tester evals filesystem-eval-tests.yaml --server-config filesystem-server-config.json --debug
+mcp-server-tester evals eval-tests.yaml --server-config filesystem-server-config.json --debug
 ```
 
 **Multiple Models:**
