@@ -22,7 +22,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const packageJson = JSON.parse(readFileSync(join(__dirname, '../package.json'), 'utf8'));
 
-const GITHUB_HELP_TEXT = `Learn more:\n  For detailed examples and documentation see the README at https://github.com/steviec/mcp-server-tester`;
+const GITHUB_HELP_TEXT = `Learn more:\n  For detailed examples see the README at https://github.com/steviec/mcp-server-tester`;
 
 interface CliOptions {
   serverConfig: string;
@@ -238,6 +238,7 @@ Examples:
   $ mcp-server-tester evals eval.yaml --server-config server.json
   $ mcp-server-tester compliance --server-config server.json
   $ mcp-server-tester schema
+  $ mcp-server-tester documentation
 
 ${GITHUB_HELP_TEXT}`
     );
@@ -329,6 +330,22 @@ ${GITHUB_HELP_TEXT}`
       console.log('```json');
       console.log(JSON.stringify(testConfigSchema, null, 2));
       console.log('```');
+    });
+
+  // Documentation command
+  program
+    .command('documentation')
+    .alias('docs')
+    .description('Display full documentation for MCP Server Tester')
+    .action(() => {
+      try {
+        const readmePath = join(__dirname, '../README.md');
+        const readmeContent = readFileSync(readmePath, 'utf8');
+        console.log(readmeContent);
+      } catch (error) {
+        console.error('Error reading README.md:', error);
+        process.exit(1);
+      }
     });
 
   // Parse command line arguments

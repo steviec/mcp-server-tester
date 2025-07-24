@@ -132,7 +132,7 @@ Try out this prompt, replacing the server config information with your own:
 
 ```
 Please create tool tests and eval tests for me to use with the mcp server tester tool.
-To see how to use it, read the documentation at: https://github.com/steviec/mcp-server-tester/ and then run:
+To see how to use it, run the tool's documentation and schema commands:
 
   `npx -y mcp-server-tester --help`
 
