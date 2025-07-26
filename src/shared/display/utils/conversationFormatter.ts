@@ -109,7 +109,7 @@ export function formatContent(content: any): string[] {
  * Format tool call
  */
 export function formatToolCall(toolName: string, args: any): string {
-  const argsStr = JSON.stringify(args);
+  const argsStr = JSON.stringify(args, null, 2);
   return formatText(`🔧 Tool Call: ${toolName}(${argsStr})`);
 }
 
@@ -117,7 +117,7 @@ export function formatToolCall(toolName: string, args: any): string {
  * Format tool result
  */
 export function formatToolResult(result: any): string {
-  const resultStr = JSON.stringify(result);
-  const truncated = resultStr.length > 200 ? `${resultStr.substring(0, 200)}...` : resultStr;
-  return formatText(`✅ Tool Result: ${truncated}`);
+  return formatText(
+    `✅ Tool Result: ${JSON.stringify(result.structuredContent ?? result.content, null, 2)}`
+  );
 }

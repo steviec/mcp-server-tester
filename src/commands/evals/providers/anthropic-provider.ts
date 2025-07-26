@@ -23,18 +23,10 @@ export class AnthropicProvider extends LlmProvider {
       const toolsResponse = await mcpClient.sdk.listTools();
       const mcpTools = toolsResponse.tools || [];
 
-      // Filter tools based on allowed list if specified
-      let toolsToUse = mcpTools;
-      if (config.allowedTools !== undefined) {
-        toolsToUse = mcpTools.filter((tool: { name: string }) =>
-          config.allowedTools!.includes(tool.name)
-        );
-      }
-
       // Convert MCP tools to AI SDK format using tool() helper
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const aiTools: Record<string, any> = {};
-      for (const mcpTool of toolsToUse) {
+      for (const mcpTool of mcpTools) {
         aiTools[mcpTool.name] = tool({
           description: mcpTool.description,
           parameters: jsonSchema(mcpTool.inputSchema as object),
