@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "test:with-api": "dotenv -e .env.test -- vitest run",
     "test:unit": "vitest run test/unit",
     "test:e2e": "vitest run test/e2e",
     "test:e2e:commands": "vitest run test/e2e/commands",

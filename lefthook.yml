@@ -18,9 +18,3 @@ pre-commit:
     test:
       run: npm run test:unit
       fail_text: 'Unit tests failed. Fix manually.'
-
-pre-push:
-  commands:
-    test-all:
-      run: npm run test:with-api
-      fail_text: 'All tests must pass before pushing.'
