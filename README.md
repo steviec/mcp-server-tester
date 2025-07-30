@@ -96,71 +96,71 @@ See the [Compliance Command (WIP)](#compliance-command-wip) section below for de
 
 2. **Create tool and eval test files manually**:
 
-**`tool-tests.yaml`**:
+   **`tool-tests.yaml`**:
 
-```yaml
-tools:
-  expected_tool_list: ['write_file']
-  tests:
-    - name: 'Write file successfully'
-      tool: 'write_file'
-      params: { path: '/tmp/test.txt', content: 'Hello world' }
-      expect: { success: true }
-```
+   ```yaml
+   tools:
+     expected_tool_list: ['write_file']
+     tests:
+       - name: 'Write file successfully'
+         tool: 'write_file'
+         params: { path: '/tmp/test.txt', content: 'Hello world' }
+         expect: { success: true }
+   ```
 
-**`eval-tests.yaml`**:
+   **`eval-tests.yaml`**:
 
-```yaml
-evals:
-  models: ['claude-3-5-haiku-latest']
-  tests:
-    - name: 'LLM can write files'
-      prompt: 'Create a file at /tmp/greeting.txt with the content "Hello from Claude"'
-      expected_tool_calls:
-        required: ['write_file']
-      response_scorers:
-        - type: 'llm-judge'
-          criteria: 'Did the assistant successfully create the file?'
-          threshold: 0.8
-```
+   ```yaml
+   evals:
+     models: ['claude-3-5-haiku-latest']
+     tests:
+       - name: 'LLM can write files'
+         prompt: 'Create a file at /tmp/greeting.txt with the content "Hello from Claude"'
+         expected_tool_calls:
+           required: ['write_file']
+         response_scorers:
+           - type: 'llm-judge'
+             criteria: 'Did the assistant successfully create the file?'
+             threshold: 0.8
+   ```
 
-See the [Tools Testing](#tools-testing) and [Evals Testing](#evals-testing) sections for comprehensive syntax examples.
+   See the [Tools Testing](#tools-testing) and [Evals Testing](#evals-testing) sections for comprehensive syntax examples.
 
-2. **Create tool and eval tests automatically using an agent**:
+3. **Create tool and eval tests automatically using an agent**:
 
-Try out this prompt, replacing the server config information with your own:
+   Try out this prompt, replacing the server config information with your own:
 
-```
-Please create tool tests and eval tests for me to use with the mcp server tester tool.
-To see how to use it, run the tool's documentation and schema commands:
+   ```
+   Please create tool tests and eval tests for me to use with the mcp server tester tool.
+   To see how to use it, run the tool's documentation and schema commands:
 
-  `npx -y mcp-server-tester --help`
+     `npx -y mcp-server-tester --help`
 
-My server config file is at ./filesystem-server-config.json. To know what tools you need to create tests for, run this command:
+   My server config file is at ./filesystem-server-config.json. To know what tools you need to create tests for, run this command:
 
-  `npx -y @modelcontextprotocol/inspector --cli --config filesystem-server-config.json --server filesystem-server --method tools/list`
+     `npx -y @modelcontextprotocol/inspector --cli --config filesystem-server-config.json --server filesystem-server --method tools/list`
 
-Please follow these steps:
+   Please follow these steps:
 
-1. Create tool tests
-  - Create a file called `tool-tests.yaml` that contains a single test for each tool. Follow these guidelines:
-    - Do NOT force an individual test to pass; if the expected output is not returned, the test should fail
-    - if there is a clear dependency between tool calls, you can chain them using the "calls" property
-  - Run the tests and confirm that the syntax is correct and that each test runs (they do not have to pass)
+   1. Create tool tests
+     - Create a file called `tool-tests.yaml` that contains a single test for each tool. Follow these guidelines:
+       - Do NOT force an individual test to pass; if the expected output is not returned, the test should fail
+       - if there is a clear dependency between tool calls, you can chain them using the "calls" property
+     - Run the tests and confirm that the syntax is correct and that each test runs (they do not have to pass)
 
-2. Create eval tests
-  - Create a file called `eval-tests.yaml` with eval tests that will test the server's behavior. Follow these guidelines:
-    - start with a few simple evals, and then build up to more complex ones
-    - create between 5 and 10 eval tests
-  - Run the tests and confirm that the syntax is correct and that each test runs (they do not have to pass)
+   2. Create eval tests
+     - Create a file called `eval-tests.yaml` with eval tests that will test the server's behavior. Follow these guidelines:
+       - start with a few simple evals, and then build up to more complex ones
+       - create between 5 and 10 eval tests
+     - Run the tests and confirm that the syntax is correct and that each test runs (they do not have to pass)
 
-3. Provide a summary, which includes:
-  - a list of the tools that are being tested and what you chose to test
-  - a list of the eval tests and your reasoning for why you chose them
-  - an explanation of how to run the tool tests and eval tests
-```
+   3. Provide a summary, which includes:
+     - a list of the tools that are being tested and what you chose to test
+     - a list of the eval tests and your reasoning for why you chose them
+     - an explanation of how to run the tool tests and eval tests
+   ```
 
-3. **Run tests**:
+4. **Run tests**:
 
    ```bash
    # Run tools tests (fast, no API key needed)
@@ -326,6 +326,7 @@ response_scorers:
 ### Advanced Options
 
 **IDE Schema Validation**
+
 Add this line to the top of your test files to enable automatic schema validation and autocomplete in IDEs like VS Code:
 
 ```
