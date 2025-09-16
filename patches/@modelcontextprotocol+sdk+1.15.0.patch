@@ -1,0 +1,65 @@
+diff --git a/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js b/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js
+index 95c6de7..55bfc6d 100644
+--- a/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js
++++ b/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js
+@@ -147,9 +147,60 @@ export class StdioClientTransport {
+     }
+     async close() {
+         this._abortController.abort();
++        await this._shutdownGracefully();
+         this._process = undefined;
+         this._readBuffer.clear();
+     }
++    async _shutdownGracefully() {
++        if (!this._process) {
++            return;
++        }
++        const closed = new Promise(resolve => {
++            this._process.once('close', () => resolve('closed'));
++        });
++        // Close stdin
++        if (this._process.stdin) {
++            this._process.stdin.end();
++        }
++        // Wait 100ms for graceful exit
++        let success = await Promise.race([
++            closed,
++            new Promise(resolve => setTimeout(() => resolve(false), 100))
++        ]);
++        if (success === 'closed')
++            return;
++        // Send SIGTERM
++        try {
++            process.kill(this._process.pid, "SIGTERM");
++        } catch (e) {
++            // Process may already be gone
++            return;
++        }
++        // Wait 1 second for SIGTERM to work
++        success = await Promise.race([
++            closed,
++            new Promise(resolve => setTimeout(() => resolve(false), 1000))
++        ]);
++        if (success === 'closed')
++            return;
++        // Force kill with SIGKILL
++        try {
++            process.kill(this._process.pid, "SIGKILL");
++        } catch (e) {
++            // Process may already be gone
++            return;
++        }
++        // Wait up to 5 seconds for SIGKILL
++        await Promise.race([
++            closed,
++            new Promise((_, reject) => 
++                setTimeout(() => reject(new Error("Process did not exit after SIGKILL")), 5000)
++            )
++        ]).catch(() => {
++            // Log but don't throw - we tried our best
++            console.error("Warning: Process did not exit after SIGKILL");
++        });
++    }
+     send(message) {
+         return new Promise((resolve) => {
+             var _a;
